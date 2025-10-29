@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target } from 'lucide-react';
+import { SignIn, SignUp, useAuth } from '@clerk/clerk-react';
+import { setAuthToken } from './services/api';
 import { UnsubscribePage } from './pages/UnsubscribePage';
 import { LeadsSignupPage } from './pages/LeadsSignupPage';
 import { AboutPage } from './pages/AboutPage';
 import { ThankYouPage } from './pages/ThankYouPage';
+import { MarketplacePage } from './pages/MarketplacePage';
+import { AccountPage } from './pages/AccountPage';
+import { LeadDetailsPage } from './pages/LeadDetailsPage';
+import { AdminVerificationPage } from './pages/AdminVerificationPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 
 const LandingPage: React.FC = () => {
   return (
@@ -289,14 +296,52 @@ const LandingPage: React.FC = () => {
 };
 
 function App() {
+  const { getToken, isSignedIn } = useAuth();
+
+  // Set up auth token getter for API calls
+  useEffect(() => {
+    if (isSignedIn && getToken) {
+      setAuthToken(getToken);
+    }
+  }, [isSignedIn, getToken]);
+
   return (
     <Router>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/leads-signup" element={<LeadsSignupPage />} />
         <Route path="/thank-you" element={<ThankYouPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
+
+        {/* Auth Routes */}
+        <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />} />
+        <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/marketplace"
+          element={isSignedIn ? <MarketplacePage /> : <Navigate to="/sign-in" replace />}
+        />
+        <Route
+          path="/account"
+          element={isSignedIn ? <AccountPage /> : <Navigate to="/sign-in" replace />}
+        />
+        <Route
+          path="/leads/:id"
+          element={isSignedIn ? <LeadDetailsPage /> : <Navigate to="/sign-in" replace />}
+        />
+        <Route
+          path="/admin/verify"
+          element={isSignedIn ? <AdminVerificationPage /> : <Navigate to="/sign-in" replace />}
+        />
+        <Route
+          path="/admin"
+          element={isSignedIn ? <AdminDashboardPage /> : <Navigate to="/sign-in" replace />}
+        />
+
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

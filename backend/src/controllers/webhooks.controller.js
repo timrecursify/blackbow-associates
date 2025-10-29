@@ -2,6 +2,7 @@ import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import * as stripeService from '../services/stripe.service.js';
+import { syncUser as clerkWebhook } from './auth.controller.js';
 
 // Stripe webhook handler
 export const stripeWebhook = asyncHandler(async (req, res) => {
@@ -153,6 +154,5 @@ export const pipedriveWebhook = asyncHandler(async (req, res) => {
 
 // Clerk webhook handler (already implemented in auth.controller.js)
 // Re-export for consistency
-export { syncUser as clerkWebhook } from './auth.controller.js';
-
 export default { stripeWebhook, pipedriveWebhook, clerkWebhook };
+export { clerkWebhook };

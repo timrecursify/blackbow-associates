@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User accounts synced from Clerk
+model User {
+  id              String           @id @default(cuid())
+  clerkUserId     String           @unique @map("clerk_user_id")
+  email           String           @unique
+  businessName    String           @map("business_name")
+  vendorType      String           @map("vendor_type")
+  balance         Decimal          @default(0.00) @db.Decimal(10, 2)
+  isAdmin         Boolean          @default(false) @map("is_admin")
+  adminVerifiedAt DateTime?        @map("admin_verified_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  transactions    Transaction[]
+  purchases       Purchase[]
+  paymentMethods  PaymentMethod[]
+
+  @@map("users")
+}
+
+// Wedding leads from Pipedrive
+model Lead {
+  id              String      @id @default(cuid())
+  pipedriveDealId Int?        @unique @map("pipedrive_deal_id")
+  weddingDate     DateTime?   @map("wedding_date")
+  location        String
+  city            String?
+  state           String?
+  budgetMin       Decimal?    @map("budget_min") @db.Decimal(10, 2)
+  budgetMax       Decimal?    @map("budget_max") @db.Decimal(10, 2)
+  servicesNeeded  String[]    @map("services_needed")
+  price           Decimal     @default(20.00) @db.Decimal(10, 2)
+  status          LeadStatus  @default(AVAILABLE)
+
+  // Masked info shown before purchase
+  maskedInfo      Json        @map("masked_info")
+
+  // Full contact info revealed after purchase
+  fullInfo        Json        @map("full_info")
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  purchases       Purchase[]
+
+  @@index([status])
+  @@index([weddingDate])
+  @@index([location])
+  @@map("leads")
+}
+
+enum LeadStatus {
+  AVAILABLE
+  SOLD
+  EXPIRED
+}
+
+// Transaction history (deposits + purchases)
+model Transaction {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  amount          Decimal         @db.Decimal(10, 2)
+  type            TransactionType
+  stripePaymentId String?         @map("stripe_payment_id")
+  balanceAfter    Decimal         @map("balance_after") @db.Decimal(10, 2)
+  metadata        Json?
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  user            User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEPOSIT
+  PURCHASE
+  REFUND
+  ADJUSTMENT
+}
+
+// Lead purchases (ownership tracking)
+model Purchase {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  leadId       String   @map("lead_id")
+  amountPaid   Decimal  @map("amount_paid") @db.Decimal(10, 2)
+  purchasedAt  DateTime @default(now()) @map("purchased_at")
+
+  user         User     @relation(fields: [userId], references: [id])
+  lead         Lead     @relation(fields: [leadId], references: [id])
+
+  @@unique([userId, leadId])
+  @@index([userId])
+  @@index([leadId])
+  @@map("purchases")
+}
+
+// Saved payment methods
+model PaymentMethod {
+  id                    String   @id @default(cuid())
+  userId                String   @map("user_id")
+  stripePaymentMethodId String   @unique @map("stripe_payment_method_id")
+  last4                 String
+  brand                 String
+  expiryMonth           Int      @map("expiry_month")
+  expiryYear            Int      @map("expiry_year")
+  isDefault             Boolean  @default(false) @map("is_default")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  user                  User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+// Admin verification codes (for admin access tracking)
+model AdminVerification {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  verifiedAt      DateTime @default(now()) @map("verified_at")
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+
+  @@index([userId])
+  @@map("admin_verifications")
+}

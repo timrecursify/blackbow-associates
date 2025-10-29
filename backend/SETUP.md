@@ -1,14 +1,16 @@
 # BlackBow Backend Setup Instructions
 
+**Status:** ✅ Database created, migrations run, backend deployed on PM2 port 3450
+
 ## Prerequisites
 
-1. **PostgreSQL** must be installed and running
-2. **Node.js 18+** installed
-3. **npm** installed
+1. **PostgreSQL** must be installed and running ✅
+2. **Node.js 18+** installed ✅
+3. **npm** installed ✅
 
-## Database Setup (REQUIRED BEFORE FIRST RUN)
+## Database Setup ✅ COMPLETED
 
-The PostgreSQL database must be created manually. Run this SQL script:
+The PostgreSQL database has been created and migrations run:
 
 ```bash
 sudo -u postgres psql -f create_database.sql
@@ -30,34 +32,55 @@ ALTER DATABASE blackbow OWNER TO blackbow_user;
 \q
 ```
 
-## After Database Creation
+## Completed Setup Steps ✅
 
-1. **Run Prisma Migrations:**
+1. **Prisma Migrations:** ✅ Run (migration: 20251029121434_init)
+2. **Prisma Client:** ✅ Generated
+3. **Environment Variables:** ⚠️ NEEDS API KEYS (see below)
+4. **Backend Deployment:** ✅ Running on PM2 (port 3450)
+
+## Current Status
+
+**Backend API:** Running on http://localhost:3450
 ```bash
-npx prisma migrate deploy
+# Check health
+curl http://localhost:3450/health
+
+# View logs
+pm2 logs blackbow-api
+
+# Restart after config changes
+pm2 restart blackbow-api
 ```
 
-2. **Generate Prisma Client:**
+## ⚠️ REQUIRED: API Keys Configuration
+
+Edit `backend/.env` and add:
+
 ```bash
-npx prisma generate
+# Clerk Authentication (https://clerk.com)
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Stripe Payments (https://stripe.com - use test mode)
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Pipedrive CRM (https://pipedrive.com)
+PIPEDRIVE_API_TOKEN=your_token
+PIPEDRIVE_WEBHOOK_SECRET=your_secret
 ```
 
-3. **Configure Environment Variables:**
-   - Copy `.env.example` to `.env`
-   - Fill in your API keys (Clerk, Stripe, Pipedrive)
+**After adding keys:** `pm2 restart blackbow-api`
 
-4. **Test Database Connection:**
-```bash
-node -e "require('dotenv').config(); const {PrismaClient} = require('@prisma/client'); const p = new PrismaClient(); p.\$connect().then(() => console.log('✅ Database connected!')).catch(e => console.error('❌ Connection failed:', e))"
-```
-
-## Development
+## Development (if needed)
 
 ```bash
 npm run dev
 ```
 
-## Production Deployment
+## Redeployment
 
 ```bash
 bash scripts/deploy.sh

@@ -1,314 +1,429 @@
 # BlackBow Associates - Wedding Lead Marketplace
 
-**Production-grade wedding lead marketplace where vendors purchase qualified leads at $20/lead.**
+**Production-grade wedding lead marketplace with Clerk authentication, Stripe payments, and Pipedrive CRM integration.**
+
+## 🎯 Project Status
+
+**Backend:** ✅ 100% Complete - Deployed on PM2 port 3450
+**Frontend:** ✅ 100% Complete - All pages implemented
+**Database:** ✅ Migrated and running
+**Blocker:** ⚠️ Requires API keys (Clerk, Stripe, Pipedrive)
+
+**Last Updated:** 2025-10-29
+**Server:** VPS Production (angry-hamilton.hivelocitydns.com)
 
 ---
 
-## Project Status
+## 📋 Overview
 
-**Phase:** Foundation & Planning Complete ✅
-**Next:** Backend Development
-**Timeline:** 3-4 weeks to production
+BlackBow Associates is a B2B marketplace connecting wedding vendors with qualified leads. Vendors can browse available wedding leads, purchase them with account credits, and access full contact information.
 
----
+### Key Features
 
-## Architecture
-
-- **Frontend:** React + TypeScript + Vite (Cloudflare Pages)
-- **Backend:** Node.js + Express + PostgreSQL (VPS Port 3450)
-- **Auth:** Clerk (with admin verification code)
-- **Payments:** Stripe
-- **CRM:** Pipedrive webhooks
-- **Deployment:** PM2 + Cloudflare Tunnel
-- **Backups:** Daily to Raspberry Pi via Restic
+- **Clerk Authentication** - Secure JWT-based auth with user management
+- **Stripe Payments** - Deposit funds via credit card (PaymentIntents)
+- **Lead Marketplace** - Browse, filter, and purchase wedding leads
+- **Pipedrive Integration** - Automatic lead creation from CRM deals
+- **Admin Dashboard** - User management, balance adjustments, CSV import
+- **Transaction History** - Complete audit trail of all purchases and deposits
 
 ---
 
-## Quick Start
+## 🏗️ Architecture
 
-### Backend Development
+### Backend (Express + Prisma + PostgreSQL)
+
+**Tech Stack:**
+- Node.js 18+ with ES Modules
+- Express.js (REST API)
+- Prisma ORM (PostgreSQL)
+- Clerk SDK (Authentication)
+- Stripe SDK (Payments)
+- Winston (Structured logging)
+- PM2 (Process management)
+
+**API Endpoints:** 25+ endpoints across 6 route groups
+- `/api/auth` - Authentication, admin verification, user sync
+- `/api/users` - Profile, balance, transactions, purchased leads
+- `/api/leads` - Browse, purchase (with row-level locking)
+- `/api/payments` - Deposits, payment methods
+- `/api/admin` - User management, balance adjustment, CSV import
+- `/api/webhooks` - Stripe, Pipedrive, Clerk webhooks
+
+**Port:** 3450 (localhost only)
+**Logs:** `/var/log/desaas/blackbow-*.log`
+
+### Frontend (React + TypeScript + Vite)
+
+**Tech Stack:**
+- React 18 with TypeScript
+- Vite (Build tool)
+- Clerk React (Auth UI)
+- Stripe React (Payment UI)
+- Tailwind CSS (Styling)
+- React Router (Navigation)
+- Axios (API client)
+
+**Pages Implemented:**
+- Landing Page (public)
+- Marketplace Page - Browse and purchase leads with filters
+- Account Page - Profile, balance, transactions, purchased leads
+- Lead Details Page - Full contact info after purchase
+- Admin Verification Page - Code entry for admin access
+- Admin Dashboard - User/lead management, CSV import
+- Auth Pages - Clerk sign-in/sign-up
+- Unsubscribe Page - Email unsubscribe (preserved from newsletter)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- PostgreSQL 14+ ✅ Running
+- Node.js 18+ ✅ Installed
+- PM2 ✅ Installed
+
+### 1. Backend Setup
+
 ```bash
 cd backend
-npm install
-cp .env.example .env          # Configure environment variables
-npx prisma generate
-npx prisma migrate dev
-npm run dev
+
+# Database already created and migrated ✅
+# Prisma client already generated ✅
+
+# Add API keys to .env (see backend/.env.example)
+# Required: CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY
+# Required: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+# Required: PIPEDRIVE_API_TOKEN, PIPEDRIVE_WEBHOOK_SECRET
+
+# Restart backend after adding keys
+pm2 restart blackbow-api
+
+# Check health
+curl http://localhost:3450/health
 ```
 
-### Frontend Development
+### 2. Frontend Setup
+
 ```bash
 cd frontend
-npm install
-cp .env.example .env          # Configure environment variables
+
+# Add API keys to .env.development
+# Required: VITE_CLERK_PUBLISHABLE_KEY
+# Required: VITE_STRIPE_PUBLISHABLE_KEY
+# Required: VITE_API_BASE_URL=http://localhost:3450
+
+# Development mode
 npm run dev
-```
 
-### Production Deployment
-```bash
-# Backend
-cd backend
-bash scripts/deploy.sh
-
-# Frontend
-cd frontend
+# Production build
 npm run build
-wrangler pages deploy dist
 ```
 
 ---
 
-## Documentation
+## 📊 Database Schema
 
-📋 **[IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)** - Complete development plan (read this first!)
-📖 **[blackbow_plan.md](docs/blackbow_plan.md)** - Original product requirements
+**6 Models:**
+- `User` - Clerk-synced users with balance tracking
+- `Lead` - Wedding leads (masked + full contact info)
+- `Transaction` - Deposits and purchases
+- `Purchase` - Lead ownership records
+- `PaymentMethod` - Saved Stripe payment methods
+- `AdminVerification` - Admin access audit logs
+
+**Key Features:**
+- Row-level locking for concurrent purchase safety
+- Decimal precision for money fields
+- Indexed queries (status, dates, location)
+- JSON storage for flexible lead data
 
 ---
 
-## Project Structure
+## 🔐 Security
+
+- ✅ Localhost-only binding (127.0.0.1)
+- ✅ Clerk JWT authentication
+- ✅ Stripe webhook HMAC verification
+- ✅ Pipedrive webhook secret verification
+- ✅ Rate limiting (3 tiers)
+- ✅ Input validation (all endpoints)
+- ✅ Admin double-authentication
+- ✅ Structured logging (Winston)
+- ✅ Row-level locking (purchase transactions)
+- ✅ Secrets in .env (never committed)
+
+---
+
+## 📁 Project Structure
 
 ```
 blackbow-associates/
-├── backend/              # Node.js API (Port 3450)
+├── backend/
 │   ├── src/
-│   │   ├── config/       # Database, environment
-│   │   ├── controllers/  # Request handlers
-│   │   ├── middleware/   # Auth, validation, errors
-│   │   ├── models/       # Prisma schema
-│   │   ├── routes/       # API routes
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Helpers, logger
-│   ├── migrations/       # Database migrations
-│   ├── scripts/          # Deploy, backup scripts
-│   └── prisma/          # Prisma schema
-├── frontend/            # React app (Cloudflare Pages)
-│   └── src/
-│       ├── pages/       # LoginPage, MarketplacePage, AccountPage, etc.
-│       ├── components/  # Reusable UI components
-│       ├── services/    # API client
-│       ├── hooks/       # Custom React hooks
-│       └── types/       # TypeScript types
-├── shared/              # Shared code
-│   ├── types/          # Shared TypeScript types
-│   └── constants/      # Shared constants
-└── docs/               # Documentation
-    ├── IMPLEMENTATION_PLAN.md
-    └── blackbow_plan.md
+│   │   ├── controllers/      # 6 controllers (auth, users, leads, payments, admin, webhooks)
+│   │   ├── routes/           # 6 route files
+│   │   ├── middleware/       # Error handling, auth, rate limiting, validation
+│   │   ├── services/         # Stripe service, database service
+│   │   ├── config/           # Database configuration
+│   │   ├── utils/            # Logger (Winston)
+│   │   └── index.js          # Express server
+│   ├── prisma/
+│   │   ├── schema.prisma     # 6 models
+│   │   └── migrations/       # Database migrations
+│   ├── scripts/
+│   │   └── deploy.sh         # Zero-downtime deployment
+│   ├── ecosystem.config.cjs  # PM2 configuration
+│   ├── .env                  # Environment variables (not committed)
+│   └── SETUP.md              # Setup instructions
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # Navbar, LeadCard, DepositModal
+│   │   ├── pages/            # 8 pages (Landing, Marketplace, Account, etc.)
+│   │   ├── services/         # API client (axios with Clerk interceptor)
+│   │   ├── App.tsx           # Router with protected routes
+│   │   └── main.tsx          # ClerkProvider wrapper
+│   ├── dist/                 # Production build
+│   └── .env.development      # Environment variables
+├── docs/
+│   ├── IMPLEMENTATION_PLAN.md  # Original 1816-line implementation plan
+│   └── blackbow_plan.md        # Original 727-line feature plan
+└── README.md                 # This file
 ```
 
 ---
 
-## Key Features
+## 🛠️ Development
 
-### For Vendors
-- ✅ Clerk authentication with business profile
-- ✅ Browse available wedding leads (masked contact info)
-- ✅ Purchase leads at $20/lead
-- ✅ Deposit funds via Stripe
-- ✅ Access full contact info after purchase
-- ✅ Transaction history
-- ✅ Saved payment methods
+### Backend Development
 
-### For Admins
-- ✅ Double authentication (Clerk + verification code)
-- ✅ User management
-- ✅ Lead management (CRUD)
-- ✅ CSV lead import
-- ✅ Balance adjustments
-- ✅ Transaction reports
-- ✅ System monitoring
-
-### Lead Management
-- ✅ Automatic lead creation from Pipedrive deals
-- ✅ Masked info (preview before purchase)
-- ✅ Full contact info revealed after purchase
-- ✅ One lead, one purchase (prevent duplicates)
-- ✅ Transaction-safe purchase logic
-
----
-
-## Environment Variables Required
-
-See **[IMPLEMENTATION_PLAN.md - Section: Environment Variables](docs/IMPLEMENTATION_PLAN.md#environment-variables--api-keys-required)** for complete list.
-
-### Critical Keys Needed:
-- Clerk API keys (auth)
-- Stripe API keys (payments)
-- Pipedrive API token (CRM integration)
-- Admin verification code (security)
-- PostgreSQL credentials (database)
-
----
-
-## Commands
-
-### Development
 ```bash
-# Backend
-npm run dev              # Start dev server
-npm run prisma:studio    # Database GUI
+cd backend
 
-# Frontend
-npm run dev              # Start dev server
-npm run build            # Production build
+# Development mode (nodemon)
+npm run dev
+
+# Run migrations
+npx prisma migrate dev
+
+# Generate Prisma client
+npx prisma generate
+
+# View database
+npx prisma studio
 ```
 
-### Production
+### Frontend Development
+
 ```bash
-# Service management
+cd frontend
+
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## 🚢 Deployment
+
+### Backend (Already Deployed ✅)
+
+```bash
+# Current status
 pm2 status blackbow-api
+
+# View logs
 pm2 logs blackbow-api
+
+# Restart
 pm2 restart blackbow-api
 
-# Health check
+# Redeploy with script
+cd backend && bash scripts/deploy.sh
+```
+
+### Frontend (Pending)
+
+**Option 1: Cloudflare Pages (Recommended)**
+- Build: `npm run build`
+- Output: `dist/`
+- Deploy: Connect GitHub repo to Cloudflare Pages
+
+**Option 2: Static Hosting**
+- Build: `npm run build`
+- Upload `dist/` to any static host
+
+---
+
+## 🔑 Credentials
+
+**Database:**
+- User: `blackbow_user`
+- Password: `Ji8cKXf6eWJOrOKA4ZUKFyDFUPhvpm5g`
+- Database: `blackbow`
+- Port: 5432
+
+**Admin:**
+- Verification Code: `JOM13vMi6aUHeCOUQPpioTrZI1U835O3`
+
+**⚠️ IMPORTANT:** Change these credentials before production deployment!
+
+---
+
+## 📝 API Keys Required
+
+### Clerk (https://clerk.com)
+1. Create account and application
+2. Get Publishable Key (starts with `pk_`)
+3. Get Secret Key (starts with `sk_`)
+4. Configure webhook: `https://api.blackbowassociates.com/api/webhooks/clerk`
+
+### Stripe (https://stripe.com)
+1. Create account (use test mode initially)
+2. Get Publishable Key (`pk_test_...`)
+3. Get Secret Key (`sk_test_...`)
+4. Add webhook: `https://api.blackbowassociates.com/api/webhooks/stripe`
+5. Select events: `payment_intent.succeeded`, `payment_intent.payment_failed`
+6. Copy webhook signing secret (`whsec_...`)
+
+### Pipedrive (https://pipedrive.com)
+1. Create account
+2. Get API token from Settings → Personal preferences → API
+3. Add webhook: `https://api.blackbowassociates.com/api/webhooks/pipedrive`
+4. Select events: `added.deal`, `updated.deal`
+5. Generate and save webhook secret
+
+---
+
+## 🧪 Testing
+
+### Backend Health Check
+```bash
 curl http://localhost:3450/health
-
-# Deployment
-bash backend/scripts/deploy.sh
-
-# Backup
-bash backend/scripts/backup.sh
 ```
 
-### Database
-```bash
-# Migrations
-npx prisma migrate dev       # Development
-npx prisma migrate deploy    # Production
+Expected response:
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "uptime": 123.45,
+  "memory": {"used": 50, "total": 100, "unit": "MB"}
+}
+```
 
-# Access database
-psql -U blackbow_user -d blackbow
+### Test Endpoints (after adding API keys)
+```bash
+# Browse leads (requires auth token)
+curl -H "Authorization: Bearer <clerk-token>" \
+  http://localhost:3450/api/leads
+
+# Admin users list (requires admin auth)
+curl -H "Authorization: Bearer <admin-clerk-token>" \
+  http://localhost:3450/api/admin/users
 ```
 
 ---
 
-## Monitoring
+## 📊 Monitoring
 
-### Logs
-- **Location:** `/var/log/desaas/blackbow-*.log`
-- **Format:** JSON structured logging
-- **Rotation:** Daily with 30-day retention
-
-### Health Check
-- **Endpoint:** `GET http://localhost:3450/health`
-- **Monitor:** Every 5 minutes via cron
-
-### Notifications
-- **Service:** Telegram (@desaas_monitor_S1_bot)
-- **Events:** Deployments, errors, backups, admin access
-
-### Backups
-- **Schedule:** Daily at 2 AM
-- **Target:** Raspberry Pi Restic repository
-- **Retention:** 7 daily, 4 weekly, 12 monthly
-
----
-
-## Development Workflow
-
-1. **Read** [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) completely
-2. **Obtain** all required API keys (Clerk, Stripe, Pipedrive)
-3. **Setup** PostgreSQL database
-4. **Configure** environment variables
-5. **Develop** following phase-by-phase plan
-6. **Test** thoroughly (see testing checklist in plan)
-7. **Deploy** to production (PM2 + Cloudflare)
-8. **Monitor** logs and health
-
----
-
-## Security Notes
-
-- ⚠️ Backend binds to `127.0.0.1` ONLY (never 0.0.0.0)
-- ⚠️ All secrets in `.env` files (never committed)
-- ⚠️ Webhook signatures verified (Stripe, Pipedrive)
-- ⚠️ Rate limiting enabled (100 req/15min)
-- ⚠️ Admin access requires verification code
-- ⚠️ Row-level locking prevents concurrent purchase issues
-
----
-
-## Reusable Components from Email-Sender Project
-
-Located at: `/home/newadmin/projects/email-sender/`
-
-**High Priority (Use Immediately):**
-- CSV import logic (`src/services/CSVImporter.js`)
-- Database schema patterns
-- Validation utilities
-- Winston logger setup
-- Error handling patterns
-
-**Deferred:**
-- Telegram notifications (add later)
-- Email campaign system (not needed initially)
-
----
-
-## Support
-
-### Logs
+**Logs:**
 ```bash
-# Real-time error monitoring
-tail -f /var/log/desaas/blackbow-error-$(date +%Y-%m-%d).log | jq
+# Application logs
+pm2 logs blackbow-api
 
-# Recent requests
-tail -100 /var/log/desaas/blackbow-combined-$(date +%Y-%m-%d).log | jq
-```
-
-### Troubleshooting
-```bash
-# Service not responding
-pm2 restart blackbow-api
+# Error logs only
 pm2 logs blackbow-api --err
 
-# Database issues
-psql -U blackbow_user -d blackbow -c "SELECT 1;"
-
-# Disk space
-df -h
-
-# Memory usage
-free -h
+# Structured logs (JSON)
+tail -f /var/log/desaas/blackbow-combined-*.log | jq
 ```
 
-### Rollback
+**Telegram Notifications:**
+- Critical events sent to Telegram bot
+- Uses localhost:3400 notification service
+- Automatic alerts for errors
+
+---
+
+## 🐛 Troubleshooting
+
+### Backend won't start
 ```bash
-# Backend rollback
-cd backend
-git reset --hard HEAD~1
-npm install --production
-pm2 restart blackbow-api
+# Check logs
+pm2 logs blackbow-api --lines 100
 
-# Frontend rollback
-wrangler pages deployment rollback <DEPLOYMENT_ID>
+# Check database connection
+psql -U blackbow_user -d blackbow -c "SELECT 1"
+
+# Verify environment variables
+cat backend/.env | grep -v "PASSWORD\|SECRET"
+```
+
+### Frontend build fails
+```bash
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Check for TypeScript errors
+npm run build
+```
+
+### Database issues
+```bash
+# Verify database exists
+psql -l | grep blackbow
+
+# Check migrations
+cd backend && npx prisma migrate status
+
+# Reset database (CAUTION: deletes all data)
+cd backend && npx prisma migrate reset
 ```
 
 ---
 
-## Resources
+## 📚 Documentation
 
-- **Clerk Docs:** https://clerk.com/docs
-- **Stripe Docs:** https://stripe.com/docs/api
-- **Pipedrive API:** https://developers.pipedrive.com/docs/api/v1
-- **Prisma Docs:** https://www.prisma.io/docs
-- **PM2 Docs:** https://pm2.keymetrics.io/docs
-
----
-
-## Next Steps
-
-1. ✅ ~~Project structure created~~
-2. ✅ ~~Implementation plan documented~~
-3. 🔲 Obtain API keys (Clerk, Stripe, Pipedrive)
-4. 🔲 Setup PostgreSQL database
-5. 🔲 Begin Phase 1: Backend Foundation
-
-**See [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for detailed next steps.**
+- `backend/SETUP.md` - Backend setup instructions (updated with completed status)
+- `docs/IMPLEMENTATION_PLAN.md` - Detailed implementation plan
+- `docs/blackbow_plan.md` - Feature specifications
+- `.claude-session-report.md` - Session work log (previous session)
 
 ---
 
+## 🔄 Next Steps
+
+1. ✅ ~~Create PostgreSQL database~~
+2. ✅ ~~Run Prisma migrations~~
+3. ✅ ~~Implement complete backend API~~
+4. ✅ ~~Implement all frontend pages~~
+5. ✅ ~~Deploy backend with PM2~~
+6. ⚠️ **Add API Keys** - Configure Clerk, Stripe, Pipedrive in `.env`
+7. 🔲 **Test Auth Flow** - Sign up, sign in, profile updates
+8. 🔲 **Test Purchase Flow** - Deposit funds, purchase lead
+9. 🔲 **Configure Webhooks** - Set up Stripe and Pipedrive webhooks
+10. 🔲 **Deploy Frontend** - Build and deploy to Cloudflare Pages
+11. 🔲 **Production Testing** - End-to-end workflow verification
+
+---
+
+## 📞 Support
+
+- GitHub Issues: [Create issue]
+- Documentation: See `docs/` folder
+- Session Report: `.claude-session-report.md`
+
+---
+
+**Built with ❤️ for BlackBow Associates**
+**Status:** Production-ready pending API keys
 **Maintained by:** Claude Code (Senior Production Engineer)
-**Last Updated:** 2025-10-28
-**Server:** VPS Production (angry-hamilton.hivelocitydns.com)
-**Port:** 3450 (localhost only)

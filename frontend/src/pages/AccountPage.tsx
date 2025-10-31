@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { DepositModal } from '../components/DepositModal';
+import Notification from '../components/Notification';
 import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText } from 'lucide-react';
 import { usersAPI } from '../services/api';
 import { format } from 'date-fns';
@@ -12,6 +13,18 @@ interface UserProfile {
   businessName: string | null;
   vendorType: string | null;
   balance: number;
+  billing?: {
+    firstName: string | null;
+    lastName: string | null;
+    companyName: string | null;
+    isCompany: boolean;
+    addressLine1: string | null;
+    addressLine2: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    country: string | null;
+  };
 }
 
 interface Transaction {
@@ -44,6 +57,7 @@ interface PurchasedLead {
 }
 
 export const AccountPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [purchasedLeads, setPurchasedLeads] = useState<PurchasedLead[]>([]);
@@ -51,14 +65,33 @@ export const AccountPage: React.FC = () => {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leads'>('overview');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingBilling, setIsEditingBilling] = useState(false);
   const [editForm, setEditForm] = useState({ businessName: '', vendorType: '' });
+  const [billingForm, setBillingForm] = useState({
+    isCompany: false,
+    firstName: '',
+    lastName: '',
+    companyName: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zip: ''
+  });
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    // Handle tab parameter from URL (e.g., /account?tab=leads)
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'leads' || tabParam === 'transactions' || tabParam === 'overview') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const fetchData = async () => {
     try {
@@ -76,6 +109,21 @@ export const AccountPage: React.FC = () => {
         vendorType: userData.vendorType || '',
       });
       
+      // Set billing form from profile billing data
+      if (userData.billing) {
+        setBillingForm({
+          isCompany: userData.billing.isCompany || false,
+          firstName: userData.billing.firstName || '',
+          lastName: userData.billing.lastName || '',
+          companyName: userData.billing.companyName || '',
+          addressLine1: userData.billing.addressLine1 || '',
+          addressLine2: userData.billing.addressLine2 || '',
+          city: userData.billing.city || '',
+          state: userData.billing.state || '',
+          zip: userData.billing.zip || ''
+        });
+      }
+      
       setTransactions(transactionsRes.data.transactions || []);
       setPurchasedLeads(leadsRes.data.leads || []);
     } catch (error) {
@@ -90,9 +138,60 @@ export const AccountPage: React.FC = () => {
       await usersAPI.updateProfile(editForm);
       await fetchData();
       setIsEditingProfile(false);
+      setNotification({ message: 'Profile updated successfully', type: 'success' });
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile');
+      setNotification({ message: 'Failed to update profile', type: 'error' });
+    }
+  };
+
+  const handleSaveBilling = async () => {
+    try {
+      // Validate required fields based on company/individual
+      if (billingForm.isCompany) {
+        if (!billingForm.companyName || !billingForm.addressLine1 ||
+            !billingForm.city || !billingForm.state || !billingForm.zip) {
+          setNotification({ message: 'Please fill in all required billing address fields', type: 'error' });
+          return;
+        }
+      } else {
+        if (!billingForm.firstName || !billingForm.lastName || !billingForm.addressLine1 ||
+            !billingForm.city || !billingForm.state || !billingForm.zip) {
+          setNotification({ message: 'Please fill in all required billing address fields', type: 'error' });
+          return;
+        }
+      }
+
+      // Validate ZIP code format
+      if (!/^\d{5}(-\d{4})?$/.test(billingForm.zip)) {
+        setNotification({ message: 'Please enter a valid ZIP code (e.g., 12345 or 12345-6789)', type: 'error' });
+        return;
+      }
+
+      // Validate state code
+      if (!/^[A-Z]{2}$/i.test(billingForm.state)) {
+        setNotification({ message: 'Please enter a valid 2-letter state code (e.g., NY, CA)', type: 'error' });
+        return;
+      }
+
+      await usersAPI.updateBillingAddress({
+        firstName: billingForm.isCompany ? '' : billingForm.firstName,
+        lastName: billingForm.isCompany ? '' : billingForm.lastName,
+        companyName: billingForm.isCompany ? billingForm.companyName : '',
+        isCompany: billingForm.isCompany,
+        addressLine1: billingForm.addressLine1,
+        addressLine2: billingForm.addressLine2 || undefined,
+        city: billingForm.city,
+        state: billingForm.state.toUpperCase(),
+        zip: billingForm.zip
+      });
+      
+      await fetchData();
+      setIsEditingBilling(false);
+      setNotification({ message: 'Billing address updated successfully', type: 'success' });
+    } catch (error: any) {
+      console.error('Failed to update billing address:', error);
+      setNotification({ message: error.response?.data?.message || 'Failed to update billing address', type: 'error' });
     }
   };
 
@@ -107,9 +206,11 @@ export const AccountPage: React.FC = () => {
       await usersAPI.updateLeadNote(leadId, noteText);
       await fetchData();
       setEditingNoteId(null);
+      setNoteText('');
+      setNotification({ message: 'Note saved successfully', type: 'success' });
     } catch (error) {
       console.error('Failed to save note:', error);
-      alert('Failed to save note');
+      setNotification({ message: 'Failed to save note', type: 'error' });
     } finally {
       setSavingNote(false);
     }
@@ -247,6 +348,233 @@ export const AccountPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Billing Address Section */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-black">Billing Address</h2>
+                {!isEditingBilling ? (
+                  <button
+                    onClick={() => setIsEditingBilling(true)}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:text-black border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto justify-center"
+                  >
+                    <Edit2 size={14} className="sm:w-4 sm:h-4" />
+                    {profile?.billing?.firstName ? 'Edit Address' : 'Add Address'}
+                  </button>
+                ) : (
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => {
+                        setIsEditingBilling(false);
+                        // Reset form to profile data
+                        if (profile?.billing) {
+                          setBillingForm({
+                            isCompany: profile.billing.isCompany || false,
+                            firstName: profile.billing.firstName || '',
+                            lastName: profile.billing.lastName || '',
+                            companyName: profile.billing.companyName || '',
+                            addressLine1: profile.billing.addressLine1 || '',
+                            addressLine2: profile.billing.addressLine2 || '',
+                            city: profile.billing.city || '',
+                            state: profile.billing.state || '',
+                            zip: profile.billing.zip || ''
+                          });
+                        } else {
+                          setBillingForm({
+                            isCompany: false,
+                            firstName: '',
+                            lastName: '',
+                            companyName: '',
+                            addressLine1: '',
+                            addressLine2: '',
+                            city: '',
+                            state: '',
+                            zip: ''
+                          });
+                        }
+                      }}
+                      className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:text-black border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveBilling}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-black text-white text-xs sm:text-sm rounded-lg hover:bg-gray-800 font-medium"
+                    >
+                      <Save size={14} className="sm:w-4 sm:h-4" />
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {!isEditingBilling ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  {profile?.billing?.firstName || profile?.billing?.companyName ? (
+                    <>
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                          {profile.billing.isCompany ? 'Company Name' : 'Name'}
+                        </label>
+                        <p className="text-sm sm:text-base text-black">
+                          {profile.billing.isCompany 
+                            ? profile.billing.companyName 
+                            : `${profile.billing.firstName} ${profile.billing.lastName}`}
+                        </p>
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Address</label>
+                        <p className="text-sm sm:text-base text-black">
+                          {profile.billing.addressLine1}
+                          {profile.billing.addressLine2 && <><br />{profile.billing.addressLine2}</>}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">City</label>
+                        <p className="text-sm sm:text-base text-black">{profile.billing.city}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">State</label>
+                        <p className="text-sm sm:text-base text-black">{profile.billing.state}</p>
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">ZIP Code</label>
+                        <p className="text-sm sm:text-base text-black">{profile.billing.zip}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2">
+                      <p className="text-sm text-gray-500 italic">No billing address on file. Please add one to make deposits.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Company/Individual Toggle */}
+                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={billingForm.isCompany}
+                        onChange={(e) => setBillingForm({ ...billingForm, isCompany: e.target.checked })}
+                        className="w-4 h-4 text-black border-gray-300 rounded focus:ring-2 focus:ring-black"
+                      />
+                      <span className="text-sm font-medium text-gray-900">This is a company</span>
+                    </label>
+                  </div>
+
+                  {/* Company Name (if company) */}
+                  {billingForm.isCompany ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                        Company Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={billingForm.companyName}
+                        onChange={(e) => setBillingForm({ ...billingForm, companyName: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                        placeholder="Acme Inc."
+                      />
+                    </div>
+                  ) : (
+                    /* Name Fields (if individual) */
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                          First Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={billingForm.firstName}
+                          onChange={(e) => setBillingForm({ ...billingForm, firstName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                          placeholder="John"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                          Last Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={billingForm.lastName}
+                          onChange={(e) => setBillingForm({ ...billingForm, lastName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                          placeholder="Doe"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                      Address Line 1 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={billingForm.addressLine1}
+                      onChange={(e) => setBillingForm({ ...billingForm, addressLine1: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                      placeholder="123 Main St"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                      Address Line 2 (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={billingForm.addressLine2}
+                      onChange={(e) => setBillingForm({ ...billingForm, addressLine2: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                      placeholder="Apt, suite, unit, etc."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-6 gap-4">
+                    <div className="col-span-3">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                        City <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={billingForm.city}
+                        onChange={(e) => setBillingForm({ ...billingForm, city: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                        placeholder="New York"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                        State <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={billingForm.state}
+                        onChange={(e) => setBillingForm({ ...billingForm, state: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                        placeholder="NY"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                        ZIP <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={billingForm.zip}
+                        onChange={(e) => setBillingForm({ ...billingForm, zip: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base text-black focus:outline-none focus:border-black focus:ring-2 focus:ring-black"
+                        placeholder="12345"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -279,6 +607,11 @@ export const AccountPage: React.FC = () => {
                           </div>
                           <p className="text-sm text-black font-medium truncate">
                             {transaction.description || transaction.metadata?.description || 'Transaction'}
+                            {transaction.type === 'PURCHASE' && transaction.metadata?.leadId && (
+                              <span className="ml-2 text-xs text-gray-500 font-mono">
+                                (Lead: {transaction.metadata.leadId.substring(0, 8)})
+                              </span>
+                            )}
                           </p>
                         </div>
                         <div className="text-right ml-3 flex-shrink-0">
@@ -304,6 +637,7 @@ export const AccountPage: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Type</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Description</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Lead ID</th>
                         <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
                         <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Balance</th>
                       </tr>
@@ -325,6 +659,13 @@ export const AccountPage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 text-sm text-black">
                             {transaction.description || transaction.metadata?.description || '-'}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600 font-mono">
+                            {transaction.type === 'PURCHASE' && transaction.metadata?.leadId ? (
+                              transaction.metadata.leadId.substring(0, 8)
+                            ) : (
+                              '-'
+                            )}
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right ${
                             transaction.type === 'DEPOSIT' ? 'text-green-600' : 'text-red-600'
@@ -600,10 +941,20 @@ export const AccountPage: React.FC = () => {
       {/* Deposit Modal */}
       <DepositModal
         isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
+        onClose={() => {
+          // Close modal FIRST, then fetch data to prevent reopening
+          setShowDepositModal(false);
+        }}
         onSuccess={async () => {
+          // Fetch data AFTER modal is closed to prevent reopening
           await fetchData();
         }}
+      />
+      <Notification
+        message={notification?.message || ''}
+        type={notification?.type || 'info'}
+        isOpen={!!notification}
+        onClose={() => setNotification(null)}
       />
     </div>
   );

@@ -7,18 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User accounts synced from Clerk
+// User accounts synced from authentication provider
 model User {
-  id              String           @id @default(cuid())
-  clerkUserId     String           @unique @map("clerk_user_id")
-  email           String           @unique
-  businessName    String           @map("business_name")
-  vendorType      String           @map("vendor_type")
-  balance         Decimal          @default(0.00) @db.Decimal(10, 2)
-  isAdmin         Boolean          @default(false) @map("is_admin")
-  adminVerifiedAt DateTime?        @map("admin_verified_at")
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  id                  String           @id @default(cuid())
+  authUserId          String?          @unique @map("auth_user_id") // Supabase Auth UUID
+  email               String           @unique
+  businessName        String           @map("business_name")
+  vendorType          String           @map("vendor_type")
+  location            String?          // City, State where business operates
+  about               String?          @db.Text // Business description
+  onboardingCompleted Boolean          @default(false) @map("onboarding_completed")
+  balance             Decimal          @default(0.00) @db.Decimal(10, 2)
+  isAdmin             Boolean          @default(false) @map("is_admin")
+  adminVerifiedAt     DateTime?        @map("admin_verified_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
   transactions    Transaction[]
   purchases       Purchase[]
@@ -29,23 +32,57 @@ model User {
 
 // Wedding leads from Pipedrive
 model Lead {
-  id              String      @id @default(cuid())
+  id              String      @id // Custom ID format: [STATE][TIMESTAMP][RANDOM] (e.g., MD202510311030451234) - 20 chars
   pipedriveDealId Int?        @unique @map("pipedrive_deal_id")
+  
+  // Deal fields (visible on marketplace)
   weddingDate     DateTime?   @map("wedding_date")
-  location        String
   city            String?
   state           String?
+  location        String?     // Composite location string
+  description     String?     @db.Text // Package description from Pipedrive
+  ethnicReligious String?     @map("ethnic_religious") // Yes/No or specific value
+  
+  // Person fields (hidden until purchase)
+  firstName       String?     @map("first_name")
+  lastName        String?     @map("last_name")
+  personName      String?     @map("person_name") // Full name from Pipedrive
+  email           String?
+  phone           String?
+  
+  // Marketing/Tracking fields (not shown on frontend)
+  source          String?
+  gclid           String?
+  fbclid          String?
+  utmTerm         String?     @map("utm_term")
+  spUtmCampaign   String?     @map("sp_utm_campaign")
+  utmContent      String?     @map("utm_content")
+  utmMedium       String?     @map("utm_medium")
+  eventId         String?     @map("event_id")
+  sessionId       String?     @map("session_id")
+  pixelId         String?     @map("pixel_id")
+  projectId       String?     @map("project_id")
+  conversionPageUrl String?   @map("conversion_page_url") @db.Text
+  
+  // Internal fields
+  expectedValue   Decimal?    @map("expected_value") @db.Decimal(10, 2) // AI-calculated score
+  active          Boolean     @default(true)
+  comment         String?     @db.Text // Internal notes
+  
+  // Legacy/budget fields
   budgetMin       Decimal?    @map("budget_min") @db.Decimal(10, 2)
   budgetMax       Decimal?    @map("budget_max") @db.Decimal(10, 2)
   servicesNeeded  String[]    @map("services_needed")
+  
+  // Marketplace fields
   price           Decimal     @default(20.00) @db.Decimal(10, 2)
   status          LeadStatus  @default(AVAILABLE)
 
-  // Masked info shown before purchase
-  maskedInfo      Json        @map("masked_info")
+  // Masked info shown before purchase (legacy - can be deprecated)
+  maskedInfo      Json?       @map("masked_info")
 
-  // Full contact info revealed after purchase
-  fullInfo        Json        @map("full_info")
+  // Full contact info revealed after purchase (legacy - can be deprecated)
+  fullInfo        Json?       @map("full_info")
 
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
@@ -55,6 +92,9 @@ model Lead {
   @@index([status])
   @@index([weddingDate])
   @@index([location])
+  @@index([state])
+  @@index([active])
+  @@index([pipedriveDealId])
   @@map("leads")
 }
 
@@ -97,6 +137,7 @@ model Purchase {
   leadId       String   @map("lead_id")
   amountPaid   Decimal  @map("amount_paid") @db.Decimal(10, 2)
   purchasedAt  DateTime @default(now()) @map("purchased_at")
+  notes        String?  @db.Text // User's personal notes for this lead
 
   user         User     @relation(fields: [userId], references: [id])
   lead         Lead     @relation(fields: [leadId], references: [id])

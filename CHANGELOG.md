@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2025-10-31
 
+### Added
+- **Automatic Location Detection** on onboarding form (step 2)
+  - Location field auto-fills based on user's IP geolocation
+  - Uses ipapi.co for reliable IP-based location detection
+  - Manual "Detect" button to re-trigger detection
+  - Shows city and state in format: "Miami, FL"
+  - Graceful fallback to manual entry if detection fails
+
 ### Fixed
 - **CRITICAL:** Registration working again - fixed Supabase Admin API configuration
   - Admin client now correctly uses Kong gateway with service role key

@@ -21,15 +21,20 @@ const supabase = createClient(
   }
 );
 
-// Initialize admin client for Admin API calls (direct to Auth service, bypasses Kong)
-// This fixes the JWT verification issue by calling Auth service directly on localhost
+// Initialize admin client for Admin API calls (through Kong gateway)
+// Uses service role key for admin operations
 const supabaseAdmin = createClient(
-  'http://localhost:9999',
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    },
+    global: {
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY
+      }
     }
   }
 );

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2025-10-31
 
+### Fixed
+- **CRITICAL:** Registration working again - fixed Supabase Admin API configuration
+  - Admin client now correctly uses Kong gateway with service role key
+  - Email/password and OAuth registration both functional
+  - Issue: Admin API endpoints not available on direct localhost:9999 port
+
 ### Changed
 - **Lead ID Format:** Migrated from CUID format to state-based format
   - New format: `[STATE][TIMESTAMP][RANDOM]` (e.g., `MD202510311030451234`)
@@ -25,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified Pipedrive import to generate new ID format
 - Created migration script with temporary column approach
 - All IDs sortable by state and creation time
+- Reverted supabaseAdmin client to use Kong gateway with proper headers
 
 ## [1.1.2] - 2025-10-31
 

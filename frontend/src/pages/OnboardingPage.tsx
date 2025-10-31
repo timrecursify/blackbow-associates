@@ -215,39 +215,18 @@ export const OnboardingPage: React.FC = () => {
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 Location (City, State) <span className="text-red-500">*</span>
               </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className={`w-full pl-11 pr-4 py-3 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors`}
-                    placeholder={detectingLocation ? "Detecting..." : "e.g., Miami, FL"}
-                    disabled={loading || detectingLocation}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={detectLocation}
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className={`w-full pl-11 pr-4 py-3 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors`}
+                  placeholder={detectingLocation ? "Detecting your location..." : "e.g., Miami, FL"}
                   disabled={loading || detectingLocation}
-                  className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
-                  title="Auto-detect my location"
-                >
-                  {detectingLocation ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm">Detecting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin size={18} />
-                      <span className="text-sm hidden sm:inline">Detect</span>
-                    </>
-                  )}
-                </button>
+                />
               </div>
               {errors.location && (
                 <p className="mt-1 text-sm text-red-600">{errors.location}</p>

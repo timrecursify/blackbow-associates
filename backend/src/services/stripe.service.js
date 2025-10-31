@@ -115,6 +115,20 @@ export const createCustomer = async (email, metadata = {}) => {
   }
 };
 
+// Retrieve payment intent from Stripe
+export const getPaymentIntent = async (paymentIntentId) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    return paymentIntent;
+  } catch (error) {
+    logger.error('Failed to retrieve PaymentIntent', {
+      error: error.message,
+      paymentIntentId
+    });
+    throw error;
+  }
+};
+
 // Get payment method details
 export const getPaymentMethod = async (paymentMethodId) => {
   try {
@@ -135,5 +149,6 @@ export default {
   detachPaymentMethod,
   verifyWebhookSignature,
   createCustomer,
-  getPaymentMethod
+  getPaymentMethod,
+  getPaymentIntent
 };

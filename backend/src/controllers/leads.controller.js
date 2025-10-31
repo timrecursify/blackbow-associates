@@ -53,17 +53,18 @@ export const getLeads = asyncHandler(async (req, res) => {
     success: true,
     leads: leads.map(lead => ({
       id: lead.id,
+      pipedriveDealId: lead.pipedriveDealId,
       weddingDate: lead.weddingDate,
       location: lead.location,
       city: lead.city,
       state: lead.state,
-      budgetMin: lead.budgetMin ? parseFloat(lead.budgetMin) : null,
-      budgetMax: lead.budgetMax ? parseFloat(lead.budgetMax) : null,
       servicesNeeded: lead.servicesNeeded,
       price: parseFloat(lead.price),
       status: lead.status,
-      maskedInfo: lead.maskedInfo, // Masked contact info
-      createdAt: lead.createdAt
+      description: lead.description, // Package description
+      ethnicReligious: lead.ethnicReligious,
+      createdAt: lead.createdAt,
+      active: lead.active
     })),
     pagination: {
       page: parseInt(page),
@@ -199,10 +200,13 @@ export const purchaseLead = asyncHandler(async (req, res) => {
       }
     });
 
-    // Update lead status to SOLD
+    // Mark lead as sold and inactive (hide from marketplace)
     await tx.lead.update({
       where: { id: leadId },
-      data: { status: 'SOLD' }
+      data: { 
+        status: 'SOLD',
+        active: false
+      }
     });
 
     return { lead, purchase, newBalance };

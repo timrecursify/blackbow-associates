@@ -192,7 +192,32 @@
   .shape {
     opacity: 0.05;
   }
-  
+
   .shape-1, .shape-3 { width: 60px; height: 60px; }
   .shape-2, .shape-4, .shape-5, .shape-6 { width: 40px; height: 40px; }
+}
+
+/* Mobile-first optimizations */
+@media (max-width: 640px) {
+  /* Ensure minimum touch target sizes */
+  button, a[role="button"], input[type="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+
+  /* Improve readability */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent text size adjust on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Improve tap highlighting */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
 }

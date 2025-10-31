@@ -32,8 +32,9 @@ export const validations = {
       .withMessage('Business name must be between 2 and 100 characters'),
     body('vendorType')
       .optional()
-      .isIn(['photographer', 'videographer', 'planner', 'venue', 'caterer', 'florist', 'dj', 'band', 'other'])
-      .withMessage('Invalid vendor type'),
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Vendor type must be between 2 and 50 characters'),
     validate
   ],
 
@@ -92,18 +93,6 @@ export const validations = {
       .optional()
       .isFloat({ min: 0 })
       .withMessage('Budget max must be a positive number'),
-    validate
-  ],
-
-  // Clerk webhook validation
-  clerkWebhook: [
-    body('type')
-      .isString()
-      .notEmpty()
-      .withMessage('Webhook type is required'),
-    body('data')
-      .isObject()
-      .withMessage('Webhook data is required'),
     validate
   ],
 

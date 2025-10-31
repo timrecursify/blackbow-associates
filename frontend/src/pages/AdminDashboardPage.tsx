@@ -158,7 +158,7 @@ export const AdminDashboardPage: React.FC = () => {
                   <option value="">Select User</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.email} (${user.balance.toFixed(2)})
+                      {user.email} (${((user.balance !== undefined && user.balance !== null) ? user.balance : 0).toFixed(2)})
                     </option>
                   ))}
                 </select>
@@ -217,7 +217,7 @@ export const AdminDashboardPage: React.FC = () => {
                           <td className="px-6 py-4 text-sm text-gray-900">{user.businessName || '-'}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{user.vendorType || '-'}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">
-                            ${user.balance.toFixed(2)}
+                            ${((user.balance !== undefined && user.balance !== null) ? user.balance : 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-sm">
                             {user.isAdmin ? (
@@ -305,7 +305,7 @@ export const AdminDashboardPage: React.FC = () => {
                             {lead.weddingDate ? format(new Date(lead.weddingDate), 'MMM dd, yyyy') : 'TBD'}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">
-                            ${lead.price.toFixed(2)}
+                            ${((lead.price !== undefined && lead.price !== null) ? lead.price : 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-sm">
                             <span

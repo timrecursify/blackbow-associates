@@ -15,11 +15,15 @@ import leadRoutes from './routes/leads.routes.js';
 import paymentRoutes from './routes/payments.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import webhookRoutes from './routes/webhooks.routes.js';
+import pipedriveRoutes from './routes/pipedrive.routes.js';
 
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3450;
 const HOST = process.env.HOST || '127.0.0.1';
+
+// Trust proxy (required for rate limiting behind nginx/reverse proxy)
+app.set('trust proxy', true);
 
 // Security middleware
 app.use(helmet());
@@ -95,6 +99,7 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/pipedrive', pipedriveRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

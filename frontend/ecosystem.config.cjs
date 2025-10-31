@@ -1,8 +1,8 @@
 module.exports = {
   apps: [{
     name: 'blackbow-frontend',
-    script: 'npm',
-    args: 'run serve',
+    script: 'node',
+    args: 'server.js',
     cwd: '/home/newadmin/projects/blackbow-associates/frontend',
     instances: 1,
     exec_mode: 'fork',

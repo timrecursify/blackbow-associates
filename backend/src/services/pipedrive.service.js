@@ -1,6 +1,6 @@
 import axios from 'axios';
 import logger from '../utils/logger.js';
-import { generateLeadId } from '../utils/leadIdGenerator.js';
+import { generateLeadId } from '../utils/leadIdGeneratorV2.js';
 
 const PIPEDRIVE_API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
 const PIPEDRIVE_BASE_URL = 'https://api.pipedrive.com/v1';
@@ -99,8 +99,8 @@ export const transformDealToLead = async (deal) => {
     const state = deal[FIELD_KEYS.state] || stateFromTitle;
     const location = buildLocationString(city, state, comments);
 
-    // Generate new ID based on state
-    const leadId = generateLeadId(state);
+    // Generate new ID based on state and city
+    const leadId = generateLeadId(state, city);
 
     // Transform to our Lead model
     const lead = {

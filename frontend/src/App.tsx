@@ -1,21 +1,66 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target } from 'lucide-react';
-import { SignIn, SignUp, useAuth } from '@clerk/clerk-react';
-import { setAuthToken } from './services/api';
+import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target, Shield } from 'lucide-react';
+import { supabase } from './lib/supabase';
+import { setAuthToken, usersAPI } from './services/api';
 import { UnsubscribePage } from './pages/UnsubscribePage';
-import { LeadsSignupPage } from './pages/LeadsSignupPage';
 import { AboutPage } from './pages/AboutPage';
-import { ThankYouPage } from './pages/ThankYouPage';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { AccountPage } from './pages/AccountPage';
 import { LeadDetailsPage } from './pages/LeadDetailsPage';
 import { AdminVerificationPage } from './pages/AdminVerificationPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { CustomSignInPage } from './pages/CustomSignInPage';
+import { CustomSignUpPage } from './pages/CustomSignUpPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { ScrollToTop } from './components/ScrollToTop';
 
 const LandingPage: React.FC = () => {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSignedIn(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative overflow-hidden">
+      {/* Simple Auth Header */}
+      <header className="absolute top-0 right-0 z-20 p-4 sm:p-4 md:p-6">
+        <div className="flex gap-2 sm:gap-3">
+          {!isSignedIn ? (
+            <>
+              <Link
+                to="/sign-in"
+                className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-medium text-gray-700 hover:text-black transition-colors min-h-[44px] flex items-center"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/sign-up"
+                className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md min-h-[44px] flex items-center"
+              >
+                Sign Up
+              </Link>
+            </>
+          ) : (
+            <Link
+              to="/marketplace"
+              className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md min-h-[44px] flex items-center"
+            >
+              Marketplace
+            </Link>
+          )}
+        </div>
+      </header>
+
       {/* Floating Geometric Shapes Animation */}
       <div className="floating-shapes">
         <div className="shape shape-1"></div>
@@ -40,43 +85,43 @@ const LandingPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 py-8 sm:py-12 relative z-10">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-4 py-20 sm:py-20 md:py-24 relative z-10 pt-24 sm:pt-20">
         <div className="text-center max-w-4xl mx-auto w-full">
-          <h1 className="font-handwritten text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-black mb-4 sm:mb-6 leading-tight px-2">
+          <h1 className="font-handwritten text-5xl sm:text-5xl md:text-6xl lg:text-7xl text-black mb-6 sm:mb-6 md:mb-8 leading-tight px-2">
             Black Bow Associates
           </h1>
-          
-          <h2 className="font-handwritten-script text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-700 mb-4 sm:mb-6 leading-relaxed px-2">
+
+          <h2 className="font-handwritten-script text-2xl sm:text-2xl md:text-3xl lg:text-4xl text-gray-700 mb-8 sm:mb-8 md:mb-10 leading-relaxed px-2">
             Professional Wedding Vendor Association
           </h2>
-          
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-4">
-            We connect premium wedding vendors with qualified couples. Get exclusive leads, grow your business, 
+
+          <p className="text-lg sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-10 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
+            We connect premium wedding vendors with qualified couples. Get exclusive leads, grow your business,
             and only pay when you book. <strong className="text-black">Join free during our launch!</strong>
           </p>
 
           {/* Benefits Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 max-w-4xl mx-auto px-4">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
-              <Sparkles className="mx-auto mb-2 sm:mb-3 text-black" size={32} strokeWidth={1.5} />
-              <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 text-gray-900">Quality Leads</h3>
-              <p className="text-gray-600 text-xs sm:text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 mb-10 sm:mb-12 max-w-4xl mx-auto px-4">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 sm:p-6 shadow-lg border border-gray-200">
+              <Sparkles className="mx-auto mb-3 sm:mb-3 text-black" size={36} strokeWidth={1.5} />
+              <h3 className="font-bold text-lg sm:text-lg mb-2 sm:mb-2 text-gray-900">Quality Leads</h3>
+              <p className="text-gray-600 text-sm sm:text-sm leading-relaxed">
                 Pre-qualified couples actively planning their weddings
               </p>
             </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
-              <DollarSign className="mx-auto mb-2 sm:mb-3 text-black" size={32} strokeWidth={1.5} />
-              <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 text-gray-900">Commission Only</h3>
-              <p className="text-gray-600 text-xs sm:text-sm">
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 sm:p-6 shadow-lg border border-gray-200">
+              <DollarSign className="mx-auto mb-3 sm:mb-3 text-black" size={36} strokeWidth={1.5} />
+              <h3 className="font-bold text-lg sm:text-lg mb-2 sm:mb-2 text-gray-900">Commission Only</h3>
+              <p className="text-gray-600 text-sm sm:text-sm leading-relaxed">
                 Pay only when you successfully book a client
               </p>
             </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
-              <Target className="mx-auto mb-2 sm:mb-3 text-black" size={32} strokeWidth={1.5} />
-              <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 text-gray-900">Free Membership</h3>
-              <p className="text-gray-600 text-xs sm:text-sm">
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 sm:p-6 shadow-lg border border-gray-200">
+              <Target className="mx-auto mb-3 sm:mb-3 text-black" size={36} strokeWidth={1.5} />
+              <h3 className="font-bold text-lg sm:text-lg mb-2 sm:mb-2 text-gray-900">Free Membership</h3>
+              <p className="text-gray-600 text-sm sm:text-sm leading-relaxed">
                 Launch special: Join free with no monthly fees
               </p>
             </div>
@@ -85,7 +130,7 @@ const LandingPage: React.FC = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center mb-6 sm:mb-8 px-4">
             <Link
-              to="/leads-signup"
+              to="/sign-up"
               className="inline-flex items-center justify-center space-x-2 sm:space-x-3 bg-black text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <span>Join Free Now</span>
@@ -102,9 +147,9 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Additional Info */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 sm:p-6 max-w-2xl mx-4 sm:mx-auto border border-gray-200">
-            <p className="text-gray-700 text-xs sm:text-sm md:text-base">
-              <strong className="text-black">Who can join?</strong> Wedding photographers, videographers, planners, 
+          <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5 sm:p-6 max-w-2xl mx-4 sm:mx-auto border border-gray-200">
+            <p className="text-gray-700 text-sm sm:text-sm md:text-base leading-relaxed">
+              <strong className="text-black">Who can join?</strong> Wedding photographers, videographers, planners,
               florists, caterers, DJs, venues, and all wedding service providers committed to excellence.
             </p>
           </div>
@@ -181,30 +226,37 @@ const LandingPage: React.FC = () => {
             </div>
             
             {/* Copyright - Center on mobile */}
-            <a 
-              href="https://www.preciouspicspro.com" 
-              target="_blank" 
+            <a
+              href="https://www.preciouspicspro.com"
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-black transition-colors duration-200 text-center text-xs no-underline"
+              className="text-gray-600 hover:text-black transition-colors duration-200 text-center text-sm no-underline"
             >
-              © 2025 Precious Pics Production Inc
+              ? 2025 Precious Pics Production Inc
             </a>
-            
-            {/* Unsubscribe - Bottom on mobile */}
-            <div className="flex items-center space-x-4">
+
+            {/* Links - Bottom on mobile */}
+            <div className="flex items-center space-x-5">
               <a
                 href="/unsubscribe"
-                className="flex items-center space-x-1 text-gray-600 hover:text-black transition-colors duration-200 text-xs"
+                className="flex items-center space-x-1.5 text-gray-600 hover:text-black transition-colors duration-200 text-sm min-h-[44px]"
               >
-                <UserX size={12} />
+                <UserX size={16} />
                 <span>Unsubscribe</span>
+              </a>
+              <a
+                href="/admin-verification"
+                className="flex items-center space-x-1.5 text-gray-600 hover:text-black transition-colors duration-200 text-sm min-h-[44px]"
+              >
+                <Shield size={16} />
+                <span>Admin</span>
               </a>
             </div>
           </div>
 
           {/* Desktop Layout - Horizontal */}
           <div className="hidden sm:flex items-center justify-between text-sm">
-            {/* Unsubscribe - Left */}
+            {/* Links - Left */}
             <div className="flex items-center space-x-4">
               <a
                 href="/unsubscribe"
@@ -212,6 +264,13 @@ const LandingPage: React.FC = () => {
               >
                 <UserX size={16} />
                 <span>Unsubscribe</span>
+              </a>
+              <a
+                href="/admin-verification"
+                className="flex items-center space-x-2 text-gray-600 hover:text-black transition-colors duration-200"
+              >
+                <Shield size={16} />
+                <span>Admin</span>
               </a>
             </div>
             
@@ -222,7 +281,7 @@ const LandingPage: React.FC = () => {
               rel="noopener noreferrer"
               className="text-gray-600 hover:text-black transition-colors duration-200 text-center flex-1 no-underline"
             >
-              © 2025 Precious Pics Production Inc
+              ? 2025 Precious Pics Production Inc
             </a>
             
             {/* Social Icons - Right */}
@@ -295,50 +354,185 @@ const LandingPage: React.FC = () => {
   );
 };
 
-function App() {
-  const { getToken, isSignedIn } = useAuth();
+// Onboarding Route Wrapper - requires auth but allows loading during OAuth callback
+const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
-  // Set up auth token getter for API calls
   useEffect(() => {
-    if (isSignedIn && getToken) {
-      setAuthToken(getToken);
-    }
-  }, [isSignedIn, getToken]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSignedIn(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Wait for Supabase to finish loading before checking auth status
+  if (isSignedIn === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <Navigate to="/sign-in" replace />;
+  }
+
+  return children;
+};
+
+// Protected Route Wrapper - checks authentication and onboarding status
+const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuthAndOnboarding = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const signedIn = !!session;
+      setIsSignedIn(signedIn);
+
+      if (!signedIn) {
+        // Clear cached status on sign out
+        localStorage.removeItem('onboardingCompleted');
+        setLoading(false);
+        return;
+      }
+
+      // Try to load cached status first for faster UX (especially on mobile)
+      const cachedStatus = localStorage.getItem('onboardingCompleted');
+      if (cachedStatus !== null) {
+        setOnboardingCompleted(cachedStatus === 'true');
+      }
+
+      // Always fetch fresh status from API
+      try {
+        const response = await usersAPI.getProfile();
+        const onboardingStatus = response.data?.user?.onboardingCompleted;
+        console.log('Onboarding status from API:', onboardingStatus, response.data);
+
+        const isCompleted = onboardingStatus === true;
+        setOnboardingCompleted(isCompleted);
+
+        // Cache the status for faster subsequent loads
+        localStorage.setItem('onboardingCompleted', String(isCompleted));
+      } catch (error) {
+        console.error('Failed to check onboarding status:', error);
+
+        // CRITICAL FIX: Don't set to false on error - this was causing the bug!
+        // Only redirect to onboarding if we have no cached status and API fails
+        if (cachedStatus === null) {
+          // First time loading and API failed - assume onboarding needed
+          setOnboardingCompleted(false);
+        }
+        // Otherwise keep the cached status or current state
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndOnboarding();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuthAndOnboarding();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <Navigate to="/sign-in" replace />;
+  }
+
+  if (onboardingCompleted === false) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return children;
+};
+
+function App() {
+  // Set up Supabase auth token for API calls
+  useEffect(() => {
+    const setupAuthToken = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setAuthToken(() => session.access_token);
+      }
+    };
+
+    setupAuthToken();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        setAuthToken(() => session.access_token);
+      } else {
+        setAuthToken(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/leads-signup" element={<LeadsSignupPage />} />
-        <Route path="/thank-you" element={<ThankYouPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
         {/* Auth Routes */}
-        <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />} />
-        <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" />} />
+        <Route path="/sign-in" element={<CustomSignInPage />} />
+        <Route path="/sign-up" element={<CustomSignUpPage />} />
 
-        {/* Protected Routes */}
+        {/* Onboarding Route - requires auth but not onboarding completion */}
+        <Route
+          path="/onboarding"
+          element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>}
+        />
+
+        {/* Protected Routes - require auth AND onboarding completion */}
         <Route
           path="/marketplace"
-          element={isSignedIn ? <MarketplacePage /> : <Navigate to="/sign-in" replace />}
+          element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>}
         />
         <Route
           path="/account"
-          element={isSignedIn ? <AccountPage /> : <Navigate to="/sign-in" replace />}
+          element={<ProtectedRoute><AccountPage /></ProtectedRoute>}
         />
         <Route
           path="/leads/:id"
-          element={isSignedIn ? <LeadDetailsPage /> : <Navigate to="/sign-in" replace />}
+          element={<ProtectedRoute><LeadDetailsPage /></ProtectedRoute>}
         />
         <Route
           path="/admin/verify"
-          element={isSignedIn ? <AdminVerificationPage /> : <Navigate to="/sign-in" replace />}
+          element={<ProtectedRoute><AdminVerificationPage /></ProtectedRoute>}
         />
         <Route
           path="/admin"
-          element={isSignedIn ? <AdminDashboardPage /> : <Navigate to="/sign-in" replace />}
+          element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>}
         />
 
         {/* Fallback */}

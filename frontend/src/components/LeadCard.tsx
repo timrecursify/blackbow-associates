@@ -1,16 +1,20 @@
-import React from 'react';
-import { Calendar, MapPin, DollarSign, Briefcase } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, MapPin, DollarSign, Briefcase, ChevronDown, ChevronUp, Heart, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Lead {
   id: string;
   weddingDate: string | null;
   location: string;
+  city: string | null;
+  state: string | null;
   budgetMin: number | null;
   budgetMax: number | null;
   servicesNeeded: string[];
   price: number;
   status: string;
+  description: string | null;
+  ethnicReligious: string | null;
 }
 
 interface LeadCardProps {
@@ -19,7 +23,27 @@ interface LeadCardProps {
   isPurchasing?: boolean;
 }
 
+// Service tag colors
+const serviceColors: Record<string, { bg: string; text: string; border: string }> = {
+  'Photography': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+  'Videography': { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+  'Drone': { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-300' },
+  'Multi-Day': { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
+  'RAW Files': { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-300' },
+};
+
+const getServiceColor = (service: string) => {
+  for (const [key, color] of Object.entries(serviceColors)) {
+    if (service.toLowerCase().includes(key.toLowerCase())) {
+      return color;
+    }
+  }
+  return { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-300' };
+};
+
 export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasing = false }) => {
+  const [expanded, setExpanded] = useState(false);
+
   const formatBudget = () => {
     if (lead.budgetMin && lead.budgetMax) {
       return `$${lead.budgetMin.toLocaleString()} - $${lead.budgetMax.toLocaleString()}`;
@@ -31,67 +55,145 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
     return 'Budget not specified';
   };
 
+  const formatDate = () => {
+    if (!lead.weddingDate) return 'TBD';
+    try {
+      return format(new Date(lead.weddingDate), 'MMM dd, yyyy');
+    } catch {
+      return lead.weddingDate;
+    }
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-        {/* Wedding Date */}
-        <div className="flex items-start space-x-2">
-          <Calendar size={18} className="text-gray-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-xs text-gray-600 font-medium">Wedding Date</p>
-            <p className="text-sm text-gray-900 font-semibold">
-              {lead.weddingDate ? format(new Date(lead.weddingDate), 'MMM dd, yyyy') : 'TBD'}
-            </p>
+    <div className="bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
+      {/* Top Color Bar */}
+      <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+      
+      <div className="p-6">
+        {/* Header Section */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            {/* Location Badge */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                <MapPin size={16} className="text-blue-600" />
+                <span className="text-sm font-bold text-blue-900">
+                  {lead.city && lead.state ? `${lead.city}, ${lead.state}` : lead.location}
+                </span>
+              </div>
+              {lead.state && (
+                <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                  {lead.state}
+                </span>
+              )}
+            </div>
+
+            {/* Wedding Date */}
+            <div className="flex items-center gap-2 text-gray-700 mb-2">
+              <Calendar size={18} className="text-rose-500" />
+              <span className="font-semibold">{formatDate()}</span>
+            </div>
+          </div>
+
+          {/* Price Tag */}
+          <div className="text-right">
+            <div className="inline-flex flex-col items-end bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl px-4 py-3 shadow-sm">
+              <span className="text-xs text-green-700 font-semibold uppercase tracking-wide">Lead Price</span>
+              <span className="text-3xl font-black text-green-700">${(lead.price || 0).toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Location */}
-        <div className="flex items-start space-x-2">
-          <MapPin size={18} className="text-gray-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-xs text-gray-600 font-medium">Location</p>
-            <p className="text-sm text-gray-900 font-semibold">{lead.location}</p>
+        {/* Services Tags */}
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-2">
+            {lead.servicesNeeded.map((service, index) => {
+              const colors = getServiceColor(service);
+              return (
+                <span
+                  key={index}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${colors.bg} ${colors.text} border ${colors.border} rounded-full text-sm font-semibold`}
+                >
+                  <Briefcase size={14} />
+                  {service}
+                </span>
+              );
+            })}
+            {lead.servicesNeeded.length === 0 && (
+              <span className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                Services not specified
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Budget */}
-        <div className="flex items-start space-x-2">
-          <DollarSign size={18} className="text-gray-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-xs text-gray-600 font-medium">Budget</p>
-            <p className="text-sm text-gray-900 font-semibold">{formatBudget()}</p>
+        {/* Budget and Ethnic/Religious Tags */}
+        <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+            <DollarSign size={16} className="text-amber-600" />
+            <span className="text-sm font-semibold text-amber-900">{formatBudget()}</span>
           </div>
+          
+          {lead.ethnicReligious && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-lg">
+              <Heart size={14} className="text-violet-600" />
+              <span className="text-sm font-semibold text-violet-900">{lead.ethnicReligious}</span>
+            </div>
+          )}
         </div>
 
-        {/* Services */}
-        <div className="flex items-start space-x-2">
-          <Briefcase size={18} className="text-gray-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-xs text-gray-600 font-medium">Services</p>
-            <p className="text-sm text-gray-900 font-semibold">
-              {lead.servicesNeeded.join(', ') || 'Not specified'}
-            </p>
+        {/* Description Preview */}
+        {lead.description && (
+          <div className="mb-4">
+            <div className={`text-sm text-gray-700 ${!expanded && 'line-clamp-2'}`}>
+              {lead.description}
+            </div>
+            {lead.description.length > 100 && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp size={16} />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={16} />
+                    Read more
+                  </>
+                )}
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Purchase Button */}
-        <div className="flex flex-col items-end space-y-2">
-          <div className="text-right">
-            <p className="text-xs text-gray-600">Lead Price</p>
-            <p className="text-2xl font-bold text-black">${lead.price.toFixed(2)}</p>
-          </div>
+        <div className="pt-4 border-t border-gray-100">
           <button
             onClick={() => onPurchase(lead.id)}
             disabled={isPurchasing || lead.status !== 'AVAILABLE'}
-            className={`w-full md:w-auto px-6 py-2 rounded-lg font-bold transition-all ${
+            className={`w-full py-3 px-6 rounded-xl font-bold text-lg transition-all transform ${
               lead.status !== 'AVAILABLE'
-                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 : isPurchasing
                 ? 'bg-gray-400 text-gray-700 cursor-wait'
-                : 'bg-black text-white hover:bg-gray-800'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] shadow-md hover:shadow-lg'
             }`}
           >
-            {isPurchasing ? 'Purchasing...' : lead.status !== 'AVAILABLE' ? 'Sold' : 'Buy Now'}
+            {isPurchasing ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Purchasing...
+              </span>
+            ) : lead.status !== 'AVAILABLE' ? (
+              '🔒 Sold'
+            ) : (
+              <>
+                🎯 Buy This Lead Now
+              </>
+            )}
           </button>
         </div>
       </div>

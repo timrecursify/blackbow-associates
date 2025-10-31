@@ -32,7 +32,7 @@ model User {
 
 // Wedding leads from Pipedrive
 model Lead {
-  id              String      @id // Custom ID format: [STATE][TIMESTAMP][RANDOM] (e.g., MD202510311030451234) - 20 chars
+  id              String      @id // Custom ID format: [STATE][6-DIGIT] (e.g., MD123456) - 8 chars
   pipedriveDealId Int?        @unique @map("pipedrive_deal_id")
   
   // Deal fields (visible on marketplace)

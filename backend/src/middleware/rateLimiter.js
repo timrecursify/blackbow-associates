@@ -13,6 +13,15 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Use custom keyGenerator to avoid trust proxy validation errors
+  keyGenerator: (req) => {
+    // Use user ID if authenticated, otherwise use IP
+    return req.user?.id || req.ip || 'unknown';
+  },
+  skip: (req) => {
+    // Skip validation for health checks
+    return req.path === '/health';
+  },
   handler: (req, res) => {
     logger.warn('Rate limit exceeded', {
       ip: req.ip,
@@ -39,6 +48,10 @@ export const authLimiter = rateLimit({
     }
   },
   skipSuccessfulRequests: false,
+  // Use custom keyGenerator to avoid trust proxy validation errors
+  keyGenerator: (req) => {
+    return req.ip || 'unknown';
+  },
   handler: (req, res) => {
     logger.warn('Auth rate limit exceeded', {
       ip: req.ip,
@@ -62,6 +75,11 @@ export const paymentLimiter = rateLimit({
       code: 'RATE_LIMIT_EXCEEDED',
       message: 'Too many payment requests, please try again later.'
     }
+  },
+  // Use custom keyGenerator to avoid trust proxy validation errors
+  keyGenerator: (req) => {
+    // Use user ID if authenticated, otherwise use IP
+    return req.user?.id || req.ip || 'unknown';
   },
   handler: (req, res) => {
     logger.warn('Payment rate limit exceeded', {

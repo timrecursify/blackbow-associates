@@ -2,19 +2,28 @@ import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import * as stripeService from '../services/stripe.service.js';
-import { syncUser as clerkWebhook } from './auth.controller.js';
 
 // Stripe webhook handler
 export const stripeWebhook = asyncHandler(async (req, res) => {
   const signature = req.headers['stripe-signature'];
   const payload = req.body;
 
+  logger.info('Stripe webhook received', {
+    hasSignature: !!signature,
+    payloadSize: payload.length,
+    headers: Object.keys(req.headers)
+  });
+
   // Verify webhook signature
   let event;
   try {
     event = stripeService.verifyWebhookSignature(payload, signature);
+    logger.info('Webhook signature verified', { eventType: event.type });
   } catch (error) {
-    logger.error('Stripe webhook signature verification failed', { error: error.message });
+    logger.error('Stripe webhook signature verification failed', { 
+      error: error.message,
+      signature: signature ? signature.substring(0, 20) + '...' : 'missing'
+    });
     throw new AppError('Invalid signature', 400, 'INVALID_SIGNATURE');
   }
 
@@ -52,11 +61,13 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
         }
       });
 
-      logger.info('Deposit processed successfully', {
+      logger.info('Deposit processed successfully via webhook', {
         userId,
+        email: user.email,
         amount,
         newBalance,
-        paymentIntentId: paymentIntent.id
+        paymentIntentId: paymentIntent.id,
+        timestamp: new Date().toISOString()
       });
 
       await notifyTelegram(
@@ -152,7 +163,4 @@ export const pipedriveWebhook = asyncHandler(async (req, res) => {
   res.json({ received: true });
 });
 
-// Clerk webhook handler (already implemented in auth.controller.js)
-// Re-export for consistency
-export default { stripeWebhook, pipedriveWebhook, clerkWebhook };
-export { clerkWebhook };
+export default { stripeWebhook, pipedriveWebhook };

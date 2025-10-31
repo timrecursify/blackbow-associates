@@ -1,15 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App.tsx';
 import './index.css';
-import { setAuthToken } from './services/api.ts';
-
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!CLERK_PUBLISHABLE_KEY) {
-  console.error('Missing Clerk Publishable Key. Add VITE_CLERK_PUBLISHABLE_KEY to .env');
-}
+import './lib/supabase'; // Initialize Supabase client
 
 const rootElement = document.getElementById('root');
 
@@ -19,8 +12,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY || ''}>
-      <App />
-    </ClerkProvider>
+    <App />
   </StrictMode>
 );

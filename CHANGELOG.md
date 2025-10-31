@@ -11,9 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Automatic Location Detection** on onboarding form (step 2)
   - Location field auto-fills based on user's IP geolocation
   - Uses ipapi.co for reliable IP-based location detection
-  - Manual "Detect" button to re-trigger detection
   - Shows city and state in format: "Miami, FL"
   - Graceful fallback to manual entry if detection fails
+  - Removed redundant manual "Detect" button (auto-detection on page load only)
+
+### Changed - V2 Lead ID Format
+- **Simplified Lead IDs:** Changed from 20-char to 8-char format
+  - OLD: `MD202510311030451234` (2-char state + 14-digit timestamp + 4-digit random)
+  - NEW: `MD123456` (2-char state + 6-digit unique number)
+- **Improved State Detection:** City-to-state mapping for missing states
+  - Boston → MA (not XX)
+  - Bridgewater → PA (even if state field invalid)
+  - Comprehensive mapping of 100+ major US cities
+- **All 36 existing leads migrated** to new format
+  - Purchase records and foreign keys maintained
+  - Zero data loss, zero downtime
 
 ### Fixed
 - **CRITICAL:** Registration working again - fixed Supabase Admin API configuration

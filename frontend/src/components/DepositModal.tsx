@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { X, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, DollarSign, CheckCircle, Loader } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { paymentsAPI } from '../services/api';
+import { paymentsAPI, usersAPI } from '../services/api';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -12,7 +12,7 @@ interface DepositModalProps {
   onSuccess: () => void;
 }
 
-const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({
+const DepositForm: React.FC<{ onClose: () => void; onSuccess: (amount: number) => void }> = ({
   onClose,
   onSuccess,
 }) => {
@@ -21,6 +21,8 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({
   const [amount, setAmount] = useState<string>('20');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [depositAmount, setDepositAmount] = useState<number>(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +48,11 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({
       }
 
       // Create payment intent
-      const { data } = await paymentsAPI.createDeposit(depositAmount);
+      const { data: depositData } = await paymentsAPI.createDeposit(depositAmount);
+      const paymentIntentId = depositData.paymentIntentId;
 
       // Confirm payment with Stripe
-      const result = await stripe.confirmCardPayment(data.clientSecret, {
+      const result = await stripe.confirmCardPayment(depositData.clientSecret, {
         payment_method: {
           card: cardElement,
         },
@@ -59,15 +62,146 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({
         setError(result.error.message || 'Payment failed');
         setIsProcessing(false);
       } else {
-        // Payment succeeded
-        onSuccess();
-        onClose();
+        // Payment succeeded - verify payment immediately as fallback
+        try {
+          // Try to verify payment immediately (fallback if webhook fails)
+          const verifyResponse = await paymentsAPI.verifyPayment(paymentIntentId);
+          
+          if (verifyResponse.data.success) {
+            console.log('Payment verified immediately', { paymentIntentId });
+            // Payment verified and credited
+            setDepositAmount(depositAmount);
+            setSuccess(true);
+            setIsProcessing(false);
+            
+            // Trigger balance update event
+            window.dispatchEvent(new CustomEvent('balanceUpdated'));
+            
+            // Call success callback
+            setTimeout(() => {
+              onSuccess(depositAmount);
+            }, 1000);
+          } else {
+            // Payment succeeded but not yet credited - poll for webhook
+            setDepositAmount(depositAmount);
+            setSuccess(true);
+            setIsProcessing(false);
+            
+            // Get initial balance before polling
+            let initialBalance = 0;
+            try {
+              const profileResponse = await usersAPI.getProfile();
+              const userData = profileResponse.data.user || profileResponse.data;
+              initialBalance = userData.balance !== undefined && userData.balance !== null ? userData.balance : 0;
+            } catch (error) {
+              console.error('Failed to get initial balance:', error);
+            }
+            
+            // Poll for balance update (webhook is async)
+            pollForBalanceUpdate(initialBalance, depositAmount);
+            
+            // Call success callback after delay
+            setTimeout(() => {
+              onSuccess(depositAmount);
+            }, 2000);
+          }
+        } catch (verifyError) {
+          console.error('Payment verification failed, will rely on webhook:', verifyError);
+          // If verification fails, rely on webhook polling
+          setDepositAmount(depositAmount);
+          setSuccess(true);
+          setIsProcessing(false);
+          
+          // Get initial balance before polling
+          let initialBalance = 0;
+          try {
+            const profileResponse = await usersAPI.getProfile();
+            const userData = profileResponse.data.user || profileResponse.data;
+            initialBalance = userData.balance !== undefined && userData.balance !== null ? userData.balance : 0;
+          } catch (error) {
+            console.error('Failed to get initial balance:', error);
+          }
+          
+          // Poll for balance update (webhook is async)
+          pollForBalanceUpdate(initialBalance, depositAmount);
+          
+          // Call success callback after delay
+          setTimeout(() => {
+            onSuccess(depositAmount);
+          }, 2000);
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to process payment');
       setIsProcessing(false);
     }
   };
+
+  const pollForBalanceUpdate = async (initialBalance: number, depositAmount: number) => {
+    // Poll every 1 second for up to 10 seconds
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const pollInterval = setInterval(async () => {
+      attempts++;
+      try {
+        const response = await usersAPI.getProfile();
+        const userData = response.data.user || response.data;
+        const currentBalance = userData.balance !== undefined && userData.balance !== null ? userData.balance : 0;
+        
+        // Check if balance increased by the deposit amount (indicating webhook processed)
+        const expectedBalance = initialBalance + depositAmount;
+        if (Math.abs(currentBalance - expectedBalance) < 0.01) { // Allow small rounding differences
+          clearInterval(pollInterval);
+          // Trigger window event to refresh Navbar balance
+          window.dispatchEvent(new CustomEvent('balanceUpdated'));
+        } else if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          // Still trigger update in case webhook is delayed
+          window.dispatchEvent(new CustomEvent('balanceUpdated'));
+        }
+      } catch (error) {
+        console.error('Failed to poll balance:', error);
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+        }
+      }
+    }, 1000);
+  };
+
+  // Show success state
+  if (success) {
+    return (
+      <div className="space-y-6 text-center py-4">
+        <div className="flex justify-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+            <CheckCircle className="w-10 h-10 text-green-600" />
+          </div>
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h3>
+          <p className="text-gray-600 mb-4">
+            Your deposit of <span className="font-bold text-black">${depositAmount.toFixed(2)}</span> has been processed.
+          </p>
+          <p className="text-sm text-gray-500">
+            Your account balance will be updated shortly...
+          </p>
+        </div>
+        <div className="flex justify-center">
+          <Loader className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+        <button
+          onClick={() => {
+            setSuccess(false);
+            onClose();
+          }}
+          className="w-full px-4 py-2 bg-black text-white rounded-lg font-bold hover:bg-gray-800"
+        >
+          Close
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -182,13 +316,22 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({
 export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
+  const handleClose = () => {
+    onClose();
+  };
+
+  const handleSuccess = (amount: number) => {
+    // Refresh balance and show success
+    onSuccess();
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
         {/* Close Button */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-600 hover:text-black"
+          onClick={handleClose}
+          className="absolute top-4 right-4 text-gray-600 hover:text-black z-10"
         >
           <X size={24} />
         </button>
@@ -201,7 +344,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onS
 
         {/* Form */}
         <Elements stripe={stripePromise}>
-          <DepositForm onClose={onClose} onSuccess={onSuccess} />
+          <DepositForm onClose={handleClose} onSuccess={handleSuccess} />
         </Elements>
       </div>
     </div>

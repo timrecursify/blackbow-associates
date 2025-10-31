@@ -139,4 +139,108 @@ export const removePaymentMethod = asyncHandler(async (req, res) => {
   });
 });
 
-export default { createDeposit, getPaymentMethods, addPaymentMethod, removePaymentMethod };
+// Verify payment and credit balance (fallback if webhook fails)
+export const verifyPayment = asyncHandler(async (req, res) => {
+  const { paymentIntentId } = req.body;
+  const user = req.user;
+
+  if (!paymentIntentId) {
+    throw new AppError('PaymentIntent ID is required', 400, 'VALIDATION_ERROR');
+  }
+
+  try {
+    // Retrieve payment intent from Stripe
+    const paymentIntent = await stripeService.getPaymentIntent(paymentIntentId);
+
+    // Verify it belongs to this user
+    if (paymentIntent.metadata.userId !== user.id) {
+      throw new AppError('PaymentIntent does not belong to this user', 403, 'FORBIDDEN');
+    }
+
+    // Check if payment succeeded
+    if (paymentIntent.status !== 'succeeded') {
+      return res.json({
+        success: false,
+        status: paymentIntent.status,
+        message: `Payment status: ${paymentIntent.status}`
+      });
+    }
+
+    // Check if already processed (avoid double crediting)
+    const existingTransaction = await prisma.transaction.findFirst({
+      where: {
+        stripePaymentId: paymentIntentId,
+        userId: user.id
+      }
+    });
+
+    if (existingTransaction) {
+      logger.info('Payment already processed', {
+        userId: user.id,
+        paymentIntentId,
+        transactionId: existingTransaction.id
+      });
+      
+      return res.json({
+        success: true,
+        alreadyProcessed: true,
+        message: 'Payment already credited to account'
+      });
+    }
+
+    // Credit the balance
+    const amount = paymentIntent.amount / 100; // Convert from cents
+    const currentUser = await prisma.user.findUnique({ where: { id: user.id } });
+    const newBalance = parseFloat(currentUser.balance) + amount;
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { balance: newBalance }
+    });
+
+    // Create transaction record
+    await prisma.transaction.create({
+      data: {
+        userId: user.id,
+        amount,
+        type: 'DEPOSIT',
+        stripePaymentId: paymentIntentId,
+        balanceAfter: newBalance,
+        metadata: { 
+          paymentIntent: paymentIntentId,
+          processedVia: 'verifyPayment_endpoint',
+          timestamp: new Date().toISOString()
+        }
+      }
+    });
+
+    logger.info('Deposit processed via verifyPayment endpoint', {
+      userId: user.id,
+      email: user.email,
+      amount,
+      newBalance,
+      paymentIntentId
+    });
+
+    await notifyTelegram(
+      `💰 Deposit verified & credited: ${user.email} added $${amount} (via verifyPayment endpoint)`,
+      'success'
+    );
+
+    res.json({
+      success: true,
+      amount,
+      newBalance,
+      message: 'Payment verified and balance credited'
+    });
+  } catch (error) {
+    logger.error('Failed to verify payment', {
+      error: error.message,
+      userId: user.id,
+      paymentIntentId
+    });
+    throw new AppError(`Failed to verify payment: ${error.message}`, 500, 'PAYMENT_VERIFICATION_ERROR');
+  }
+});
+
+export default { createDeposit, getPaymentMethods, addPaymentMethod, removePaymentMethod, verifyPayment };

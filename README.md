@@ -1,16 +1,20 @@
 # BlackBow Associates - Wedding Lead Marketplace
 
-**Production-grade wedding lead marketplace with Clerk authentication, Stripe payments, and Pipedrive CRM integration.**
+**Production-grade wedding lead marketplace with Supabase authentication, Stripe payments, and Pipedrive CRM integration.**
 
 ## 🎯 Project Status
 
-**Backend:** ✅ 100% Complete - Deployed on PM2 port 3450
-**Frontend:** ✅ 100% Complete - All pages implemented
-**Database:** ✅ Migrated and running
-**Blocker:** ⚠️ Requires API keys (Clerk, Stripe, Pipedrive)
+**Backend:** ✅ Operational - All endpoints healthy
+**Frontend:** ✅ Complete - All pages implemented
+**Database:** ✅ Running healthy (PostgreSQL 15)
+**Authentication:** ✅ Fully functional - OAuth + email/password working
+**Infrastructure:** ✅ All services running healthy (9 PM2 + 11 Docker containers)
 
-**Last Updated:** 2025-10-29
+**Version:** 1.1.2 (Production-ready)
+**Last Updated:** 2025-10-31
 **Server:** VPS Production (angry-hamilton.hivelocitydns.com)
+
+**Recent Fix (v1.1.2):** Resolved JWT verification issue by exposing Supabase Auth service on localhost:9999 for direct Admin API access. See CHANGELOG.md for details.
 
 ---
 
@@ -20,12 +24,13 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 
 ### Key Features
 
-- **Clerk Authentication** - Secure JWT-based auth with user management
+- **Supabase Authentication** - Self-hosted auth with OAuth (Google, Facebook) + email/password
 - **Stripe Payments** - Deposit funds via credit card (PaymentIntents)
 - **Lead Marketplace** - Browse, filter, and purchase wedding leads
 - **Pipedrive Integration** - Automatic lead creation from CRM deals
 - **Admin Dashboard** - User management, balance adjustments, CSV import
 - **Transaction History** - Complete audit trail of all purchases and deposits
+- **Onboarding Flow** - Multi-step registration with business details collection
 
 ---
 
@@ -37,18 +42,18 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 - Node.js 18+ with ES Modules
 - Express.js (REST API)
 - Prisma ORM (PostgreSQL)
-- Clerk SDK (Authentication)
+- Supabase SDK (Authentication - self-hosted)
 - Stripe SDK (Payments)
 - Winston (Structured logging)
 - PM2 (Process management)
 
-**API Endpoints:** 25+ endpoints across 6 route groups
+**API Endpoints:** 26+ endpoints across 6 route groups
 - `/api/auth` - Authentication, admin verification, user sync
-- `/api/users` - Profile, balance, transactions, purchased leads
+- `/api/users` - Profile, balance, transactions, purchased leads, **onboarding completion**
 - `/api/leads` - Browse, purchase (with row-level locking)
 - `/api/payments` - Deposits, payment methods
 - `/api/admin` - User management, balance adjustment, CSV import
-- `/api/webhooks` - Stripe, Pipedrive, Clerk webhooks
+- `/api/webhooks` - Stripe, Pipedrive webhooks
 
 **Port:** 3450 (localhost only)
 **Logs:** `/var/log/desaas/blackbow-*.log`
@@ -58,7 +63,7 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 **Tech Stack:**
 - React 18 with TypeScript
 - Vite (Build tool)
-- Clerk React (Auth UI)
+- Supabase JS Client (Authentication)
 - Stripe React (Payment UI)
 - Tailwind CSS (Styling)
 - React Router (Navigation)
@@ -66,13 +71,28 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 
 **Pages Implemented:**
 - Landing Page (public)
+- Onboarding Page - Multi-step registration (business details collection)
 - Marketplace Page - Browse and purchase leads with filters
 - Account Page - Profile, balance, transactions, purchased leads
 - Lead Details Page - Full contact info after purchase
 - Admin Verification Page - Code entry for admin access
 - Admin Dashboard - User/lead management, CSV import
-- Auth Pages - Clerk sign-in/sign-up
+- Auth Pages - Custom Supabase sign-in/sign-up with OAuth (Google, Facebook)
 - Unsubscribe Page - Email unsubscribe (preserved from newsletter)
+
+**Authentication Flow:**
+- Step 1: Email/password or OAuth (Google/Facebook) registration via Supabase
+- Step 2: Business details form (business name, location, vendor type, about)
+- Required fields: All fields mandatory with validation
+- Auto-creation: Users auto-created in PostgreSQL database on first login
+- Protection: Marketplace/account access blocked until onboarding complete
+
+**✅ Recent Migration (2025-10-30):**
+- **Migrated from Clerk → Supabase** (local self-hosted instance)
+- **Reason:** OAuth redirect loop issues with Clerk, cost optimization
+- **Status:** Migration complete and operational
+- **Changes:** Custom auth pages, JWT verification updated, dual auth fields in schema
+- **Infrastructure:** Supabase running on Docker, accessible via auth.blackbowassociates.com
 
 ---
 
@@ -126,12 +146,18 @@ npm run build
 ## 📊 Database Schema
 
 **6 Models:**
-- `User` - Clerk-synced users with balance tracking
+- `User` - Clerk-synced users with balance tracking, **NEW:** location, about, onboardingCompleted
 - `Lead` - Wedding leads (masked + full contact info)
 - `Transaction` - Deposits and purchases
 - `Purchase` - Lead ownership records
 - `PaymentMethod` - Saved Stripe payment methods
 - `AdminVerification` - Admin access audit logs
+
+**Recent Schema Changes (2025-10-29):**
+- Added `location` (String, nullable) - City/State for vendor business
+- Added `about` (Text, nullable) - Business description
+- Added `onboardingCompleted` (Boolean, default: false) - Onboarding status tracking
+- Migration: `20251029_add_onboarding_fields`
 
 **Key Features:**
 - Row-level locking for concurrent purchase safety
@@ -180,12 +206,13 @@ blackbow-associates/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/       # Navbar, LeadCard, DepositModal
-│   │   ├── pages/            # 8 pages (Landing, Marketplace, Account, etc.)
+│   │   ├── pages/            # 9 pages (Landing, Onboarding, Marketplace, Account, etc.)
 │   │   ├── services/         # API client (axios with Clerk interceptor)
-│   │   ├── App.tsx           # Router with protected routes
+│   │   ├── App.tsx           # Router with ProtectedRoute wrapper for onboarding enforcement
 │   │   └── main.tsx          # ClerkProvider wrapper
 │   ├── dist/                 # Production build
-│   └── .env.development      # Environment variables
+│   ├── server.js             # Custom Express server (localhost binding)
+│   └── .env.production       # Environment variables
 ├── docs/
 │   ├── IMPLEMENTATION_PLAN.md  # Original 1816-line implementation plan
 │   └── blackbow_plan.md        # Original 727-line feature plan
@@ -262,18 +289,13 @@ cd backend && bash scripts/deploy.sh
 
 ---
 
-## 🔑 Credentials
+## 🔑 Configuration
 
-**Database:**
-- User: `blackbow_user`
-- Password: `Ji8cKXf6eWJOrOKA4ZUKFyDFUPhvpm5g`
-- Database: `blackbow`
-- Port: 5432
+**All credentials are stored in `.env` files:**
+- Backend credentials: `backend/.env`
+- Frontend credentials: `frontend/.env.production`
 
-**Admin:**
-- Verification Code: `JOM13vMi6aUHeCOUQPpioTrZI1U835O3`
-
-**⚠️ IMPORTANT:** Change these credentials before production deployment!
+**See `.env.example` files for required variables.**
 
 ---
 
@@ -407,12 +429,14 @@ cd backend && npx prisma migrate reset
 3. ✅ ~~Implement complete backend API~~
 4. ✅ ~~Implement all frontend pages~~
 5. ✅ ~~Deploy backend with PM2~~
-6. ⚠️ **Add API Keys** - Configure Clerk, Stripe, Pipedrive in `.env`
-7. 🔲 **Test Auth Flow** - Sign up, sign in, profile updates
-8. 🔲 **Test Purchase Flow** - Deposit funds, purchase lead
-9. 🔲 **Configure Webhooks** - Set up Stripe and Pipedrive webhooks
-10. 🔲 **Deploy Frontend** - Build and deploy to Cloudflare Pages
-11. 🔲 **Production Testing** - End-to-end workflow verification
+6. ✅ ~~Implement onboarding flow~~
+7. ✅ ~~Deploy frontend with PM2~~
+8. 🔴 **FIX OAUTH REDIRECT LOOP** - Critical blocker preventing user registration
+9. ⚠️ **Add API Keys** - Configure Clerk, Stripe, Pipedrive in `.env`
+10. 🔲 **Test Auth Flow** - Sign up, sign in, profile updates
+11. 🔲 **Test Purchase Flow** - Deposit funds, purchase lead
+12. 🔲 **Configure Webhooks** - Set up Stripe and Pipedrive webhooks
+13. 🔲 **Production Testing** - End-to-end workflow verification
 
 ---
 
@@ -425,5 +449,7 @@ cd backend && npx prisma migrate reset
 ---
 
 **Built with ❤️ for BlackBow Associates**
-**Status:** Production-ready pending API keys
+**Status:** Blocked - OAuth redirect loop requires investigation
+**Deployed:** Backend + Frontend operational on PM2
+**Critical Issue:** User registration broken - OAuth redirect loop
 **Maintained by:** Claude Code (Senior Production Engineer)

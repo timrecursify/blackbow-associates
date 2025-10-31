@@ -1,5 +1,5 @@
 import express from 'express';
-import { getProfile, updateProfile, getTransactions, getPurchasedLeads } from '../controllers/users.controller.js';
+import { getProfile, updateProfile, getTransactions, getPurchasedLeads, updateLeadNote } from '../controllers/users.controller.js';
 import { requireAuth, attachUser } from '../middleware/auth.js';
 import { validations } from '../middleware/validate.js';
 
@@ -18,6 +18,9 @@ router.put('/profile', validations.updateProfile, updateProfile);
 router.get('/transactions', getTransactions);
 
 // Get purchased leads
-router.get('/purchases', getPurchasedLeads);
+router.get('/purchased-leads', getPurchasedLeads);
+
+// Update note on purchased lead
+router.put('/leads/:leadId/note', updateLeadNote);
 
 export default router;

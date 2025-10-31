@@ -1,5 +1,5 @@
 import express from 'express';
-import { stripeWebhook, pipedriveWebhook, clerkWebhook } from '../controllers/webhooks.controller.js';
+import { stripeWebhook, pipedriveWebhook } from '../controllers/webhooks.controller.js';
 
 const router = express.Router();
 
@@ -8,8 +8,5 @@ router.post('/stripe', express.raw({ type: 'application/json' }), stripeWebhook)
 
 // Pipedrive webhook
 router.post('/pipedrive', pipedriveWebhook);
-
-// Clerk webhook
-router.post('/clerk', clerkWebhook);
 
 export default router;

@@ -101,26 +101,26 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 transition-colors duration-200">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-handwritten text-4xl md:text-5xl text-black mb-2">
+          <h1 className="font-handwritten text-4xl md:text-5xl text-black transition-colors duration-200">
             Admin Dashboard
           </h1>
-          <p className="text-gray-700 text-lg">Manage users, leads, and system settings</p>
+          <p className="text-gray-700 transition-colors duration-200">Manage users, leads, and system settings</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-4 mb-6 border-b border-gray-200">
+        <div className="flex space-x-4 mb-6 border-b border-gray-200 transition-colors duration-200">
           <button
             onClick={() => setActiveTab('users')}
             className={`pb-3 px-4 font-bold transition-colors flex items-center space-x-2 ${
               activeTab === 'users'
-                ? 'border-b-2 border-black text-black'
-                : 'text-gray-600 hover:text-black'
+                ? 'border-b-2 border-black'
+                : 'text-gray-600'
             }`}
           >
             <Users size={18} />
@@ -130,8 +130,8 @@ export const AdminDashboardPage: React.FC = () => {
             onClick={() => setActiveTab('leads')}
             className={`pb-3 px-4 font-bold transition-colors flex items-center space-x-2 ${
               activeTab === 'leads'
-                ? 'border-b-2 border-black text-black'
-                : 'text-gray-600 hover:text-black'
+                ? 'border-b-2 border-black'
+                : 'text-gray-600'
             }`}
           >
             <Package size={18} />
@@ -143,8 +143,8 @@ export const AdminDashboardPage: React.FC = () => {
         {activeTab === 'users' && (
           <div className="space-y-6">
             {/* Balance Adjustment Form */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200sition-colors duration-200">
+              <h2 className="text-lg font-bold text-gray-900s-center space-x-2 transition-colors duration-200">
                 <DollarSign size={20} />
                 <span>Adjust User Balance</span>
               </h2>
@@ -152,7 +152,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <select
                   value={adjustUserId}
                   onChange={(e) => setAdjustUserId(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-black"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black transition-colors duration-200"
                   required
                 >
                   <option value="">Select User</option>
@@ -168,7 +168,7 @@ export const AdminDashboardPage: React.FC = () => {
                   value={adjustAmount}
                   onChange={(e) => setAdjustAmount(e.target.value)}
                   placeholder="Amount (+/-)"
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-black"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black transition-colors duration-200"
                   required
                 />
                 <input
@@ -176,12 +176,12 @@ export const AdminDashboardPage: React.FC = () => {
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
                   placeholder="Reason"
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-black"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black transition-colors duration-200"
                   required
                 />
                 <button
                   type="submit"
-                  className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 font-bold"
+                  className="bg-black text-white hover:bg-gray-800 transition-colors duration-200"
                 >
                   Adjust
                 </button>
@@ -189,46 +189,46 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900">All Users ({users.length})</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200sition-colors duration-200">
+              <div className="p-6 border-b border-gray-200sition-colors duration-200">
+                <h2 className="text-lg font-bold text-gray-900 transition-colors duration-200">All Users ({users.length})</h2>
               </div>
               {loading ? (
                 <div className="p-8 text-center">
-                  <p className="text-gray-700">Loading users...</p>
+                  <p className="text-gray-700 transition-colors duration-200">Loading users...</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50sition-colors duration-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Business</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Type</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-900 uppercase">Balance</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Admin</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Joined</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Business</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Type</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-900se transition-colors duration-200">Balance</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Admin</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Joined</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200sition-colors duration-200">
                       {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{user.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{user.businessName || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{user.vendorType || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">
+                        <tr key={user.id} className="hover:bg-gray-50sition-colors">
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">{user.email}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">{user.businessName || '-'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">{user.vendorType || '-'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">
                             ${((user.balance !== undefined && user.balance !== null) ? user.balance : 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-sm">
                             {user.isAdmin ? (
-                              <span className="px-2 py-1 text-xs font-bold rounded bg-purple-100 text-purple-800">
+                              <span className="px-2 py-1 text-xs font-bold rounded bg-purple-100sition-colors duration-200">
                                 ADMIN
                               </span>
                             ) : (
-                              <span className="text-gray-600">No</span>
+                              <span className="text-gray-600 transition-colors duration-200">No</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">
                             {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                           </td>
                         </tr>
@@ -245,31 +245,31 @@ export const AdminDashboardPage: React.FC = () => {
         {activeTab === 'leads' && (
           <div className="space-y-6">
             {/* CSV Import Form */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200sition-colors duration-200">
+              <h2 className="text-lg font-bold text-gray-900s-center space-x-2 transition-colors duration-200">
                 <Upload size={20} />
                 <span>Import Leads (CSV)</span>
               </h2>
               <form onSubmit={handleImportCSV} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 transition-colors duration-200">
                     CSV Data (comma-separated)
                   </label>
                   <textarea
                     value={csvData}
                     onChange={(e) => setCsvData(e.target.value)}
                     placeholder="location,weddingDate,budgetMin,budgetMax,servicesNeeded,coupleName,email,phone&#10;New York NY,2025-06-15,25000,35000,Photography,John & Jane,john@example.com,555-1234"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 font-mono text-sm focus:ring-2 focus:ring-black"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black transition-colors duration-200"
                     rows={6}
                     required
                   />
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-600 transition-colors duration-200">
                     First row should be headers. Each subsequent row is a lead.
                   </p>
                 </div>
                 <button
                   type="submit"
-                  className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 font-bold"
+                  className="bg-black text-white hover:bg-gray-800 transition-colors duration-200"
                 >
                   Import CSV
                 </button>
@@ -277,48 +277,48 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
 
             {/* Leads Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900">All Leads ({leads.length})</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200sition-colors duration-200">
+              <div className="p-6 border-b border-gray-200sition-colors duration-200">
+                <h2 className="text-lg font-bold text-gray-900 transition-colors duration-200">All Leads ({leads.length})</h2>
               </div>
               {loading ? (
                 <div className="p-8 text-center">
-                  <p className="text-gray-700">Loading leads...</p>
+                  <p className="text-gray-700 transition-colors duration-200">Loading leads...</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50sition-colors duration-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Location</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Wedding Date</th>
-                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-900 uppercase">Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase">Created</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Location</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Wedding Date</th>
+                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-900se transition-colors duration-200">Price</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-900se transition-colors duration-200">Created</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200sition-colors duration-200">
                       {leads.map((lead) => (
-                        <tr key={lead.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{lead.location}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                        <tr key={lead.id} className="hover:bg-gray-50sition-colors">
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">{lead.location}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">
                             {lead.weddingDate ? format(new Date(lead.weddingDate), 'MMM dd, yyyy') : 'TBD'}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">
                             ${((lead.price !== undefined && lead.price !== null) ? lead.price : 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-sm">
                             <span
-                              className={`px-2 py-1 text-xs font-bold rounded ${
+                              className={`px-2 py-1 text-xs font-bold rounded transition-colors duration-200 ${
                                 lead.status === 'AVAILABLE'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
+                                  ? 'bg-green-100'
+                                  : 'bg-gray-100'
                               }`}
                             >
                               {lead.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                          <td className="px-6 py-4 text-sm text-gray-900 transition-colors duration-200">
                             {format(new Date(lead.createdAt), 'MMM dd, yyyy')}
                           </td>
                         </tr>

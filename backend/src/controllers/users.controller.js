@@ -27,7 +27,17 @@ export const getProfile = asyncHandler(async (req, res) => {
         onboardingCompleted: true,
         isAdmin: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        billingFirstName: true,
+        billingLastName: true,
+        billingCompanyName: true,
+        billingIsCompany: true,
+        billingAddressLine1: true,
+        billingAddressLine2: true,
+        billingCity: true,
+        billingState: true,
+        billingZip: true,
+        billingCountry: true
       }
     });
 
@@ -58,7 +68,19 @@ export const getProfile = asyncHandler(async (req, res) => {
         onboardingCompleted: onboardingCompleted,
         isAdmin: profile.isAdmin,
         createdAt: profile.createdAt,
-        updatedAt: profile.updatedAt
+        updatedAt: profile.updatedAt,
+        billing: {
+          firstName: profile.billingFirstName,
+          lastName: profile.billingLastName,
+          companyName: profile.billingCompanyName,
+          isCompany: profile.billingIsCompany,
+          addressLine1: profile.billingAddressLine1,
+          addressLine2: profile.billingAddressLine2,
+          city: profile.billingCity,
+          state: profile.billingState,
+          zip: profile.billingZip,
+          country: profile.billingCountry
+        }
       }
     });
   } catch (error) {
@@ -235,10 +257,76 @@ export const updateLeadNote = asyncHandler(async (req, res) => {
   });
 });
 
+// Update billing address
+export const updateBillingAddress = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const {
+    firstName,
+    lastName,
+    companyName,
+    isCompany,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    zip
+  } = req.body;
+
+  logger.info('Billing address update request', { userId: user.id });
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      billingFirstName: firstName || null,
+      billingLastName: lastName || null,
+      billingCompanyName: companyName || null,
+      billingIsCompany: isCompany === true,
+      billingAddressLine1: addressLine1,
+      billingAddressLine2: addressLine2 || null,
+      billingCity: city,
+      billingState: state,
+      billingZip: zip
+    },
+    select: {
+      id: true,
+      billingFirstName: true,
+      billingLastName: true,
+      billingCompanyName: true,
+      billingIsCompany: true,
+      billingAddressLine1: true,
+      billingAddressLine2: true,
+      billingCity: true,
+      billingState: true,
+      billingZip: true,
+      billingCountry: true
+    }
+  });
+
+  logger.info('Billing address updated', { userId: user.id });
+
+  res.json({
+    success: true,
+    message: 'Billing address updated successfully',
+    billing: {
+      firstName: updatedUser.billingFirstName,
+      lastName: updatedUser.billingLastName,
+      companyName: updatedUser.billingCompanyName,
+      isCompany: updatedUser.billingIsCompany,
+      addressLine1: updatedUser.billingAddressLine1,
+      addressLine2: updatedUser.billingAddressLine2,
+      city: updatedUser.billingCity,
+      state: updatedUser.billingState,
+      zip: updatedUser.billingZip,
+      country: updatedUser.billingCountry
+    }
+  });
+});
+
 export default {
   getProfile,
   updateProfile,
   getTransactions,
   getPurchasedLeads,
-  updateLeadNote
+  updateLeadNote,
+  updateBillingAddress
 };

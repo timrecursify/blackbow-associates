@@ -102,6 +102,7 @@ export const Navbar: React.FC = () => {
 
           {/* Navigation Links */}
           <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+
             {isSignedIn ? (
               <>
                 {/* Balance Display - Show on mobile in compact form */}
@@ -135,7 +136,7 @@ export const Navbar: React.FC = () => {
                   className={`hidden sm:flex items-center space-x-1 font-medium transition-colors rounded-lg hover:bg-transparent ${
                     location.pathname === '/account'
                       ? 'text-black'
-                      : 'text-gray-700 hover:text-black'
+                      : 'text-gray-700'
                   }`}
                   title="Account"
                 >
@@ -149,8 +150,8 @@ export const Navbar: React.FC = () => {
                     to="/admin"
                     className={`flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:space-x-1 font-medium transition-colors rounded-lg sm:hover:bg-transparent ${
                       location.pathname === '/admin' 
-                        ? 'text-black bg-gray-100' 
-                        : 'text-gray-700 hover:text-black hover:bg-gray-100 sm:hover:bg-transparent'
+                        ? 'text-black' 
+                        : 'text-gray-700 hover:text-black sm:hover:bg-transparent'
                     }`}
                     title="Admin"
                   >
@@ -173,10 +174,10 @@ export const Navbar: React.FC = () => {
                   </button>
 
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-64 sm:w-56 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-64 sm:w-56 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50 transition-colors duration-200">
                       {userEmail && (
                         <div className="px-4 py-3 border-b border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">Signed in as</p>
+                          <p className="text-xs text-gray-500">Signed in as</p>
                           <p className="text-sm text-black font-medium break-words">{userEmail}</p>
                           {balance !== null && balance !== undefined && (
                             <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-100">
@@ -216,7 +217,7 @@ export const Navbar: React.FC = () => {
                           </Link>
                         )}
                       </div>
-                      <div className="border-t border-gray-200 pt-1">
+                      <div className="border-t border-gray-200">
                         <button
                           onClick={() => {
                             handleSignOut();
@@ -242,7 +243,7 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <Link
                   to="/sign-up"
-                  className="bg-black text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors text-sm sm:text-base"
+                  className="bg-black text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm sm:text-base"
                 >
                   Sign Up
                 </Link>

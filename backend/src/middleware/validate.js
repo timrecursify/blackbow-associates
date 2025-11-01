@@ -38,12 +38,96 @@ export const validations = {
     validate
   ],
 
+  // Billing address validation
+  updateBillingAddress: [
+    body('isCompany')
+      .optional()
+      .isBoolean()
+      .withMessage('isCompany must be a boolean'),
+    body('firstName')
+      .optional({ checkFalsy: true })
+      .trim()
+      .custom((value, { req }) => {
+        // Required if not a company
+        if (req.body.isCompany !== true) {
+          if (!value || value.trim().length === 0) {
+            throw new Error('First name is required for individuals');
+          }
+          if (value.trim().length < 1 || value.trim().length > 50) {
+            throw new Error('First name must be between 1 and 50 characters');
+          }
+        }
+        return true;
+      }),
+    body('lastName')
+      .optional({ checkFalsy: true })
+      .trim()
+      .custom((value, { req }) => {
+        // Required if not a company
+        if (req.body.isCompany !== true) {
+          if (!value || value.trim().length === 0) {
+            throw new Error('Last name is required for individuals');
+          }
+          if (value.trim().length < 1 || value.trim().length > 50) {
+            throw new Error('Last name must be between 1 and 50 characters');
+          }
+        }
+        return true;
+      }),
+    body('companyName')
+      .optional({ checkFalsy: true })
+      .trim()
+      .custom((value, { req }) => {
+        // Required if it's a company
+        if (req.body.isCompany === true) {
+          if (!value || value.trim().length === 0) {
+            throw new Error('Company name is required for companies');
+          }
+          if (value.trim().length < 1 || value.trim().length > 100) {
+            throw new Error('Company name must be between 1 and 100 characters');
+          }
+        }
+        return true;
+      }),
+    body('addressLine1')
+      .trim()
+      .notEmpty()
+      .withMessage('Address line 1 is required')
+      .isLength({ min: 5, max: 100 })
+      .withMessage('Address line 1 must be between 5 and 100 characters'),
+    body('addressLine2')
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Address line 2 must be less than 100 characters'),
+    body('city')
+      .trim()
+      .notEmpty()
+      .withMessage('City is required')
+      .isLength({ min: 2, max: 50 })
+      .withMessage('City must be between 2 and 50 characters'),
+    body('state')
+      .trim()
+      .notEmpty()
+      .withMessage('State is required')
+      .isLength({ min: 2, max: 2 })
+      .withMessage('State must be a 2-letter code (e.g., NY, CA)'),
+    body('zip')
+      .trim()
+      .notEmpty()
+      .withMessage('ZIP code is required')
+      .matches(/^\d{5}(-\d{4})?$/)
+      .withMessage('ZIP code must be in format 12345 or 12345-6789'),
+    validate
+  ],
+
   // Lead purchase validation
   purchaseLead: [
     param('id')
       .isString()
-      .isLength({ min: 20, max: 30 })
-      .withMessage('Invalid lead ID'),
+      .isLength({ min: 8, max: 8 })
+      .matches(/^[A-Z]{2}\d{6}$/)
+      .withMessage('Invalid lead ID format (expected format: XX123456)'),
     validate
   ],
 

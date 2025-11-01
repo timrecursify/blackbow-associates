@@ -45,7 +45,7 @@ const LandingPage: React.FC = () => {
               </Link>
               <Link
                 to="/sign-up"
-                className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md min-h-[44px] flex items-center"
+                className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white hover:bg-gray-800 transition-colors shadow-md rounded-lg min-h-[44px] flex items-center"
               >
                 Sign Up
               </Link>
@@ -53,7 +53,7 @@ const LandingPage: React.FC = () => {
           ) : (
             <Link
               to="/marketplace"
-              className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md min-h-[44px] flex items-center"
+              className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white hover:bg-gray-800 transition-colors shadow-md min-h-[44px] flex items-center"
             >
               Marketplace
             </Link>
@@ -87,15 +87,15 @@ const LandingPage: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-4 py-20 sm:py-20 md:py-24 relative z-10 pt-24 sm:pt-20">
         <div className="text-center max-w-4xl mx-auto w-full">
-          <h1 className="font-handwritten text-5xl sm:text-5xl md:text-6xl lg:text-7xl text-black mb-6 sm:mb-6 md:mb-8 leading-tight px-2">
+          <h1 className="font-handwritten text-5xl sm:text-5xl md:text-6xl lg:text-7xl text-black mb-6 sm:mb-6 md:mb-8 leading-tight px-2 transition-colors duration-200">
             Black Bow Associates
           </h1>
 
-          <h2 className="font-handwritten-script text-2xl sm:text-2xl md:text-3xl lg:text-4xl text-gray-700 mb-8 sm:mb-8 md:mb-10 leading-relaxed px-2">
+          <h2 className="font-handwritten-script text-2xl sm:text-2xl md:text-3xl lg:text-4xl text-gray-700 mb-8 sm:mb-8 md:mb-10 leading-relaxed px-2 transition-colors duration-200">
             Professional Wedding Vendor Association
           </h2>
 
-          <p className="text-lg sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-10 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
+          <p className="text-lg sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-10 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4 transition-colors duration-200">
             We connect premium wedding vendors with qualified couples. Get exclusive leads, grow your business,
             and only pay when you book. <strong className="text-black">Join free during our launch!</strong>
           </p>
@@ -105,7 +105,7 @@ const LandingPage: React.FC = () => {
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 sm:p-6 shadow-lg border border-gray-200">
               <Sparkles className="mx-auto mb-3 sm:mb-3 text-black" size={36} strokeWidth={1.5} />
               <h3 className="font-bold text-lg sm:text-lg mb-2 sm:mb-2 text-gray-900">Quality Leads</h3>
-              <p className="text-gray-600 text-sm sm:text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 Pre-qualified couples actively planning their weddings
               </p>
             </div>
@@ -113,7 +113,7 @@ const LandingPage: React.FC = () => {
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 sm:p-6 shadow-lg border border-gray-200">
               <DollarSign className="mx-auto mb-3 sm:mb-3 text-black" size={36} strokeWidth={1.5} />
               <h3 className="font-bold text-lg sm:text-lg mb-2 sm:mb-2 text-gray-900">Commission Only</h3>
-              <p className="text-gray-600 text-sm sm:text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 Pay only when you successfully book a client
               </p>
             </div>
@@ -121,7 +121,7 @@ const LandingPage: React.FC = () => {
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 sm:p-6 shadow-lg border border-gray-200">
               <Target className="mx-auto mb-3 sm:mb-3 text-black" size={36} strokeWidth={1.5} />
               <h3 className="font-bold text-lg sm:text-lg mb-2 sm:mb-2 text-gray-900">Free Membership</h3>
-              <p className="text-gray-600 text-sm sm:text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed">
                 Launch special: Join free with no monthly fees
               </p>
             </div>
@@ -148,7 +148,7 @@ const LandingPage: React.FC = () => {
 
           {/* Additional Info */}
           <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5 sm:p-6 max-w-2xl mx-4 sm:mx-auto border border-gray-200">
-            <p className="text-gray-700 text-sm sm:text-sm md:text-base leading-relaxed">
+            <p className="text-gray-700 text-sm md:text-base leading-relaxed">
               <strong className="text-black">Who can join?</strong> Wedding photographers, videographers, planners,
               florists, caterers, DJs, venues, and all wedding service providers committed to excellence.
             </p>
@@ -232,7 +232,7 @@ const LandingPage: React.FC = () => {
               rel="noopener noreferrer"
               className="text-gray-600 hover:text-black transition-colors duration-200 text-center text-sm no-underline"
             >
-              ? 2025 Precious Pics Production Inc
+              © 2025 Precious Pics Production Inc
             </a>
 
             {/* Links - Bottom on mobile */}
@@ -281,7 +281,7 @@ const LandingPage: React.FC = () => {
               rel="noopener noreferrer"
               className="text-gray-600 hover:text-black transition-colors duration-200 text-center flex-1 no-underline"
             >
-              ? 2025 Precious Pics Production Inc
+              © 2025 Precious Pics Production Inc
             </a>
             
             {/* Social Icons - Right */}
@@ -495,50 +495,50 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <ScrollToTop />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/unsubscribe" element={<UnsubscribePage />} />
+      <Router>
+        <ScrollToTop />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-        {/* Auth Routes */}
-        <Route path="/sign-in" element={<CustomSignInPage />} />
-        <Route path="/sign-up" element={<CustomSignUpPage />} />
+          {/* Auth Routes */}
+          <Route path="/sign-in" element={<CustomSignInPage />} />
+          <Route path="/sign-up" element={<CustomSignUpPage />} />
 
-        {/* Onboarding Route - requires auth but not onboarding completion */}
-        <Route
-          path="/onboarding"
-          element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>}
-        />
+          {/* Onboarding Route - requires auth but not onboarding completion */}
+          <Route
+            path="/onboarding"
+            element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>}
+          />
 
-        {/* Protected Routes - require auth AND onboarding completion */}
-        <Route
-          path="/marketplace"
-          element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>}
-        />
-        <Route
-          path="/account"
-          element={<ProtectedRoute><AccountPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/leads/:id"
-          element={<ProtectedRoute><LeadDetailsPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/admin/verify"
-          element={<ProtectedRoute><AdminVerificationPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/admin"
-          element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>}
-        />
+          {/* Protected Routes - require auth AND onboarding completion */}
+          <Route
+            path="/marketplace"
+            element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>}
+          />
+          <Route
+            path="/account"
+            element={<ProtectedRoute><AccountPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/leads/:id"
+            element={<ProtectedRoute><LeadDetailsPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/verify"
+            element={<ProtectedRoute><AdminVerificationPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/admin"
+            element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>}
+          />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
   );
 }
 

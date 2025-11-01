@@ -65,7 +65,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
   };
 
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
+    <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
       {/* Top Color Bar */}
       <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
       
@@ -75,31 +75,31 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
           <div className="flex-1">
             {/* Location Badge */}
             <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                <MapPin size={16} className="text-blue-600" />
-                <span className="text-sm font-bold text-blue-900">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 transition-colors duration-200">
+                <MapPin size={16} className="text-blue-600 transition-colors duration-200" />
+                <span className="text-sm font-bold text-blue-900 transition-colors duration-200">
                   {lead.city && lead.state ? `${lead.city}, ${lead.state}` : lead.location}
                 </span>
               </div>
               {lead.state && (
-                <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                <span className="px-2 py-1 bg-blue-600s font-bold rounded transition-colors duration-200">
                   {lead.state}
                 </span>
               )}
             </div>
 
             {/* Wedding Date */}
-            <div className="flex items-center gap-2 text-gray-700 mb-2">
-              <Calendar size={18} className="text-rose-500" />
+            <div className="flex items-center gap-2 text-gray-700 transition-colors duration-200">
+              <Calendar size={18} className="text-rose-500 transition-colors duration-200" />
               <span className="font-semibold">{formatDate()}</span>
             </div>
           </div>
 
           {/* Price Tag */}
           <div className="text-right">
-            <div className="inline-flex flex-col items-end bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl px-4 py-3 shadow-sm">
-              <span className="text-xs text-green-700 font-semibold uppercase tracking-wide">Lead Price</span>
-              <span className="text-3xl font-black text-green-700">${(lead.price || 0).toFixed(2)}</span>
+            <div className="inline-flex flex-col items-end bg-gradient-to-br from-green-50 to-emerald-50shadow-sm transition-colors duration-200">
+              <span className="text-xs text-green-700semibold uppercase tracking-wide transition-colors duration-200">Lead Price</span>
+              <span className="text-3xl font-black text-green-700 transition-colors duration-200">${(lead.price || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -128,16 +128,16 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
         </div>
 
         {/* Budget and Ethnic/Religious Tags */}
-        <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
-            <DollarSign size={16} className="text-amber-600" />
-            <span className="text-sm font-semibold text-amber-900">{formatBudget()}</span>
+        <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-gray-100 transition-colors duration-200">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 transition-colors duration-200">
+            <DollarSign size={16} className="text-amber-600 transition-colors duration-200" />
+            <span className="text-sm font-semibold text-amber-900 transition-colors duration-200">{formatBudget()}</span>
           </div>
           
           {lead.ethnicReligious && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-lg">
-              <Heart size={14} className="text-violet-600" />
-              <span className="text-sm font-semibold text-violet-900">{lead.ethnicReligious}</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50sition-colors duration-200">
+              <Heart size={14} className="text-violet-600sition-colors duration-200" />
+              <span className="text-sm font-semibold text-violet-900sition-colors duration-200">{lead.ethnicReligious}</span>
             </div>
           )}
         </div>
@@ -145,13 +145,13 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
         {/* Description Preview */}
         {lead.description && (
           <div className="mb-4">
-            <div className={`text-sm text-gray-700 ${!expanded && 'line-clamp-2'}`}>
+            <div className={`text-sm text-gray-700 line-clamp-2 transition-colors duration-200`}>
               {lead.description}
             </div>
             {lead.description.length > 100 && (
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                className="mt-2 text-sm text-blue-600 flex items-center gap-1 transition-colors duration-200"
               >
                 {expanded ? (
                   <>
@@ -170,7 +170,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
         )}
 
         {/* Purchase Button */}
-        <div className="pt-4 border-t border-gray-100">
+        <div className="pt-4 border-t border-gray-100 transition-colors duration-200">
           <button
             onClick={() => onPurchase(lead.id)}
             disabled={isPurchasing || lead.status !== 'AVAILABLE'}
@@ -188,10 +188,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPurchase, isPurchasi
                 Purchasing...
               </span>
             ) : lead.status !== 'AVAILABLE' ? (
-              '🔒 Sold'
+              '?? Sold'
             ) : (
               <>
-                🎯 Buy This Lead Now
+                ?? Buy This Lead Now
               </>
             )}
           </button>

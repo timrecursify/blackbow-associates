@@ -218,12 +218,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default fallback UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 transition-colors duration-200">
+          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 transition-colors duration-200">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-8 w-8 text-red-500"
+                  className="h-8 w-8 text-red-500 transition-colors duration-200"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -237,23 +237,23 @@ export class ErrorBoundary extends Component<Props, State> {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900 transition-colors duration-200">
                   Something went wrong
                 </h3>
               </div>
             </div>
             
             <div className="mb-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 transition-colors duration-200">
                 We're sorry, but something unexpected happened. Our team has been notified and is working on a fix.
               </p>
               
               {import.meta.env.DEV && this.state.error && (
                 <details className="mt-4">
-                  <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+                  <summary className="text-sm font-medium text-gray-700 cursor-pointer transition-colors duration-200">
                     Error Details (Development Only)
                   </summary>
-                  <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-800 overflow-auto max-h-40">
+                  <div className="mt-2 p-3 bg-gray-100 font-mono text-gray-800 transition-colors duration-200">
                     <div className="mb-2">
                       <strong>Error ID:</strong> {this.state.errorId}
                     </div>
@@ -272,13 +272,13 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex space-x-3">
               <button
                 onClick={this.handleRetry}
-                className="flex-1 bg-black text-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="flex-1 bg-black text-white px-4 py-2 rounded font-medium hover:bg-gray-800 transition-colors duration-200"
               >
                 Try Again
               </button>
               <button
                 onClick={this.handleReload}
-                className="flex-1 bg-gray-200 text-gray-900 px-4 py-2 rounded text-sm font-medium hover:bg-gray-300 transition-colors"
+                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded font-medium hover:bg-gray-300 transition-colors duration-200"
               >
                 Reload Page
               </button>

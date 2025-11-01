@@ -60,6 +60,17 @@ export const usersAPI = {
     apiClient.get('/users/purchased-leads', { params: { page, limit } }),
   updateLeadNote: (leadId: string, note: string) =>
     apiClient.put(`/users/leads/${leadId}/note`, { note }),
+  updateBillingAddress: (data: {
+    firstName: string;
+    lastName: string;
+    companyName?: string;
+    isCompany?: boolean;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zip: string;
+  }) => apiClient.put('/users/billing-address', data),
 };
 
 // Leads API
@@ -67,6 +78,9 @@ export const leadsAPI = {
   getLeads: (params?: any) => apiClient.get('/leads', { params }),
   getLead: (id: string) => apiClient.get(`/leads/${id}`),
   purchaseLead: (id: string) => apiClient.post(`/leads/${id}/purchase`),
+  getFavorites: () => apiClient.get('/leads/favorites/list'),
+  addFavorite: (leadId: string) => apiClient.post(`/leads/${leadId}/favorite`),
+  removeFavorite: (leadId: string) => apiClient.delete(`/leads/${leadId}/favorite`),
 };
 
 // Payments API

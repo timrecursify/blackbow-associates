@@ -338,26 +338,26 @@ export const MarketplacePage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="font-handwritten text-4xl sm:text-5xl md:text-6xl text-black mb-2">Lead Marketplace</h1>
-          <p className="text-sm sm:text-base text-gray-600">Browse and purchase wedding leads</p>
+          <h1 className="font-handwritten text-4xl sm:text-5xl md:text-6xl text-black transition-colors duration-200">Lead Marketplace</h1>
+          <p className="text-sm sm:text-base text-gray-600 transition-colors duration-200">Browse and purchase wedding leads</p>
         </div>
 
         {/* Mobile: Search Bar First */}
         <div className="block sm:hidden mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors duration-200" size={18} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search leads..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-base text-black placeholder-gray-400 focus:outline-none focus:border-black focus:bg-white transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 text-black outline-none focus:border-black transition-all"
             />
           </div>
         </div>
 
         {/* Toolbar - Desktop Layout */}
-        <div className="hidden sm:flex items-center justify-between gap-4 pb-4 border-b border-gray-200 mb-6">
+        <div className="hidden sm:flex items-center justify-between gap-4 pb-4 border-b border-gray-200 transition-colors duration-200">
           {/* Search */}
           <div className="flex-1 max-w-md">
             <div className="relative">
@@ -367,7 +367,7 @@ export const MarketplacePage: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search leads..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded text-sm text-black placeholder-gray-400 focus:outline-none focus:border-black focus:bg-white transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 text-black outline-none focus:border-black focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -375,27 +375,27 @@ export const MarketplacePage: React.FC = () => {
           {/* Controls Row */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* View Switcher */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
+            <div className="flex items-center gap-1 bg-gray-100 transition-colors duration-200">
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 sm:p-2 rounded transition-all ${viewMode === 'table' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+                className={`p-1.5 sm:p-2 rounded transition-all ${viewMode === 'table' ? 'bg-white rounded-lg shadow-sm' : 'hover:bg-gray-200'}`}
                 title="Table view"
               >
-                <TableIcon size={16} className="sm:w-[18px] sm:h-[18px] text-gray-700" />
+                <TableIcon size={16} className="sm:w-[18px] sm:h-[18px] text-gray-700 transition-colors duration-200" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 sm:p-2 rounded transition-all ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+                className={`p-1.5 sm:p-2 rounded transition-all ${viewMode === 'list' ? 'bg-white rounded-lg shadow-sm' : 'hover:bg-gray-200'}`}
                 title="List view"
               >
-                <List size={16} className="sm:w-[18px] sm:h-[18px] text-gray-700" />
+                <List size={16} className="sm:w-[18px] sm:h-[18px] text-gray-700 transition-colors duration-200" />
               </button>
               <button
                 onClick={() => setViewMode('card')}
-                className={`p-1.5 sm:p-2 rounded transition-all ${viewMode === 'card' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+                className={`p-1.5 sm:p-2 rounded transition-all ${viewMode === 'card' ? 'bg-white rounded-lg shadow-sm' : 'hover:bg-gray-200'}`}
                 title="Card view"
               >
-                <Grid size={16} className="sm:w-[18px] sm:h-[18px] text-gray-700" />
+                <Grid size={16} className="sm:w-[18px] sm:h-[18px] text-gray-700 transition-colors duration-200" />
               </button>
             </div>
 
@@ -404,7 +404,7 @@ export const MarketplacePage: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="pl-2.5 sm:pl-3 pr-7 sm:pr-8 py-2 bg-gray-50 border border-gray-200 rounded text-xs sm:text-sm text-black focus:outline-none focus:border-black appearance-none"
+                className="pl-2.5 sm:pl-3 pr-7 sm:pr-8 py-2 bg-gray-50 text-sm text-black outline-none focus:border-black appearance-none transition-colors duration-200"
               >
                 <option value="newest">Newest</option>
                 <option value="date">Date</option>
@@ -429,24 +429,24 @@ export const MarketplacePage: React.FC = () => {
         <div className="block sm:hidden mb-4 pb-4 border-b border-gray-200">
           <div className="flex flex-col gap-3">
             {/* View Switcher - Full width on mobile */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded p-1 w-full">
+            <div className="flex items-center gap-1 bg-gray-100 transition-colors duration-200">
               <button
                 onClick={() => setViewMode('table')}
-                className={`flex-1 p-2.5 rounded transition-all min-h-[44px] flex items-center justify-center ${viewMode === 'table' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+                className={`flex-1 p-2.5 rounded transition-all min-h-[44px] flex items-center justify-center ${viewMode === 'table' ? 'bg-white rounded-lg shadow-sm' : 'hover:bg-gray-200'}`}
                 title="Table view"
               >
                 <TableIcon size={20} className="text-gray-700" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`flex-1 p-2.5 rounded transition-all min-h-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+                className={`flex-1 p-2.5 rounded transition-all min-h-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-white rounded-lg shadow-sm' : 'hover:bg-gray-200'}`}
                 title="List view"
               >
                 <List size={20} className="text-gray-700" />
               </button>
               <button
                 onClick={() => setViewMode('card')}
-                className={`flex-1 p-2.5 rounded transition-all min-h-[44px] flex items-center justify-center ${viewMode === 'card' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+                className={`flex-1 p-2.5 rounded transition-all min-h-[44px] flex items-center justify-center ${viewMode === 'card' ? 'bg-white rounded-lg shadow-sm' : 'hover:bg-gray-200'}`}
                 title="Card view"
               >
                 <Grid size={20} className="text-gray-700" />
@@ -471,7 +471,7 @@ export const MarketplacePage: React.FC = () => {
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded text-sm text-black hover:bg-gray-100 transition-all min-h-[44px] whitespace-nowrap"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 text-black transition-all min-h-[44px] whitespace-nowrap"
               >
                 <SlidersHorizontal size={18} />
                 <span>Filter</span>
@@ -482,15 +482,15 @@ export const MarketplacePage: React.FC = () => {
 
         {/* Filters */}
         {showFilters && (
-          <div className="mb-4 sm:mb-6 p-5 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg overflow-x-auto">
+          <div className="mb-4 sm:mb-6 p-5 sm:p-5 bg-gray-50 transition-colors duration-200">
             {/* Favorites Only Toggle */}
-            <div className="mb-5 pb-5 border-b border-gray-200">
+            <div className="mb-5 pb-5 border-b border-gray-200 transition-colors duration-200">
               <button
                 onClick={() => setFavoritesOnly(!favoritesOnly)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all ${
                   favoritesOnly
-                    ? 'bg-black text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-400'
+                    ? 'bg-black'
+                    : 'bg-white'
                 }`}
               >
                 <Star
@@ -503,7 +503,7 @@ export const MarketplacePage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 min-w-0">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">State</p>
+                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">State</p>
                 <div className="flex flex-wrap gap-2">
                   {getUniqueStates().map(state => (
                     <button
@@ -513,8 +513,8 @@ export const MarketplacePage: React.FC = () => {
                       )}
                       className={`px-3 py-2 text-sm font-medium border rounded transition-all whitespace-nowrap min-h-[40px] ${
                         selectedStates.includes(state!)
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                          ? 'bg-black'
+                          : 'bg-white'
                       }`}
                     >
                       {state}
@@ -523,7 +523,7 @@ export const MarketplacePage: React.FC = () => {
                 </div>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Services</p>
+                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Services</p>
                 <div className="flex flex-wrap gap-2">
                   {getUniqueServices().map(service => (
                     <button
@@ -533,8 +533,8 @@ export const MarketplacePage: React.FC = () => {
                       )}
                       className={`px-3 py-2 text-sm font-medium border rounded transition-all whitespace-nowrap min-h-[40px] ${
                         selectedServices.includes(service)
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                          ? 'bg-black'
+                          : 'bg-white'
                       }`}
                     >
                       {service}
@@ -548,10 +548,10 @@ export const MarketplacePage: React.FC = () => {
 
         {/* Results count and Bulk Actions */}
         <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="text-xs sm:text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600 transition-colors duration-200">
             {filteredLeads.length} {filteredLeads.length === 1 ? 'lead' : 'leads'}
             {selectedLeadIds.size > 0 && (
-              <span className="ml-2 text-black font-medium">
+              <span className="ml-2 text-black transition-colors duration-200">
                 ({selectedLeadIds.size} selected)
               </span>
             )}
@@ -561,7 +561,7 @@ export const MarketplacePage: React.FC = () => {
             <button
               onClick={handleBulkPurchase}
               disabled={bulkPurchasing}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+              className="flex items-center gap-2 px-4 py-2 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
             >
               <ShoppingCart size={18} />
               {bulkPurchasing ? (
@@ -575,11 +575,11 @@ export const MarketplacePage: React.FC = () => {
 
         {/* Table View */}
         {viewMode === 'table' && (
-          <div className="border border-gray-200 rounded overflow-x-auto">
+          <div className="border border-gray-200 transition-colors duration-200">
             <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-12">
+                <tr className="bg-gray-50 transition-colors duration-200">
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-12 transition-colors duration-200">
                     <input
                       type="checkbox"
                       checked={filteredLeads.length > 0 && filteredLeads.every(lead => selectedLeadIds.has(lead.id))}
@@ -590,20 +590,20 @@ export const MarketplacePage: React.FC = () => {
                           setSelectedLeadIds(new Set());
                         }
                       }}
-                      className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black cursor-pointer"
+                      className="w-4 h-4 text-black focus:ring-black cursor-pointer transition-colors duration-200"
                     />
                   </th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-12"></th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-20 sm:w-24 hidden sm:table-cell">ID</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Wedding Date</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden sm:table-cell">Submitted</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Services</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-20 sm:w-24">Action</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-12 transition-colors duration-200"></th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-20 sm:w-24 hidden sm:table-cell transition-colors duration-200">ID</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Wedding Date</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden sm:table-cell transition-colors duration-200">Submitted</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Location</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Services</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Price</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-20 sm:w-24 transition-colors duration-200">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 transition-colors duration-200">
                 {filteredLeads.map((lead) => (
                   <React.Fragment key={lead.id}>
                     <tr className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}>
@@ -612,13 +612,13 @@ export const MarketplacePage: React.FC = () => {
                           type="checkbox"
                           checked={selectedLeadIds.has(lead.id)}
                           onChange={() => handleToggleSelect(lead.id)}
-                          className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black cursor-pointer"
+                          className="w-4 h-4 text-black focus:ring-black cursor-pointer transition-colors duration-200"
                         />
                       </td>
                       <td className="px-2 py-2 sm:py-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => toggleFavorite(lead.id, lead.isFavorited || false)}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          className="p-1 hover:bg-gray-100 transition-colors"
                           title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                         >
                           <Star
@@ -627,23 +627,23 @@ export const MarketplacePage: React.FC = () => {
                           />
                         </button>
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 font-mono hidden sm:table-cell">
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 hidden sm:table-cell transition-colors duration-200">
                         {lead.id.substring(0, 8)}
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-black whitespace-nowrap">
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-blackspace-nowrap transition-colors duration-200">
                         <div className="flex items-center gap-2">
                           {formatDate(lead.weddingDate)}
                           {lead.tags?.includes('NEW') && (
-                            <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-300 rounded-full">
+                            <span className="px-2 py-0.5 text-xs font-bold bg-green-100 transition-colors duration-200">
                               NEW
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 hidden sm:table-cell">{formatDate(lead.createdAt)}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 sm:table-cell transition-colors duration-200">{formatDate(lead.createdAt)}</td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
-                        <div className="text-xs sm:text-sm text-black">{lead.city || lead.location}</div>
-                        {lead.state && <div className="text-xs text-gray-500">{lead.state}</div>}
+                        <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
+                        {lead.state && <div className="text-xs text-gray-500 transition-colors duration-200">{lead.state}</div>}
                       </td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
                         <div className="flex flex-wrap gap-1">
@@ -653,16 +653,16 @@ export const MarketplacePage: React.FC = () => {
                             </span>
                           ))}
                           {lead.servicesNeeded.length > 2 && (
-                            <span className="px-1.5 sm:px-2 py-0.5 text-xs text-gray-500">+{lead.servicesNeeded.length - 2}</span>
+                            <span className="px-1.5 sm:px-2 py-0.5 text-xs text-gray-500 transition-colors duration-200">+{lead.servicesNeeded.length - 2}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-black">${lead.price.toFixed(2)}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-black transition-colors duration-200">${lead.price.toFixed(2)}</td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3 text-right">
                         {purchasing === lead.id ? (
                           <button
                             disabled
-                            className="px-3 sm:px-4 py-1 sm:py-1.5 bg-gray-400 text-white text-xs sm:text-sm font-medium rounded disabled:bg-gray-400 whitespace-nowrap"
+                            className="px-3 sm:px-4 py-1 sm:py-1.5 bg-gray-400 text-white sm:text-sm font-medium rounded disabled:bg-gray-400 whitespace-nowrap transition-colors duration-200"
                           >
                             Buying...
                           </button>
@@ -672,7 +672,7 @@ export const MarketplacePage: React.FC = () => {
                               e.stopPropagation();
                               handleBuyClick(lead);
                             }}
-                            className="px-3 sm:px-4 py-1 sm:py-1.5 bg-black text-white text-xs sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
+                            className="px-3 sm:px-4 py-1 sm:py-1.5 bg-black text-white sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
                           >
                             Buy
                           </button>
@@ -681,12 +681,12 @@ export const MarketplacePage: React.FC = () => {
                     </tr>
                     {expandedLead === lead.id && lead.description && (
                       <tr>
-                        <td colSpan={8} className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
+                        <td colSpan={8} className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-50 transition-colors duration-200">
                           <div className="flex items-start gap-2">
-                            <ChevronRight size={14} className="sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <ChevronRight size={14} className="sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 transition-colors duration-200" />
                             <div>
-                              <p className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Package Description</p>
-                              <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">{lead.description}</p>
+                              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Package Description</p>
+                              <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap transition-colors duration-200">{lead.description}</p>
                             </div>
                           </div>
                         </td>
@@ -703,18 +703,18 @@ export const MarketplacePage: React.FC = () => {
         {viewMode === 'list' && (
           <div className="space-y-2">
             {filteredLeads.map((lead) => (
-              <div key={lead.id} className="p-3 sm:p-4 bg-white border border-gray-200 rounded hover:border-gray-400 transition-all">
+              <div key={lead.id} className="p-3 sm:p-4 bg-white rounded-lg transition-all">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
                     <input
                       type="checkbox"
                       checked={selectedLeadIds.has(lead.id)}
                       onChange={() => handleToggleSelect(lead.id)}
-                      className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black cursor-pointer mt-1"
+                      className="w-4 h-4 text-black sm:ring-blacks:ring-white cursor-pointer mt-1 transition-colors duration-200"
                     />
                     <button
                       onClick={() => toggleFavorite(lead.id, lead.isFavorited || false)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      className="p-1 hover:bg-gray-100 transition-colors"
                       title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                     >
                       <Star
@@ -722,16 +722,16 @@ export const MarketplacePage: React.FC = () => {
                         className={`${lead.isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'} transition-colors`}
                       />
                     </button>
-                    <div className="text-xs text-gray-500 font-mono">{lead.id.substring(0, 8)}</div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-black">
+                    <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-black transition-colors duration-200">
                       {formatDate(lead.weddingDate)}
                       {lead.tags?.includes('NEW') && (
-                        <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-300 rounded-full">
+                        <span className="px-2 py-0.5 text-xs font-bold bg-green-100sition-colors duration-200">
                           NEW
                         </span>
                       )}
                     </div>
-                    <div className="text-xs sm:text-sm text-black truncate">{lead.city || lead.location}</div>
+                    <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
                     <div className="flex flex-wrap gap-1">
                       {lead.servicesNeeded.map((service, i) => (
                         <span key={i} className={`px-1.5 sm:px-2 py-0.5 text-xs font-medium border rounded ${getServiceColor(service)}`}>
@@ -741,18 +741,18 @@ export const MarketplacePage: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <span className="text-sm font-semibold text-black">${lead.price.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-black transition-colors duration-200">${lead.price.toFixed(2)}</span>
                     {purchasing === lead.id ? (
                       <button
                         disabled
-                        className="px-3 sm:px-4 py-1.5 bg-gray-400 text-white text-xs sm:text-sm font-medium rounded disabled:bg-gray-400 whitespace-nowrap"
+                        className="px-3 sm:px-4 py-1.5 bg-gray-400 text-white sm:text-sm font-medium rounded disabled:bg-gray-400 whitespace-nowrap transition-colors duration-200"
                       >
                         Buying...
                       </button>
                     ) : (
                       <button
                         onClick={() => handleBuyClick(lead)}
-                        className="px-3 sm:px-4 py-1.5 bg-black text-white text-xs sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
+                        className="px-3 sm:px-4 py-1.5 bg-black text-white sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
                       >
                         Buy
                       </button>
@@ -767,20 +767,20 @@ export const MarketplacePage: React.FC = () => {
         {viewMode === 'card' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredLeads.map((lead) => (
-              <div key={lead.id} className="p-3 sm:p-4 bg-white border border-gray-200 rounded hover:border-gray-400 transition-all">
+              <div key={lead.id} className="p-3 sm:p-4 bg-white rounded-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={selectedLeadIds.has(lead.id)}
                       onChange={() => handleToggleSelect(lead.id)}
-                      className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black cursor-pointer"
+                      className="w-4 h-4 text-black focus:ring-black cursor-pointer transition-colors duration-200"
                     />
-                    <div className="text-xs text-gray-500 font-mono">{lead.id.substring(0, 8)}</div>
+                    <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
                   </div>
                   <button
                     onClick={() => toggleFavorite(lead.id, lead.isFavorited || false)}
-                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    className="p-1 hover:bg-gray-100 transition-colors"
                     title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                   >
                     <Star
@@ -789,7 +789,7 @@ export const MarketplacePage: React.FC = () => {
                     />
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-black mb-1">
+                <div className="flex items-center gap-2 text-sm font-medium text-black transition-colors duration-200">
                   {formatDate(lead.weddingDate)}
                   {lead.tags?.includes('NEW') && (
                     <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-300 rounded-full">
@@ -829,7 +829,7 @@ export const MarketplacePage: React.FC = () => {
         )}
 
         {filteredLeads.length === 0 && !loading && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 transition-colors duration-200">
             No leads found matching your criteria.
           </div>
         )}
@@ -839,14 +839,14 @@ export const MarketplacePage: React.FC = () => {
           <div className="mt-6 sm:mt-8 pt-4 border-t border-gray-200">
             {/* Mobile Layout - Stacked */}
             <div className="flex flex-col gap-4 sm:hidden">
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-gray-600 transition-colors duration-200">
                 Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
               </div>
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1 || loading}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white min-h-[44px] flex items-center justify-center"
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white min-h-[44px] flex items-center justify-center"
                 >
                   Previous
                 </button>
@@ -872,8 +872,8 @@ export const MarketplacePage: React.FC = () => {
                         disabled={loading}
                         className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] flex items-center justify-center ${
                           currentPage === pageNum
-                            ? 'bg-black text-white'
-                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                            ? 'bg-black'
+                            : 'text-gray-700'
                         }`}
                       >
                         {pageNum}
@@ -885,7 +885,7 @@ export const MarketplacePage: React.FC = () => {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
                   disabled={currentPage === pagination.totalPages || loading}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white min-h-[44px] flex items-center justify-center"
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white min-h-[44px] flex items-center justify-center"
                 >
                   Next
                 </button>
@@ -894,14 +894,14 @@ export const MarketplacePage: React.FC = () => {
 
             {/* Desktop Layout - Horizontal */}
             <div className="hidden sm:flex flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 transition-colors duration-200">
                 Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total leads)
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1 || loading}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                 >
                   Previous
                 </button>
@@ -927,8 +927,8 @@ export const MarketplacePage: React.FC = () => {
                         disabled={loading}
                         className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           currentPage === pageNum
-                            ? 'bg-black text-white'
-                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                            ? 'bg-black'
+                            : 'text-gray-700'
                         }`}
                       >
                         {pageNum}
@@ -940,7 +940,7 @@ export const MarketplacePage: React.FC = () => {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
                   disabled={currentPage === pagination.totalPages || loading}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
                 >
                   Next
                 </button>
@@ -953,7 +953,7 @@ export const MarketplacePage: React.FC = () => {
       {/* Confirmation Modal */}
       {showConfirmModal && selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
             {/* Close Button */}
             <button
               onClick={() => {
@@ -961,45 +961,45 @@ export const MarketplacePage: React.FC = () => {
                 setSelectedLead(null);
               }}
               disabled={purchasing === selectedLead.id}
-              className="absolute top-4 right-4 text-gray-600 hover:text-black z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute top-4 right-4 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               aria-label="Close"
             >
               <X size={24} />
             </button>
 
             {/* Header */}
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Confirm Purchase</h2>
-            <p className="text-sm text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 transition-colors duration-200">Confirm Purchase</h2>
+            <p className="text-sm text-gray-600 transition-colors duration-200">
               Are you sure you want to purchase this lead for <span className="font-bold text-black">${selectedLead.price.toFixed(2)}</span>?
             </p>
 
             {/* Lead Details */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-2 text-sm">
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-2 text-sm transition-colors duration-200">
               <div><span className="text-gray-600">Wedding Date:</span> <span className="font-medium text-black">{formatDate(selectedLead.weddingDate)}</span></div>
               <div><span className="text-gray-600">Location:</span> <span className="font-medium text-black">{selectedLead.location}</span></div>
               <div><span className="text-gray-600">Services:</span> <span className="font-medium text-black">{selectedLead.servicesNeeded.join(', ')}</span></div>
             </div>
 
-            <p className="text-xs text-gray-600 mb-6">
-              After purchase, you can view this lead in your <button onClick={() => { setShowConfirmModal(false); navigate('/account'); window.history.replaceState(null, '', '/account?tab=leads'); }} className="text-black font-medium underline">Account page</button>.
+            <p className="text-xs text-gray-600 transition-colors duration-200">
+              After purchase, you can view this lead in your <button onClick={() => { setShowConfirmModal(false); navigate('/account'); window.history.replaceState(null, '', '/account?tab=leads'); }} className="text-black">Account page</button>.
             </p>
 
             {/* Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <button
                 onClick={() => {
                   setShowConfirmModal(false);
                   setSelectedLead(null);
                 }}
                 disabled={purchasing === selectedLead.id}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmPurchase}
                 disabled={purchasing === selectedLead.id}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {purchasing === selectedLead.id ? (
                   <>

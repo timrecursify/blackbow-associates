@@ -35,7 +35,8 @@ export const LeadDetailsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await leadsAPI.getLead(leadId);
-      setLead(response.data);
+      // API returns { success: true, lead: {...} }
+      setLead(response.data.lead || response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch lead details');
     } finally {
@@ -45,10 +46,10 @@ export const LeadDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 transition-colors duration-200">
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-gray-700 text-lg">Loading lead details...</p>
+          <p className="text-gray-700 transition-colors duration-200">Loading lead details...</p>
         </div>
       </div>
     );
@@ -56,11 +57,11 @@ export const LeadDetailsPage: React.FC = () => {
 
   if (error || !lead) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 transition-colors duration-200">
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg border border-red-200 p-8 text-center">
-            <p className="text-red-800 text-lg mb-4">{error || 'Lead not found'}</p>
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
+            <p className="text-red-800 transition-colors duration-200">{error || 'Lead not found'}</p>
             <Link
               to="/account"
               className="inline-flex items-center space-x-2 text-black hover:text-gray-700 font-medium"
@@ -77,14 +78,14 @@ export const LeadDetailsPage: React.FC = () => {
   const info = lead.fullInfo || lead.maskedInfo || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50sition-colors duration-200">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
         <Link
           to="/account"
-          className="inline-flex items-center space-x-2 text-gray-700 hover:text-black font-medium mb-6"
+          className="inline-flex items-center space-x-2 text-gray-700 transition-colors duration-200"
         >
           <ArrowLeft size={18} />
           <span>Back to My Leads</span>
@@ -92,41 +93,41 @@ export const LeadDetailsPage: React.FC = () => {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-handwritten text-4xl md:text-5xl text-black mb-2">Lead Details</h1>
+          <h1 className="font-handwritten text-4xl md:text-5xl text-black transition-colors duration-200">Lead Details</h1>
           {lead.status === 'SOLD' ? (
-            <p className="text-gray-700 text-lg">Full contact information revealed</p>
+            <p className="text-gray-700 transition-colors duration-200">Full contact information revealed</p>
           ) : (
-            <p className="text-gray-700 text-lg">Preview information (purchase to see full details)</p>
+            <p className="text-gray-700 transition-colors duration-200">Preview information (purchase to see full details)</p>
           )}
         </div>
 
         {/* Lead Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200space-y-6 transition-colors duration-200">
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-start space-x-3">
-              <Calendar size={20} className="text-gray-600 mt-0.5" />
+              <Calendar size={20} className="text-gray-600 transition-colors duration-200" />
               <div>
-                <p className="text-sm text-gray-600 font-medium">Wedding Date</p>
-                <p className="text-lg text-gray-900 font-bold">
+                <p className="text-sm text-gray-600 transition-colors duration-200">Wedding Date</p>
+                <p className="text-lg text-gray-900 transition-colors duration-200">
                   {lead.weddingDate ? format(new Date(lead.weddingDate), 'MMMM dd, yyyy') : 'TBD'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
-              <MapPin size={20} className="text-gray-600 mt-0.5" />
+              <MapPin size={20} className="text-gray-600 transition-colors duration-200" />
               <div>
-                <p className="text-sm text-gray-600 font-medium">Location</p>
-                <p className="text-lg text-gray-900 font-bold">{lead.location}</p>
+                <p className="text-sm text-gray-600 transition-colors duration-200">Location</p>
+                <p className="text-lg text-gray-900 transition-colors duration-200">{lead.location}</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
-              <DollarSign size={20} className="text-gray-600 mt-0.5" />
+              <DollarSign size={20} className="text-gray-600 transition-colors duration-200" />
               <div>
-                <p className="text-sm text-gray-600 font-medium">Budget</p>
-                <p className="text-lg text-gray-900 font-bold">
+                <p className="text-sm text-gray-600 transition-colors duration-200">Budget</p>
+                <p className="text-lg text-gray-900 transition-colors duration-200">
                   {lead.budgetMin && lead.budgetMax
                     ? `$${lead.budgetMin.toLocaleString()} - $${lead.budgetMax.toLocaleString()}`
                     : 'Not specified'}
@@ -135,10 +136,10 @@ export const LeadDetailsPage: React.FC = () => {
             </div>
 
             <div className="flex items-start space-x-3">
-              <Briefcase size={20} className="text-gray-600 mt-0.5" />
+              <Briefcase size={20} className="text-gray-600 transition-colors duration-200" />
               <div>
-                <p className="text-sm text-gray-600 font-medium">Services Needed</p>
-                <p className="text-lg text-gray-900 font-bold">
+                <p className="text-sm text-gray-600 transition-colors duration-200">Services Needed</p>
+                <p className="text-lg text-gray-900 transition-colors duration-200">
                   {lead.servicesNeeded.join(', ') || 'Not specified'}
                 </p>
               </div>
@@ -147,28 +148,28 @@ export const LeadDetailsPage: React.FC = () => {
 
           {/* Contact Information (if purchased) */}
           {lead.status === 'SOLD' && lead.fullInfo && (
-            <>
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h2>
+            <>  
+              <div className="border-t border-gray-200sition-colors duration-200">
+                <h2 className="text-xl font-bold text-gray-900 transition-colors duration-200">Contact Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {info.coupleName && (
                     <div className="flex items-start space-x-3">
-                      <User size={20} className="text-gray-600 mt-0.5" />
+                      <User size={20} className="text-gray-600 transition-colors duration-200" />
                       <div>
-                        <p className="text-sm text-gray-600 font-medium">Couple</p>
-                        <p className="text-lg text-gray-900 font-bold">{info.coupleName}</p>
+                        <p className="text-sm text-gray-600 transition-colors duration-200">Couple</p>
+                        <p className="text-lg text-gray-900 transition-colors duration-200">{info.coupleName}</p>
                       </div>
                     </div>
                   )}
 
                   {info.email && (
                     <div className="flex items-start space-x-3">
-                      <Mail size={20} className="text-gray-600 mt-0.5" />
+                      <Mail size={20} className="text-gray-600 transition-colors duration-200" />
                       <div>
-                        <p className="text-sm text-gray-600 font-medium">Email</p>
+                        <p className="text-sm text-gray-600 transition-colors duration-200">Email</p>
                         <a
                           href={`mailto:${info.email}`}
-                          className="text-lg text-blue-600 hover:text-blue-800 font-bold"
+                          className="text-lg text-blue-600 transition-colors duration-200"
                         >
                           {info.email}
                         </a>
@@ -178,12 +179,12 @@ export const LeadDetailsPage: React.FC = () => {
 
                   {info.phone && (
                     <div className="flex items-start space-x-3">
-                      <Phone size={20} className="text-gray-600 mt-0.5" />
+                      <Phone size={20} className="text-gray-600 transition-colors duration-200" />
                       <div>
-                        <p className="text-sm text-gray-600 font-medium">Phone</p>
+                        <p className="text-sm text-gray-600 transition-colors duration-200">Phone</p>
                         <a
                           href={`tel:${info.phone}`}
-                          className="text-lg text-blue-600 hover:text-blue-800 font-bold"
+                          className="text-lg text-blue-600 transition-colors duration-200"
                         >
                           {info.phone}
                         </a>
@@ -195,9 +196,9 @@ export const LeadDetailsPage: React.FC = () => {
 
               {/* Additional Details */}
               {info.notes && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">Additional Notes</h2>
-                  <p className="text-gray-800 whitespace-pre-wrap">{info.notes}</p>
+                <div className="border-t border-gray-200 transition-colors duration-200">
+                  <h2 className="text-xl font-bold text-gray-900 transition-colors duration-200">Additional Notes</h2>
+                  <p className="text-gray-800 whitespace-pre-wrap transition-colors duration-200">{info.notes}</p>
                 </div>
               )}
             </>

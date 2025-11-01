@@ -5,6 +5,141 @@ All notable changes to the BlackBow Associates project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2025-11-01 (Minor UI/UX Fixes)
+
+### Fixed - User Interface Issues
+- **Homepage Footer**
+  - Fixed copyright symbol displaying as "?" instead of "©"
+  - Updated both mobile and desktop footer copyright text
+
+- **Homepage Sign Up Button**
+  - Added rounded corners (`rounded-lg`) to match other buttons
+  - Improved visual consistency across the landing page
+
+- **Authentication Pages (Sign In & Sign Up)**
+  - Fixed "Or continue with" text styling
+  - Removed excessive classes (was using card container classes)
+  - Applied proper text styling with gray color
+
+- **Modal Styling Improvements**
+  - Buy Leads modal: Added rounded corners to buttons, fixed spacing
+  - Buy Leads in Bulk modal: Added rounded corners to buttons, improved spacing
+  - Both modals: Enhanced button styling with background colors and hover states
+  - Fixed lead details card in purchase modal (added rounded corners and proper spacing)
+
+### Changed - UI Consistency
+- All buttons now have consistent rounded corners across the application
+- Modal buttons now have proper background colors (gray for cancel, black for confirm)
+- Improved visual hierarchy in confirmation modals
+
+## [1.3.1] - 2025-11-01 (Emergency Fix - Styling & Auth Service)
+
+### Fixed - Critical Production Issues
+- **Supabase Docker Containers Restored**
+  - All Supabase containers were stopped (~1 hour before fix)
+  - Restored Kong (port 8304), Auth, Database, and all dependent services
+  - Fixed docker-compose.yml boolean environment variables (true → "true")
+  - Removed unsupported `name:` field for docker-compose 1.29.2 compatibility
+  - Result: auth.blackbowassociates.com now responding (no more 502 Bad Gateway)
+
+- **Malformed Tailwind CSS Classes Removed**
+  - Fixed 28 instances of broken dark mode syntax across 5 files:
+    - CustomSignUpPage.tsx (4 fixes): Removed `blacks:`, `s:ring-2` malformed syntax
+    - AccountPage.tsx (12 fixes): Fixed input and textarea className patterns
+    - MarketplacePage.tsx (1 fix): Fixed search input styling
+    - OnboardingPage.tsx (3 fixes): Fixed location, vendor type, and about field styling
+    - CustomSignInPage.tsx: Already clean, no changes needed
+  - All form inputs now display proper borders, focus states, and responsive behavior
+  - Dark mode attempt completely removed per requirements (clean light mode only)
+
+### Added - Operational Improvements
+- **Supabase Health Monitoring Script**
+  - Created `/home/newadmin/scripts/monitor-supabase.sh`
+  - Monitors Kong on port 8304 every 5 minutes (ready for cron)
+  - Sends Telegram alerts via @desaas_monitor_S1_bot when service is down
+  - Alert cooldown: 30 minutes to prevent spam
+  - Logs to syslog for audit trail
+
+- **Systemd Service for Auto-Restart**
+  - Created `/tmp/blackbow-supabase.service` systemd unit file
+  - Ensures Supabase containers auto-start on VPS reboot
+  - Installation script: `/tmp/install-supabase-systemd.sh` (requires sudo)
+
+### Changed - Build & Deployment
+- Frontend rebuilt with zero TypeScript errors
+- Deployed via PM2 zero-downtime reload
+- All services verified healthy post-deployment
+
+### Technical Debt Addressed
+- Fixed docker-compose.yml to be compatible with docker-compose 1.29.2
+- Removed incomplete dark mode implementation that caused CSS breakage
+
+## [1.3.0] - 2025-10-31 (Session 5 - Phase 2 Features)
+
+### Added - Billing Address Collection
+- **2-Step Deposit Flow** with billing address collection before payment
+  - Step 1: Billing address form (firstName, lastName, addressLine1, addressLine2, city, state, ZIP)
+  - Step 2: Payment form (amount selection + card details)
+  - Step indicators and back button for smooth UX
+  - Backend endpoint: `PUT /api/users/billing-address` with full validation
+  - Client-side and server-side validation for ZIP code format (12345 or 12345-6789)
+  - Client-side and server-side validation for state code (2-letter format)
+  - All required fields validated before proceeding to payment step
+
+### Added - Star/Favorite Functionality
+- **Complete favorites system** across all marketplace views
+  - Backend endpoints:
+    - `POST /api/leads/:leadId/favorite` - Add lead to favorites
+    - `DELETE /api/leads/:leadId/favorite` - Remove from favorites
+    - `GET /api/leads/favorites/list` - Get all favorited leads
+  - Backend performance optimization:
+    - Added `isFavorited` flag to getLeads response (Set-based O(1) lookup)
+    - Single query fetches all user favorites upfront
+    - `favoritesOnly` query parameter for filtering marketplace view
+  - Frontend star icons in all 3 views:
+    - **Table view:** First column with clickable star
+    - **List view:** Star at beginning of row
+    - **Card view:** Star in top-right corner with ID
+  - Visual feedback: Yellow filled star for favorited, gray outlined for non-favorited
+  - "Favorites Only" filter button in filters panel
+  - Optimistic UI updates for instant feedback
+  - Event propagation handling to prevent row expansion when clicking star
+
+### Changed - Database Migration
+- **Migrated from local PostgreSQL to Supabase PostgreSQL**
+  - Source: Local PostgreSQL (port 5432)
+  - Destination: Supabase PostgreSQL in Docker (port 5433)
+  - Data migrated: 8 users, 36 leads, 23 transactions, 10 purchases
+  - 100% data integrity verified
+  - Migration method: Prisma-based migration script (safe, transactional)
+  - Legacy PostgreSQL service removed and uninstalled
+  - Port 5432 now available (freed)
+
+### Infrastructure
+- **Production deployment with zero downtime**
+  - Frontend build: 5.89s, zero errors, 563.95 KB bundle (156.13 KB gzipped)
+  - Backend reload: Successful (PM2 restart #18)
+  - Frontend reload: Successful (PM2 restart #18)
+  - All services: 🟢 Online, no errors in logs
+- **Documentation updates**
+  - VPS_INFRASTRUCTURE.md: Updated all database references from port 5432 to 5433
+  - PROJECT_STATUS.md: Added Session 4 and Session 5 details
+  - operations/emergency-procedures.md: Converted PostgreSQL commands to Docker-based
+
+### Technical Details
+- Utilized existing `UserLeadFavorite` Prisma model (junction table)
+- Composite unique key: `userId_leadId` for favorites relationship
+- Database schema already had billing address fields (no migration needed)
+- Validation rules:
+  - ZIP code regex: `/^\d{5}(-\d{4})?$/`
+  - State code: 2-letter uppercase format
+  - Address lengths: 5-100 chars (line 1), up to 100 chars (line 2)
+
+### Performance
+- Favorite lookup optimized with JavaScript Set (O(1) instead of O(n))
+- Single database query for all user favorites (no N+1 query problem)
+- Optimistic UI updates reduce perceived latency
+
 ## [1.2.0] - 2025-10-31
 
 ### Added

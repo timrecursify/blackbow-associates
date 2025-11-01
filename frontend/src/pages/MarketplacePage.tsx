@@ -872,8 +872,8 @@ export const MarketplacePage: React.FC = () => {
                         disabled={loading}
                         className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] flex items-center justify-center ${
                           currentPage === pageNum
-                            ? 'bg-black'
-                            : 'text-gray-700'
+                            ? 'bg-black text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         {pageNum}

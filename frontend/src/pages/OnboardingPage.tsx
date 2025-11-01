@@ -338,7 +338,7 @@ export const OnboardingPage: React.FC = () => {
                 <p className="mt-1 text-sm text-red-600 transition-colors duration-200">{errors.location}</p>
               )}
               {detectingLocation && (
-                <p className="mt-1 text-xs text-gray-500 transition-colors duration-200">?? Detecting your location automatically...</p>
+                <p className="mt-1 text-xs text-gray-500 transition-colors duration-200">📍 Detecting your location automatically...</p>
               )}
             </div>
 
@@ -348,7 +348,7 @@ export const OnboardingPage: React.FC = () => {
                 What services do you provide? <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400s-none z-10 transition-colors duration-200" size={20} />
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 transition-colors duration-200" size={20} />
                 <select
                   id="vendorType"
                   name="vendorType"

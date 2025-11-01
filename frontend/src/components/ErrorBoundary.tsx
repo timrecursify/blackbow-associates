@@ -272,13 +272,13 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex space-x-3">
               <button
                 onClick={this.handleRetry}
-                className="flex-1 bg-black text-white px-4 py-2 rounded font-medium hover:bg-gray-800 transition-colors duration-200"
+                className="flex-1 bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200"
               >
                 Try Again
               </button>
               <button
                 onClick={this.handleReload}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded font-medium hover:bg-gray-300 transition-colors duration-200"
+                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200"
               >
                 Reload Page
               </button>

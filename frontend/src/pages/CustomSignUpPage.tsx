@@ -121,7 +121,7 @@ export const CustomSignUpPage: React.FC = () => {
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="John"
                   disabled={loading}
                 />
@@ -142,7 +142,7 @@ export const CustomSignUpPage: React.FC = () => {
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="Doe"
                   disabled={loading}
                 />
@@ -163,7 +163,7 @@ export const CustomSignUpPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="you@example.com"
                   disabled={loading}
                 />
@@ -185,7 +185,7 @@ export const CustomSignUpPage: React.FC = () => {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="••••••••"
                   disabled={loading}
                 />

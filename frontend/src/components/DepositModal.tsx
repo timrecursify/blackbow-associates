@@ -291,7 +291,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
             setSuccess(false);
             onClose();
           }}
-          className="w-full px-4 py-2 bg-black text-white hover:bg-gray-800 transition-colors duration-200"
+          className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200"
         >
           Close
         </button>
@@ -318,7 +318,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         </div>
         <button
           onClick={onClose}
-          className="w-full px-4 py-2 bg-black text-white hover:bg-gray-800 transition-colors duration-200"
+          className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200"
         >
           Close
         </button>
@@ -432,7 +432,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         <button
           type="submit"
           disabled={!stripe || isProcessing}
-          className="flex-1 px-5 py-2.5 bg-black text-white disabled:bg-gray-400 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+          className="flex-1 px-5 py-2.5 bg-black text-white rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
         >
           {isProcessing ? (
             <span className="flex items-center justify-center gap-2">

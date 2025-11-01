@@ -95,7 +95,7 @@ const LandingPage: React.FC = () => {
             Professional Wedding Vendor Association
           </h2>
 
-          <p className="text-lg sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-10 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4 transition-colors duration-200">
+          <p className="text-base sm:text-base md:text-lg lg:text-xl text-gray-600 mb-10 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4 transition-colors duration-200">
             We connect premium wedding vendors with qualified couples. Get exclusive leads, grow your business,
             and only pay when you book. <strong className="text-black">Join free during our launch!</strong>
           </p>

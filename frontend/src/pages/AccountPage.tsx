@@ -233,7 +233,7 @@ export const AccountPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 transition-colors duration-200">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-8">
@@ -244,7 +244,7 @@ export const AccountPage: React.FC = () => {
         </div>
 
         {/* Balance Card */}
-        <div className="mb-5 sm:mb-8 p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-white shadow-sm transition-colors duration-200">
+        <div className="mb-5 sm:mb-8 p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm transition-colors duration-200">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm text-gray-600 transition-colors duration-200">Account Balance</p>
@@ -316,7 +316,7 @@ export const AccountPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Email</label>
-                  <p className="text-sm sm:text-base text-blacks transition-colors duration-200">{profile?.email}</p>
+                  <p className="text-sm sm:text-base text-black transition-colors duration-200">{profile?.email}</p>
                 </div>
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Business Name</label>
@@ -325,7 +325,7 @@ export const AccountPage: React.FC = () => {
                       type="text"
                       value={editForm.businessName}
                       onChange={(e) => setEditForm({ ...editForm, businessName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                       placeholder="Enter business name"
                     />
                   ) : (
@@ -339,7 +339,7 @@ export const AccountPage: React.FC = () => {
                       type="text"
                       value={editForm.vendorType}
                       onChange={(e) => setEditForm({ ...editForm, vendorType: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                       placeholder="e.g., Photographer, Videographer"
                     />
                   ) : (
@@ -451,7 +451,7 @@ export const AccountPage: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {/* Company/Individual Toggle */}
-                  <div className="flex items-center gap-4 p-4 bg-gray-50sition-colors duration-200">
+                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg transition-colors duration-200">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -473,7 +473,7 @@ export const AccountPage: React.FC = () => {
                         type="text"
                         value={billingForm.companyName}
                         onChange={(e) => setBillingForm({ ...billingForm, companyName: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                         placeholder="Acme Inc."
                       />
                     </div>
@@ -488,7 +488,7 @@ export const AccountPage: React.FC = () => {
                           type="text"
                           value={billingForm.firstName}
                           onChange={(e) => setBillingForm({ ...billingForm, firstName: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                           placeholder="John"
                         />
                       </div>
@@ -500,7 +500,7 @@ export const AccountPage: React.FC = () => {
                           type="text"
                           value={billingForm.lastName}
                           onChange={(e) => setBillingForm({ ...billingForm, lastName: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                           placeholder="Doe"
                         />
                       </div>
@@ -515,7 +515,7 @@ export const AccountPage: React.FC = () => {
                       type="text"
                       value={billingForm.addressLine1}
                       onChange={(e) => setBillingForm({ ...billingForm, addressLine1: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                       placeholder="123 Main St"
                     />
                   </div>
@@ -528,7 +528,7 @@ export const AccountPage: React.FC = () => {
                       type="text"
                       value={billingForm.addressLine2}
                       onChange={(e) => setBillingForm({ ...billingForm, addressLine2: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                       placeholder="Apt, suite, unit, etc."
                     />
                   </div>
@@ -542,7 +542,7 @@ export const AccountPage: React.FC = () => {
                         type="text"
                         value={billingForm.city}
                         onChange={(e) => setBillingForm({ ...billingForm, city: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                         placeholder="New York"
                       />
                     </div>
@@ -554,7 +554,7 @@ export const AccountPage: React.FC = () => {
                         type="text"
                         value={billingForm.state}
                         onChange={(e) => setBillingForm({ ...billingForm, state: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                         placeholder="NY"
                         maxLength={2}
                       />
@@ -567,7 +567,7 @@ export const AccountPage: React.FC = () => {
                         type="text"
                         value={billingForm.zip}
                         onChange={(e) => setBillingForm({ ...billingForm, zip: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg sm:text-base text-black outline-none focus:border-black focus:ring-2 focus:ring-black transition-colors duration-200"
                         placeholder="12345"
                       />
                     </div>
@@ -590,7 +590,7 @@ export const AccountPage: React.FC = () => {
                 {/* Mobile Card View */}
                 <div className="block sm:hidden space-y-3">
                   {transactions.map((transaction) => (
-                    <div key={transaction.id} className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
+                    <div key={transaction.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-colors duration-200">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -630,10 +630,10 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 {/* Desktop Table View */}
-                <div className="hidden sm:block bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
+                <div className="hidden sm:block bg-white rounded-lg shadow-sm border border-gray-200 transition-colors duration-200">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gray-50sition-colors duration-200">
+                      <tr className="bg-gray-50 transition-colors duration-200">
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Type</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Description</th>
@@ -642,9 +642,9 @@ export const AccountPage: React.FC = () => {
                         <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Balance</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100sition-colors duration-200">
+                    <tbody className="divide-y divide-gray-100 transition-colors duration-200">
                       {transactions.map((transaction) => (
-                        <tr key={transaction.id} className="hover:bg-gray-50sition-colors">
+                        <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-black transition-colors duration-200">
                             {format(new Date(transaction.createdAt), 'MMM dd, yyyy HH:mm')}
                           </td>
@@ -700,7 +700,7 @@ export const AccountPage: React.FC = () => {
                 <p className="text-sm sm:text-base text-gray-700 transition-colors duration-200">You haven't purchased any leads yet</p>
                 <Link
                   to="/marketplace"
-                  className="inline-flex items-center gap-2 bg-blacksm:px-6 py-2.5 sm:py-3 rounded hover:bg-gray-800sm sm:text-base font-medium transition-colors duration-200"
+                  className="inline-flex items-center gap-2 bg-black text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-gray-800 sm:text-base font-medium transition-colors duration-200"
                 >
                   Browse Marketplace
                   <ExternalLink size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -709,7 +709,7 @@ export const AccountPage: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {purchasedLeads.map((lead) => (
-                  <div key={lead.id} className="bg-white sm:p-6 transition-colors duration-200">
+                  <div key={lead.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 transition-colors duration-200">
                     {/* Mobile Layout */}
                     <div className="block sm:hidden space-y-3">
                       <div className="flex items-start justify-between">
@@ -736,7 +736,7 @@ export const AccountPage: React.FC = () => {
                         <p className="text-xs text-gray-500 transition-colors duration-200">Services Needed</p>
                         <div className="flex flex-wrap gap-1.5">
                           {lead.servicesNeeded.map((service, i) => (
-                            <span key={i} className="px-2 py-0.5 text-xs font-medium bg-blue-50sition-colors duration-200">
+                            <span key={i} className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded transition-colors duration-200">
                               {service}
                             </span>
                           ))}
@@ -744,13 +744,13 @@ export const AccountPage: React.FC = () => {
                       </div>
 
                       {lead.description && (
-                        <div className="pt-2 border-t border-gray-100sition-colors duration-200">
+                        <div className="pt-2 border-t border-gray-100 transition-colors duration-200">
                           <p className="text-xs text-gray-500 transition-colors duration-200">Description</p>
                           <p className="text-sm text-gray-700 transition-colors duration-200">{lead.description}</p>
                         </div>
                       )}
 
-                      <div className="pt-3 border-t border-gray-200sition-colors duration-200">
+                      <div className="pt-3 border-t border-gray-200 transition-colors duration-200">
                         <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Contact Information</p>
                         {lead.personName && (
                           <div className="mb-2">
@@ -773,7 +773,7 @@ export const AccountPage: React.FC = () => {
                       </div>
 
                       {/* Notes Section Mobile */}
-                      <div className="pt-3 border-t border-gray-200sition-colors duration-200">
+                      <div className="pt-3 border-t border-gray-200 transition-colors duration-200">
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2 transition-colors duration-200">
                             <FileText size={14} />
@@ -795,26 +795,26 @@ export const AccountPage: React.FC = () => {
                               onChange={(e) => setNoteText(e.target.value)}
                               rows={3}
                               placeholder="Add notes about this lead..."
-                              className="w-full px-3 py-2 border border-gray-200 text-black outline-none focus:border-black focus:ring-1 focus:ring-black resize-none transition-colors duration-200"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-black outline-none focus:border-black focus:ring-1 focus:ring-black resize-none transition-colors duration-200"
                             />
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleSaveNote(lead.leadId)}
                                 disabled={savingNote}
-                                className="flex-1 px-4 py-2 bg-blacksm rounded hover:bg-gray-800sabled:bg-gray-400sabled:bg-gray-600 font-medium transition-colors duration-200"
+                                className="flex-1 px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors duration-200"
                               >
                                 {savingNote ? 'Saving...' : 'Save'}
                               </button>
                               <button
                                 onClick={handleCancelNote}
-                                className="flex-1 px-4 py-2 bg-gray-100sm rounded hover:bg-gray-200sition-colors duration-200"
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors duration-200"
                               >
                                 Cancel
                               </button>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-700space-pre-wrap min-h-[2rem] transition-colors duration-200">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap min-h-[2rem] transition-colors duration-200">
                             {lead.notes || <span className="text-gray-400">No notes yet</span>}
                           </p>
                         )}
@@ -827,20 +827,20 @@ export const AccountPage: React.FC = () => {
                         {/* Lead Info */}
                         <div className="space-y-3">
                           <div>
-                            <p className="text-xs text-gray-600semibold uppercase tracking-wide mb-1 transition-colors duration-200">Wedding Date</p>
+                            <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1 transition-colors duration-200">Wedding Date</p>
                             <p className="text-sm text-black transition-colors duration-200">
                               {lead.weddingDate ? format(new Date(lead.weddingDate), 'MMMM dd, yyyy') : 'TBD'}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600semibold uppercase tracking-wide mb-1 transition-colors duration-200">Location</p>
+                            <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1 transition-colors duration-200">Location</p>
                             <p className="text-sm text-black transition-colors duration-200">{lead.city && lead.state ? `${lead.city}, ${lead.state}` : lead.location}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600semibold uppercase tracking-wide mb-1 transition-colors duration-200">Services</p>
+                            <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1 transition-colors duration-200">Services</p>
                             <div className="flex flex-wrap gap-1">
                               {lead.servicesNeeded.map((service, i) => (
-                                <span key={i} className="px-2 py-0.5 text-xs font-medium bg-blue-50sition-colors duration-200">
+                                <span key={i} className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded transition-colors duration-200">
                                   {service}
                                 </span>
                               ))}
@@ -848,14 +848,14 @@ export const AccountPage: React.FC = () => {
                           </div>
                           {lead.description && (
                             <div>
-                              <p className="text-xs text-gray-600semibold uppercase tracking-wide mb-1 transition-colors duration-200">Package Description</p>
+                              <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1 transition-colors duration-200">Package Description</p>
                               <p className="text-sm text-gray-700 transition-colors duration-200">{lead.description}</p>
                             </div>
                           )}
                         </div>
 
                         {/* Contact Info */}
-                        <div className="space-y-3 bg-gray-50sition-colors duration-200">
+                        <div className="space-y-3 bg-gray-50 rounded-lg p-4 transition-colors duration-200">
                           <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Contact Information</h3>
                           {lead.personName && (
                             <div>
@@ -875,7 +875,7 @@ export const AccountPage: React.FC = () => {
                               <a href={`tel:${lead.phone}`} className="text-sm text-blue-600 transition-colors duration-200">{lead.phone}</a>
                             </div>
                           )}
-                          <div className="pt-3 border-t border-gray-200sition-colors duration-200">
+                          <div className="pt-3 border-t border-gray-200 transition-colors duration-200">
                             <p className="text-xs text-gray-600 transition-colors duration-200">Purchased On</p>
                             <p className="text-sm text-black transition-colors duration-200">{format(new Date(lead.purchasedAt), 'MMM dd, yyyy HH:mm')}</p>
                           </div>
@@ -883,7 +883,7 @@ export const AccountPage: React.FC = () => {
                       </div>
 
                       {/* Notes Section Desktop */}
-                      <div className="mt-4 pt-4 border-t border-gray-200sition-colors duration-200">
+                      <div className="mt-4 pt-4 border-t border-gray-200 transition-colors duration-200">
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2 transition-colors duration-200">
                             <FileText size={14} />
@@ -905,26 +905,26 @@ export const AccountPage: React.FC = () => {
                               onChange={(e) => setNoteText(e.target.value)}
                               rows={3}
                               placeholder="Add notes about this lead..."
-                              className="w-full px-3 py-2 border border-gray-200 text-black outline-none focus:border-black focus:ring-1 focus:ring-black resize-none transition-colors duration-200"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-black outline-none focus:border-black focus:ring-1 focus:ring-black resize-none transition-colors duration-200"
                             />
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleSaveNote(lead.leadId)}
                                 disabled={savingNote}
-                                className="px-4 py-2 bg-blacksm rounded hover:bg-gray-800sabled:bg-gray-400sabled:bg-gray-600 font-medium transition-colors duration-200"
+                                className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors duration-200"
                               >
                                 {savingNote ? 'Saving...' : 'Save'}
                               </button>
                               <button
                                 onClick={handleCancelNote}
-                                className="px-4 py-2 bg-gray-100sm rounded hover:bg-gray-200sition-colors duration-200"
+                                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors duration-200"
                               >
                                 Cancel
                               </button>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-700space-pre-wrap min-h-[2rem] transition-colors duration-200">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap min-h-[2rem] transition-colors duration-200">
                             {lead.notes || <span className="text-gray-400">No notes yet</span>}
                           </p>
                         )}

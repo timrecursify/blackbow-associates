@@ -69,3 +69,4 @@ coverage/
 
 # Misc
 .wrangler/
+frontend/.env.production

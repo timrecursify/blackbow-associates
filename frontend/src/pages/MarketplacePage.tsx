@@ -549,7 +549,7 @@ export const MarketplacePage: React.FC = () => {
         {/* Results count and Bulk Actions */}
         <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="text-xs sm:text-sm text-gray-600 transition-colors duration-200">
-            {filteredLeads.length} {filteredLeads.length === 1 ? 'lead' : 'leads'}
+            {filteredLeads.length} of {pagination?.total || filteredLeads.length} {pagination?.total === 1 ? 'lead' : 'leads'}
             {selectedLeadIds.size > 0 && (
               <span className="ml-2 text-black transition-colors duration-200">
                 ({selectedLeadIds.size} selected)
@@ -927,8 +927,8 @@ export const MarketplacePage: React.FC = () => {
                         disabled={loading}
                         className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           currentPage === pageNum
-                            ? 'bg-black'
-                            : 'text-gray-700'
+                            ? 'bg-black text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         {pageNum}

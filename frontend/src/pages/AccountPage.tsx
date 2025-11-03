@@ -3,8 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { DepositModal } from '../components/DepositModal';
 import Notification from '../components/Notification';
-import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText } from 'lucide-react';
-import { usersAPI } from '../services/api';
+import { LeadFeedbackModal, FeedbackData } from '../components/LeadFeedbackModal';
+import { FeedbackSuccessModal } from '../components/FeedbackSuccessModal';
+import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { usersAPI, leadsAPI } from '../services/api';
 import { format } from 'date-fns';
 
 interface UserProfile {
@@ -41,6 +43,7 @@ interface PurchasedLead {
   id: string;
   leadId: string;
   purchasedAt: string;
+  hasFeedback: boolean;
   weddingDate: string | null;
   location: string;
   city: string | null;
@@ -82,6 +85,11 @@ export const AccountPage: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showFeedbackSuccess, setShowFeedbackSuccess] = useState(false);
+  const [feedbackLeadId, setFeedbackLeadId] = useState<string | null>(null);
+  const [leadsPage, setLeadsPage] = useState(1);
+  const [leadsPagination, setLeadsPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -91,7 +99,7 @@ export const AccountPage: React.FC = () => {
     if (tabParam === 'leads' || tabParam === 'transactions' || tabParam === 'overview') {
       setActiveTab(tabParam);
     }
-  }, [searchParams]);
+  }, [searchParams, leadsPage]);
 
   const fetchData = async () => {
     try {
@@ -99,7 +107,7 @@ export const AccountPage: React.FC = () => {
       const [profileRes, transactionsRes, leadsRes] = await Promise.all([
         usersAPI.getProfile(),
         usersAPI.getTransactions(1, 50),
-        usersAPI.getPurchasedLeads(1, 50),
+        usersAPI.getPurchasedLeads(leadsPage, 10),
       ]);
 
       const userData = profileRes.data.user || profileRes.data;
@@ -108,7 +116,7 @@ export const AccountPage: React.FC = () => {
         businessName: userData.businessName || '',
         vendorType: userData.vendorType || '',
       });
-      
+
       // Set billing form from profile billing data
       if (userData.billing) {
         setBillingForm({
@@ -123,9 +131,14 @@ export const AccountPage: React.FC = () => {
           zip: userData.billing.zip || ''
         });
       }
-      
+
       setTransactions(transactionsRes.data.transactions || []);
       setPurchasedLeads(leadsRes.data.leads || []);
+
+      // Set pagination info
+      if (leadsRes.data.pagination) {
+        setLeadsPagination(leadsRes.data.pagination);
+      }
     } catch (error) {
       console.error('Failed to fetch account data:', error);
     } finally {
@@ -219,6 +232,32 @@ export const AccountPage: React.FC = () => {
   const handleCancelNote = () => {
     setEditingNoteId(null);
     setNoteText('');
+  };
+
+  const handleOpenFeedback = (leadId: string) => {
+    setFeedbackLeadId(leadId);
+    setShowFeedbackModal(true);
+  };
+
+  const handleSubmitFeedback = async (feedback: FeedbackData) => {
+    if (!feedbackLeadId) return;
+
+    try {
+      await leadsAPI.submitFeedback(feedbackLeadId, feedback);
+      setShowFeedbackModal(false);
+      setShowFeedbackSuccess(true);
+      // Trigger balance refresh
+      window.dispatchEvent(new CustomEvent('balanceUpdated'));
+      // Refresh data to get updated balance
+      await fetchData();
+    } catch (error: any) {
+      throw error; // Let modal handle the error display
+    }
+  };
+
+  const handleCloseFeedbackSuccess = () => {
+    setShowFeedbackSuccess(false);
+    setFeedbackLeadId(null);
   };
 
   if (loading) {
@@ -691,8 +730,13 @@ export const AccountPage: React.FC = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-base sm:text-lg font-bold text-black transition-colors duration-200">
-                Purchased Leads ({purchasedLeads.length})
+                Purchased Leads {leadsPagination && `(${leadsPagination.total})`}
               </h2>
+              {leadsPagination && leadsPagination.totalPages > 1 && (
+                <span className="text-xs sm:text-sm text-gray-500">
+                  Page {leadsPagination.page} of {leadsPagination.totalPages}
+                </span>
+              )}
             </div>
 
             {purchasedLeads.length === 0 ? (
@@ -708,10 +752,26 @@ export const AccountPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {purchasedLeads.map((lead) => (
-                  <div key={lead.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 transition-colors duration-200">
+                {purchasedLeads.map((lead) => {
+                  // Check if lead was purchased within last 24 hours
+                  const isNew = new Date().getTime() - new Date(lead.purchasedAt).getTime() < 24 * 60 * 60 * 1000;
+
+                  return (
+                  <div key={lead.id} className={`bg-white rounded-lg shadow-sm border p-4 sm:p-6 transition-all duration-200 ${
+                    isNew ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                  }`}>
                     {/* Mobile Layout */}
                     <div className="block sm:hidden space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        {isNew && (
+                          <span className="inline-block px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 rounded">
+                            NEW
+                          </span>
+                        )}
+                        <span className="text-xs font-mono text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 ml-auto">
+                          #{lead.leadId}
+                        </span>
+                      </div>
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-500 transition-colors duration-200">Wedding Date</p>
@@ -819,10 +879,38 @@ export const AccountPage: React.FC = () => {
                           </p>
                         )}
                       </div>
+
+                      {/* Provide Feedback Button - Mobile */}
+                      <div className="pt-3 border-t border-gray-200">
+                        {lead.hasFeedback ? (
+                          <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-500 rounded-lg font-medium border border-gray-300">
+                            <MessageSquare size={18} />
+                            <span>Feedback Submitted</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenFeedback(lead.leadId)}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                          >
+                            <MessageSquare size={18} />
+                            <span>Provide Feedback (Earn $2.00)</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Desktop Layout */}
                     <div className="hidden sm:block">
+                      <div className="flex items-center justify-between mb-4">
+                        {isNew && (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 rounded">
+                            NEW
+                          </span>
+                        )}
+                        <span className="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 ml-auto">
+                          #{lead.leadId}
+                        </span>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         {/* Lead Info */}
                         <div className="space-y-3">
@@ -929,9 +1017,75 @@ export const AccountPage: React.FC = () => {
                           </p>
                         )}
                       </div>
+
+                      {/* Provide Feedback Button - Desktop */}
+                      <div className="mt-6 pt-4 border-t border-gray-200">
+                        {lead.hasFeedback ? (
+                          <div className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-500 rounded-lg font-medium text-base border border-gray-300">
+                            <MessageSquare size={20} />
+                            <span>Feedback Submitted</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenFeedback(lead.leadId)}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-base"
+                          >
+                            <MessageSquare size={20} />
+                            <span>Provide Feedback & Earn $2.00</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!loading && purchasedLeads.length > 0 && leadsPagination && leadsPagination.totalPages > 1 && (
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-2">
+                <button
+                  onClick={() => setLeadsPage(prev => Math.max(1, prev - 1))}
+                  disabled={leadsPage === 1}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                    leadsPage === 1
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <ChevronLeft size={16} />
+                  <span>Previous</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: leadsPagination.totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setLeadsPage(page)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                        page === leadsPage
+                          ? 'bg-gray-900 text-white border-gray-900'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setLeadsPage(prev => Math.min(leadsPagination.totalPages, prev + 1))}
+                  disabled={leadsPage === leadsPagination.totalPages}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                    leadsPage === leadsPagination.totalPages
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>Next</span>
+                  <ChevronRight size={16} />
+                </button>
               </div>
             )}
           </div>
@@ -956,6 +1110,25 @@ export const AccountPage: React.FC = () => {
         isOpen={!!notification}
         onClose={() => setNotification(null)}
       />
+
+      {/* Feedback Modals */}
+      {feedbackLeadId && (
+        <>
+          <LeadFeedbackModal
+            isOpen={showFeedbackModal}
+            onClose={() => {
+              setShowFeedbackModal(false);
+              setFeedbackLeadId(null);
+            }}
+            onSubmit={handleSubmitFeedback}
+            leadId={feedbackLeadId}
+          />
+          <FeedbackSuccessModal
+            isOpen={showFeedbackSuccess}
+            onClose={handleCloseFeedbackSuccess}
+          />
+        </>
+      )}
     </div>
   );
 };

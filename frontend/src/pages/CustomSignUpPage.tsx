@@ -101,7 +101,7 @@ export const CustomSignUpPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 flex items-start gap-3 transition-colors duration-200">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 transition-colors duration-200">
                 <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5 transition-colors duration-200" size={20} />
                 <p className="text-red-800 text-sm transition-colors duration-200">{error}</p>
               </div>

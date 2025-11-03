@@ -1,0 +1,17 @@
+[Unit]
+Description=BlackBow Associates Daily Database Backup Timer
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Timer]
+# Run daily at 2:00 AM UTC
+OnCalendar=*-*-* 02:00:00
+# If system was down, run immediately when it comes back up
+Persistent=true
+# Run at system boot (5 minutes after boot)
+OnBootSec=5min
+# Accuracy: run within 1 minute of scheduled time
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

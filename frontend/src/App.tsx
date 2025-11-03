@@ -10,6 +10,7 @@ import { AccountPage } from './pages/AccountPage';
 import { LeadDetailsPage } from './pages/LeadDetailsPage';
 import { AdminVerificationPage } from './pages/AdminVerificationPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AccountBlocked } from './pages/AccountBlocked';
 import { CustomSignInPage } from './pages/CustomSignInPage';
 import { CustomSignUpPage } from './pages/CustomSignUpPage';
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -506,6 +507,7 @@ function App() {
           {/* Auth Routes */}
           <Route path="/sign-in" element={<CustomSignInPage />} />
           <Route path="/sign-up" element={<CustomSignUpPage />} />
+          <Route path="/account-blocked" element={<AccountBlocked />} />
 
           {/* Onboarding Route - requires auth but not onboarding completion */}
           <Route

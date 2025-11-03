@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { fetchDealsByStages, transformDealToLead } from '../services/pipedrive.service.js';
+import { scheduledSync, getLastSyncStatus } from '../jobs/pipedrive-sync.job.js';
 import logger from '../utils/logger.js';
 
 const prisma = new PrismaClient();
@@ -112,7 +113,50 @@ export const getImportStatus = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Manual trigger for scheduled sync
+ * POST /api/pipedrive/sync-now
+ */
+export const syncNow = asyncHandler(async (req, res) => {
+  logger.info('Manual Pipedrive sync triggered', {
+    userId: req.user?.id,
+    userEmail: req.user?.email
+  });
+
+  try {
+    const result = await scheduledSync();
+
+    res.json({
+      success: true,
+      message: result.message,
+      results: result.results
+    });
+  } catch (error) {
+    logger.error('Manual sync failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Manual sync failed',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get last sync status
+ * GET /api/pipedrive/sync-status
+ */
+export const getSyncStatus = asyncHandler(async (req, res) => {
+  const status = getLastSyncStatus();
+
+  res.json({
+    success: true,
+    status
+  });
+});
+
 export default {
   importDeals,
-  getImportStatus
+  getImportStatus,
+  syncNow,
+  getSyncStatus
 };

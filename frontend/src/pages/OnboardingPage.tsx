@@ -131,11 +131,11 @@ export const OnboardingPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    const checked = type === 'checkbox' && 'checked' in e.target ? e.target.checked : false;
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
 
     // Clear error for this field
@@ -258,7 +258,7 @@ export const OnboardingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50s-center justify-center px-4 py-12 transition-colors duration-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-12 transition-colors duration-200">
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -270,11 +270,11 @@ export const OnboardingPage: React.FC = () => {
           </p>
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 mt-4">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 ${currentStep === 1 ? 'bg-black' : 'bg-gray-300'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${currentStep === 1 ? 'bg-black text-white' : 'bg-gray-300 text-gray-600'}`}>
               1
             </div>
             <div className={`w-16 h-0.5 transition-colors duration-200 ${currentStep === 2 ? 'bg-black' : 'bg-gray-300'}`}></div>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 ${currentStep === 2 ? 'bg-black' : 'bg-gray-300'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${currentStep === 2 ? 'bg-black text-white' : 'bg-gray-300 text-gray-600'}`}>
               2
             </div>
           </div>
@@ -285,7 +285,7 @@ export const OnboardingPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Form Error */}
             {errors.form && (
-              <div className="bg-red-50 flex items-start gap-3 transition-colors duration-200">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 transition-colors duration-200">
                 <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5 transition-colors duration-200" size={20} />
                 <p className="text-red-800 text-sm transition-colors duration-200">{errors.form}</p>
               </div>
@@ -353,7 +353,7 @@ export const OnboardingPage: React.FC = () => {
                   id="vendorType"
                   name="vendorType"
                   value={formData.vendorType}
-                  onChange={handleChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, vendorType: e.target.value }))}
                   className={`w-full pl-11 pr-4 py-3 border ${errors.vendorType ? 'border-red-300' : 'border-gray-300'} rounded-lg bg-white focus:ring-2 focus:ring-black focus:border-black transition-colors appearance-none`}
                   disabled={loading}
                 >
@@ -621,7 +621,7 @@ export const OnboardingPage: React.FC = () => {
         </div>
 
         {/* Help Text */}
-        <p className="text-center text-sm text-gray-600 transition-colors duration-200">
+        <p className="text-center text-sm text-gray-600 mt-6 transition-colors duration-200">
           This information helps us match you with the right leads for your business.
         </p>
       </div>

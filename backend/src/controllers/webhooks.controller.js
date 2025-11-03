@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
@@ -82,10 +83,20 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
       const paymentIntent = event.data.object;
       const userId = paymentIntent.metadata.userId;
 
+      // SECURITY: Sanitize payment error - do not log sensitive payment details
+      const sanitizedError = paymentIntent.last_payment_error ? {
+        code: paymentIntent.last_payment_error.code,
+        type: paymentIntent.last_payment_error.type,
+        decline_code: paymentIntent.last_payment_error.decline_code,
+        // Do NOT log: payment_method object (contains card details), charge details, or full message
+      } : null;
+
       logger.warn('Payment failed', {
         userId,
         paymentIntentId: paymentIntent.id,
-        error: paymentIntent.last_payment_error
+        errorCode: sanitizedError?.code,
+        errorType: sanitizedError?.type,
+        declineCode: sanitizedError?.decline_code
       });
 
       await notifyTelegram(
@@ -107,9 +118,31 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
 export const pipedriveWebhook = asyncHandler(async (req, res) => {
   const { event, current } = req.body;
 
-  // Verify webhook secret
+  // SECURITY: Verify webhook secret using constant-time comparison to prevent timing attacks
   const webhookSecret = req.headers['x-pipedrive-webhook-secret'];
-  if (webhookSecret !== process.env.PIPEDRIVE_WEBHOOK_SECRET) {
+  const expectedSecret = process.env.PIPEDRIVE_WEBHOOK_SECRET;
+
+  if (!webhookSecret || !expectedSecret) {
+    logger.warn('Pipedrive webhook secret missing', {
+      hasReceivedSecret: !!webhookSecret,
+      hasConfiguredSecret: !!expectedSecret
+    });
+    throw new AppError('Invalid webhook secret', 401, 'UNAUTHORIZED');
+  }
+
+  // Use constant-time comparison to prevent timing attacks
+  const receivedBuffer = Buffer.from(webhookSecret, 'utf8');
+  const expectedBuffer = Buffer.from(expectedSecret, 'utf8');
+
+  // Ensure buffers are same length to prevent timing leak
+  if (receivedBuffer.length !== expectedBuffer.length) {
+    throw new AppError('Invalid webhook secret', 401, 'UNAUTHORIZED');
+  }
+
+  if (!crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
+    logger.warn('Pipedrive webhook authentication failed - invalid secret', {
+      ip: req.ip
+    });
     throw new AppError('Invalid webhook secret', 401, 'UNAUTHORIZED');
   }
 

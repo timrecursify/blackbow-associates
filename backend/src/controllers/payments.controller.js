@@ -166,71 +166,99 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       });
     }
 
-    // Check if already processed (avoid double crediting)
-    const existingTransaction = await prisma.transaction.findFirst({
-      where: {
-        stripePaymentId: paymentIntentId,
-        userId: user.id
+    // SECURITY: Use transaction to prevent double-crediting race condition
+    // This ensures webhook and manual verification cannot both credit the same payment
+    const result = await prisma.$transaction(async (tx) => {
+      // Check if already processed (with transaction lock)
+      const existingTransaction = await tx.transaction.findFirst({
+        where: {
+          stripePaymentId: paymentIntentId,
+          userId: user.id
+        }
+      });
+
+      if (existingTransaction) {
+        logger.info('Payment already processed', {
+          userId: user.id,
+          paymentIntentId,
+          transactionId: existingTransaction.id
+        });
+
+        return {
+          alreadyProcessed: true,
+          transaction: existingTransaction
+        };
       }
+
+      // Credit the balance atomically
+      const amount = paymentIntent.amount / 100; // Convert from cents
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: { balance: { increment: amount } }, // Atomic increment
+        select: { balance: true }
+      });
+
+      const newBalance = parseFloat(updatedUser.balance);
+
+      // Create transaction record (MUST use tx for atomicity)
+      const transaction = await tx.transaction.create({
+        data: {
+          userId: user.id,
+          amount,
+          type: 'DEPOSIT',
+          stripePaymentId: paymentIntentId,
+          balanceAfter: newBalance,
+          metadata: {
+            paymentIntent: paymentIntentId,
+            processedVia: 'verifyPayment_endpoint',
+            timestamp: new Date().toISOString()
+          }
+        }
+      });
+
+      return {
+        alreadyProcessed: false,
+        transaction,
+        amount,
+        newBalance
+      };
     });
 
-    if (existingTransaction) {
-      logger.info('Payment already processed', {
+    // Handle result after transaction completes
+    if (result.alreadyProcessed) {
+      logger.info('Payment already processed - returning existing transaction', {
         userId: user.id,
         paymentIntentId,
-        transactionId: existingTransaction.id
+        transactionId: result.transaction.id
       });
-      
+
       return res.json({
         success: true,
-        alreadyProcessed: true,
-        message: 'Payment already credited to account'
+        amount: parseFloat(result.transaction.amount),
+        newBalance: parseFloat(result.transaction.balanceAfter),
+        message: 'Payment already processed',
+        alreadyProcessed: true
       });
     }
 
-    // Credit the balance
-    const amount = paymentIntent.amount / 100; // Convert from cents
-    const currentUser = await prisma.user.findUnique({ where: { id: user.id } });
-    const newBalance = parseFloat(currentUser.balance) + amount;
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { balance: newBalance }
-    });
-
-    // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        userId: user.id,
-        amount,
-        type: 'DEPOSIT',
-        stripePaymentId: paymentIntentId,
-        balanceAfter: newBalance,
-        metadata: { 
-          paymentIntent: paymentIntentId,
-          processedVia: 'verifyPayment_endpoint',
-          timestamp: new Date().toISOString()
-        }
-      }
-    });
-
+    // New payment processed successfully
     logger.info('Deposit processed via verifyPayment endpoint', {
       userId: user.id,
       email: user.email,
-      amount,
-      newBalance,
+      amount: result.amount,
+      newBalance: result.newBalance,
       paymentIntentId
     });
 
     await notifyTelegram(
-      `💰 Deposit verified & credited: ${user.email} added $${amount} (via verifyPayment endpoint)`,
+      `💰 Deposit verified & credited: ${user.email} added $${result.amount} (via verifyPayment endpoint)`,
       'success'
     );
 
     res.json({
       success: true,
-      amount,
-      newBalance,
+      amount: result.amount,
+      newBalance: result.newBalance,
       message: 'Payment verified and balance credited'
     });
   } catch (error) {

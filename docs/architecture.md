@@ -1,8 +1,8 @@
 # BlackBow Associates - System Architecture
 
-**Last Updated:** October 29, 2025
-**Version:** 1.0.0
-**Status:** Production-Ready (Pending API Keys)
+**Last Updated:** November 1, 2025
+**Version:** 1.3.0
+**Status:** Production (Active)
 
 ---
 
@@ -24,15 +24,17 @@ BlackBow Associates is a B2B wedding lead marketplace built with a modern micros
 - TypeScript 5.x (Type safety)
 - Vite 5.x (Build tool)
 - Tailwind CSS 3.x (Styling)
+- Tremor 3.x (Dashboard charts & analytics)
 - React Router 7.x (Navigation)
 
 **Authentication & Payments:**
-- Clerk (JWT-based authentication)
+- Supabase Auth (Self-hosted, JWT-based authentication)
 - Stripe (Payment processing)
 - Pipedrive (CRM integration)
 
 **Infrastructure:**
 - PM2 (Process management)
+- Supabase (Self-hosted via Docker - Auth, PostgreSQL)
 - Cloudflare Tunnel (Secure ingress)
 - Express static server (Frontend hosting)
 
@@ -85,19 +87,21 @@ Response → Error Handler → Logger
 ```
 
 **Route Groups:**
-- `/api/auth` - Authentication, admin verification, user sync
+- `/api/auth` - Authentication, current user info
 - `/api/users` - User profiles, balance management, transactions
 - `/api/leads` - Lead browsing, purchasing (with row-level locking)
 - `/api/payments` - Stripe deposits, payment methods
-- `/api/admin` - User management, balance adjustments, CSV import
-- `/api/webhooks` - Stripe, Pipedrive, Clerk event handlers
+- `/api/admin` - User management (view, block, unblock, delete), balance adjustments, CSV import
+- `/api/admin/analytics` - Dashboard analytics (overview, revenue, users, leads, feedback)
+- `/api/webhooks` - Stripe, Pipedrive event handlers
 
 **Security Layers:**
 1. Helmet.js security headers
 2. CORS whitelist (frontend domain only)
-3. Rate limiting (3 tiers: general, strict, webhook)
-4. Clerk JWT validation
-5. Admin double-authentication (JWT + verification code)
+3. Rate limiting (3 tiers: general, strict, webhook, analytics)
+4. Supabase JWT validation (auth middleware)
+5. Admin role-based access control (isAdmin flag in database)
+6. User account blocking system (isBlocked flag with reason tracking)
 6. Webhook HMAC/secret verification
 7. Input validation (express-validator)
 
@@ -126,21 +130,28 @@ Response → Error Handler → Logger
 /marketplace (protected)    → Browse/purchase leads
 /account (protected)        → User profile & transactions
 /lead/:id (protected)       → Lead details after purchase
-/admin-verify (protected)   → Admin code entry
-/admin (admin only)         → Admin dashboard
-/sign-in, /sign-up         → Clerk auth pages
+/admin (admin only)         → Admin dashboard with analytics
+/account-blocked           → Account restricted page
+/sign-in, /sign-up         → Supabase auth pages
+/onboarding (protected)    → New user onboarding flow
 /unsubscribe/:token        → Email unsubscribe
 ```
 
 **State Management:**
-- React Context (ClerkProvider for auth)
+- React Context (Supabase auth state)
 - Component-local state (useState, useEffect)
 - No global state manager (Redux/Zustand not needed)
 
 **API Client:**
 - Axios with interceptors
-- Clerk token injection (Bearer auth)
+- Supabase JWT token injection (Bearer auth)
 - Base URL: `https://api.blackbowassociates.com`
+
+**Admin Dashboard Features:**
+- Overview tab: KPIs, revenue charts, user growth, vendor distribution
+- Users tab: User management (view, block, unblock, delete with confirmation)
+- Leads tab: Lead management, CSV import
+- Feedback tab: Booking rates, responsiveness analytics, time-to-book metrics
 
 **Build Process:**
 ```
@@ -153,13 +164,19 @@ Express Static Server → Served to users
 **6 Core Models:**
 
 ```
-User (Clerk-synced)
-├── id: String (Clerk userId)
+User (Supabase-synced)
+├── id: String (CUID)
+├── authUserId: String (Supabase auth ID, nullable)
 ├── email: String (unique)
-├── name: String
+├── businessName: String
+├── vendorType: String
 ├── balance: Decimal (default: 0)
 ├── isAdmin: Boolean (default: false)
-└── Relationships: transactions[], purchases[], paymentMethods[]
+├── isBlocked: Boolean (default: false)
+├── blockedAt: DateTime (nullable)
+├── blockedReason: String (nullable)
+├── onboardingCompleted: Boolean (default: false)
+└── Relationships: transactions[], purchases[], paymentMethods[], favorites[], leadFeedback[]
 
 Lead
 ├── id: String (UUID)

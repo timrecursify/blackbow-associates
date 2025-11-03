@@ -74,7 +74,7 @@ export const Navbar: React.FC = () => {
       const response = await usersAPI.getProfile();
       const userData = response.data.user || response.data;
       setBalance(userData.balance !== undefined && userData.balance !== null ? userData.balance : 0);
-      setIsAdmin(userData.isAdmin && userData.adminVerifiedAt);
+      setIsAdmin(userData.isAdmin === true);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
     }
@@ -206,7 +206,17 @@ export const Navbar: React.FC = () => {
                             <span>Marketplace</span>
                           </Link>
                         )}
-                        {isAdmin && (
+                        {isAdmin && isMarketplacePage && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setShowUserMenu(false)}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Shield size={16} />
+                            <span>Admin</span>
+                          </Link>
+                        )}
+                        {isAdmin && !isMarketplacePage && (
                           <Link
                             to="/admin"
                             onClick={() => setShowUserMenu(false)}

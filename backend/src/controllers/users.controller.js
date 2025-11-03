@@ -176,7 +176,13 @@ export const getPurchasedLeads = asyncHandler(async (req, res) => {
     prisma.purchase.findMany({
       where: { userId: user.id },
       include: {
-        lead: true
+        lead: {
+          include: {
+            feedback: {
+              where: { userId: user.id }
+            }
+          }
+        }
       },
       orderBy: { purchasedAt: 'desc' },
       skip: parseInt(skip),
@@ -192,7 +198,8 @@ export const getPurchasedLeads = asyncHandler(async (req, res) => {
       leadId: purchase.leadId,
       purchasedAt: purchase.purchasedAt,
       amountPaid: parseFloat(purchase.amountPaid),
-      notes: purchase.notes, // User's notes from Purchase model
+      notes: purchase.notes,
+      hasFeedback: purchase.lead.feedback && purchase.lead.feedback.length > 0,
       // Full lead details after purchase
       weddingDate: purchase.lead.weddingDate,
       location: purchase.lead.location,

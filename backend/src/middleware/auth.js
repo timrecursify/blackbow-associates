@@ -98,6 +98,9 @@ export const attachUser = async (req, res, next) => {
         onboardingCompleted: true,
         isAdmin: true,
         adminVerifiedAt: true,
+        isBlocked: true,
+        blockedAt: true,
+        blockedReason: true,
         createdAt: true,
         updatedAt: true
       }
@@ -140,6 +143,9 @@ export const attachUser = async (req, res, next) => {
             onboardingCompleted: true,
             isAdmin: true,
             adminVerifiedAt: true,
+            isBlocked: true,
+            blockedAt: true,
+            blockedReason: true,
             createdAt: true,
             updatedAt: true
           }
@@ -170,6 +176,9 @@ export const attachUser = async (req, res, next) => {
                 onboardingCompleted: true,
                 isAdmin: true,
                 adminVerifiedAt: true,
+                isBlocked: true,
+                blockedAt: true,
+                blockedReason: true,
                 createdAt: true,
                 updatedAt: true
               }
@@ -321,6 +330,22 @@ export const attachUser = async (req, res, next) => {
           );
         }
       }
+    }
+
+    // SECURITY: Enforce user blocking - prevent blocked users from accessing any routes
+    if (user.isBlocked) {
+      logger.warn('Blocked user attempted access', {
+        userId: user.id,
+        email: user.email,
+        blockedAt: user.blockedAt,
+        blockedReason: user.blockedReason
+      });
+      throw new AppError(
+        `Account blocked${user.blockedReason ? `: ${user.blockedReason}` : '. Please contact support.'}`,
+        403,
+        'ACCOUNT_BLOCKED',
+        { blockedAt: user.blockedAt }
+      );
     }
 
     req.user = user;

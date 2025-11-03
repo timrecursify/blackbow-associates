@@ -16,6 +16,10 @@ import paymentRoutes from './routes/payments.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import webhookRoutes from './routes/webhooks.routes.js';
 import pipedriveRoutes from './routes/pipedrive.routes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+
+// Import cron jobs
+import { initCronScheduler } from './jobs/pipedrive-sync.job.js';
 
 // Initialize Express app
 const app = express();
@@ -25,8 +29,42 @@ const HOST = process.env.HOST || '127.0.0.1';
 // Trust proxy (required for rate limiting behind nginx/reverse proxy)
 app.set('trust proxy', true);
 
-// Security middleware
-app.use(helmet());
+// Security middleware - Enhanced helmet configuration
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  frameguard: {
+    action: 'deny'
+  },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: {
+    policy: 'strict-origin-when-cross-origin'
+  },
+  permissionsPolicy: {
+    features: {
+      geolocation: ["'none'"],
+      microphone: ["'none'"],
+      camera: ["'none'"]
+    }
+  }
+}));
 
 // CORS configuration
 const corsOptions = {
@@ -100,6 +138,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/pipedrive', pipedriveRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
@@ -137,6 +176,10 @@ const server = app.listen(PORT, HOST, async () => {
     // Test database connection on startup
     await testConnection();
     await notifyTelegram(`✅ BlackBow API started on port ${PORT}`, 'success');
+
+    // Initialize Pipedrive sync cron scheduler
+    initCronScheduler();
+    logger.info('Pipedrive sync scheduler initialized');
   } catch (error) {
     logger.error('Failed to connect to database on startup', { error: error.message });
     await notifyTelegram(`❌ BlackBow API started but database connection failed`, 'error');

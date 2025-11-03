@@ -10,11 +10,11 @@
 **Authentication:** ✅ Fully functional - OAuth + email/password working
 **Infrastructure:** ✅ All services running healthy (9 PM2 + 11 Docker containers)
 
-**Version:** 1.1.2 (Production-ready)
-**Last Updated:** 2025-10-31
+**Version:** 1.8.0 (Production-hardened, security-audited)
+**Last Updated:** 2025-11-03
 **Server:** VPS Production (angry-hamilton.hivelocitydns.com)
 
-**Recent Fix (v1.1.2):** Resolved JWT verification issue by exposing Supabase Auth service on localhost:9999 for direct Admin API access. See CHANGELOG.md for details.
+**Latest Update (v1.8.0):** Comprehensive security audit completed. Fixed 9 vulnerabilities (4 CRITICAL, 5 HIGH). All race conditions eliminated, atomic operations enforced, PCI-DSS compliance improved. See CHANGELOG.md for complete details.
 
 ---
 

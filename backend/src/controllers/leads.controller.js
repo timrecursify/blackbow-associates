@@ -492,4 +492,120 @@ export const getFavorites = asyncHandler(async (req, res) => {
   });
 });
 
-export default { getLeads, getLead, purchaseLead, addFavorite, removeFavorite, getFavorites };
+// Submit lead feedback
+export const submitFeedback = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const { leadId } = req.params;
+  const { booked, leadResponsive, timeToBook, amountCharged } = req.body;
+
+  // Validation
+  if (typeof booked !== 'boolean') {
+    throw new AppError('Booked status is required', 400, 'VALIDATION_ERROR');
+  }
+
+  if (!['responsive', 'ghosted', 'partial'].includes(leadResponsive)) {
+    throw new AppError('Invalid lead responsiveness value', 400, 'VALIDATION_ERROR');
+  }
+
+  if (booked && !timeToBook) {
+    throw new AppError('Time to book is required when lead booked', 400, 'VALIDATION_ERROR');
+  }
+
+  if (booked && !amountCharged) {
+    throw new AppError('Amount charged is required when lead booked', 400, 'VALIDATION_ERROR');
+  }
+
+  // Check if user has purchased this lead
+  const purchase = await prisma.purchase.findUnique({
+    where: {
+      userId_leadId: {
+        userId: user.id,
+        leadId
+      }
+    }
+  });
+
+  if (!purchase) {
+    throw new AppError('You have not purchased this lead', 403, 'FORBIDDEN');
+  }
+
+  // Check if feedback already exists
+  const existingFeedback = await prisma.leadFeedback.findUnique({
+    where: {
+      userId_leadId: {
+        userId: user.id,
+        leadId
+      }
+    }
+  });
+
+  if (existingFeedback) {
+    throw new AppError('You have already submitted feedback for this lead', 409, 'ALREADY_SUBMITTED');
+  }
+
+  // Start transaction to create feedback and add $2 reward
+  const result = await prisma.$transaction(async (tx) => {
+    // Create feedback record
+    const feedback = await tx.leadFeedback.create({
+      data: {
+        userId: user.id,
+        leadId,
+        booked,
+        leadResponsive,
+        timeToBook: booked ? timeToBook : null,
+        amountCharged: booked ? parseFloat(amountCharged) : null
+      }
+    });
+
+    // Get current balance
+    const currentUser = await tx.user.findUnique({
+      where: { id: user.id }
+    });
+
+    const currentBalance = parseFloat(currentUser.balance);
+    const rewardAmount = 2.00;
+    const newBalance = currentBalance + rewardAmount;
+
+    // Add $2 reward to user balance
+    await tx.user.update({
+      where: { id: user.id },
+      data: { balance: newBalance }
+    });
+
+    // Create transaction record for the reward
+    await tx.transaction.create({
+      data: {
+        userId: user.id,
+        amount: rewardAmount,
+        type: 'FEEDBACK_REWARD',
+        balanceAfter: newBalance,
+        description: 'Feedback reward for lead ' + leadId.substring(0, 8),
+        metadata: { leadId, feedbackId: feedback.id }
+      }
+    });
+
+    return { feedback, newBalance, rewardAmount };
+  });
+
+  logger.info('Lead feedback submitted', {
+    userId: user.id,
+    leadId,
+    booked: result.feedback.booked,
+    rewardAmount: result.rewardAmount
+  });
+
+  await notifyTelegram(
+    `📝 Lead feedback submitted by ${user.businessName} - Booked: ${booked ? 'Yes' : 'No'}, Lead: ${leadId.substring(0, 8)}`,
+    'info'
+  );
+
+  res.json({
+    success: true,
+    message: 'Feedback submitted successfully',
+    feedback: result.feedback,
+    rewardAmount: result.rewardAmount,
+    newBalance: result.newBalance
+  });
+});
+
+export default { getLeads, getLead, purchaseLead, addFavorite, removeFavorite, getFavorites, submitFeedback };

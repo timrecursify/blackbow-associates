@@ -32,6 +32,15 @@ build/
 *.db
 *.sqlite
 *.sql.backup
+*.sql.gz
+*.sql.gz.sha256
+
+# Backup files
+backend/backups/
+backups/
+**/backups/**/*.sql.gz
+**/backups/**/*.sha256
+**/backups/**/*.json
 
 # OS
 .DS_Store

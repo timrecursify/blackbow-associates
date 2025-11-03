@@ -1,13 +1,13 @@
 import express from 'express';
-import { verifyAdmin, getCurrentUser } from '../controllers/auth.controller.js';
+import { getCurrentUser } from '../controllers/auth.controller.js';
 import { requireAuth, attachUser } from '../middleware/auth.js';
-import { authLimiter } from '../middleware/rateLimiter.js';
-import { validations } from '../middleware/validate.js';
 
 const router = express.Router();
 
-// Verify admin code - grant admin access
-router.post('/verify-admin', requireAuth, attachUser, validations.verifyAdmin, verifyAdmin);
+/**
+ * Admin access is managed via database (isAdmin field).
+ * No separate admin verification endpoint needed.
+ */
 
 // Get current user
 router.get('/me', requireAuth, attachUser, getCurrentUser);

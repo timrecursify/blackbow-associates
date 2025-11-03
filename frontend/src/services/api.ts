@@ -47,6 +47,7 @@ export const setAuthToken = (token: string | (() => string) | null) => {
 export const authAPI = {
   syncUser: (userData: { clerkUserId: string; email: string }) =>
     apiClient.post('/auth/sync', userData),
+  getCurrentUser: () => apiClient.get('/auth/me'),
 };
 
 // Users API
@@ -81,6 +82,7 @@ export const leadsAPI = {
   getFavorites: () => apiClient.get('/leads/favorites/list'),
   addFavorite: (leadId: string) => apiClient.post(`/leads/${leadId}/favorite`),
   removeFavorite: (leadId: string) => apiClient.delete(`/leads/${leadId}/favorite`),
+  submitFeedback: (leadId: string, feedback: any) => apiClient.post(`/leads/${leadId}/feedback`, feedback),
 };
 
 // Payments API
@@ -97,13 +99,42 @@ export const paymentsAPI = {
 
 // Admin API
 export const adminAPI = {
+  // User management
+  getAllUsers: (page = 1, limit = 100) => apiClient.get('/admin/users', { params: { page, limit } }),
   getUsers: (params?: any) => apiClient.get('/admin/users', { params }),
+
+  // Lead management
+  getAllLeads: (page = 1, limit = 100) => apiClient.get('/admin/leads', { params: { page, limit } }),
   getLeads: (params?: any) => apiClient.get('/admin/leads', { params }),
   createLead: (data: any) => apiClient.post('/admin/leads', data),
   updateLead: (id: string, data: any) => apiClient.put(`/admin/leads/${id}`, data),
+  updateLeadStatus: (id: string, status: string) => apiClient.put(`/admin/leads/${id}/status`, { status }),
   deleteLead: (id: string) => apiClient.delete(`/admin/leads/${id}`),
+  importLeads: (leads: any[]) => apiClient.post('/admin/leads/import', { leads }),
+
+  // Balance adjustment
+  adjustBalance: (userId: string, amount: number, reason: string) =>
+    apiClient.post('/admin/adjust-balance', { userId, amount, reason }),
   updateUserBalance: (userId: string, amount: number, reason: string) =>
     apiClient.post('/admin/adjust-balance', { userId, amount, reason }),
+
+  // User management actions
+  blockUser: (userId: string, reason: string) =>
+    apiClient.post(`/admin/users/${userId}/block`, { reason }),
+  unblockUser: (userId: string) =>
+    apiClient.post(`/admin/users/${userId}/unblock`),
+  deleteUser: (userId: string) =>
+    apiClient.delete(`/admin/users/${userId}`),
+
+  // Analytics
+  getOverview: (params?: any) => apiClient.get('/admin/analytics/overview', { params }),
+  getRevenueAnalytics: (params?: any) => apiClient.get('/admin/analytics/revenue', { params }),
+  getUserAnalytics: (params?: any) => apiClient.get('/admin/analytics/users', { params }),
+  getLeadAnalytics: (params?: any) => apiClient.get('/admin/analytics/leads', { params }),
+  getFeedbackAnalytics: (params?: any) => apiClient.get('/admin/analytics/feedback', { params }),
+  getRevenueGrowth: (params?: any) => apiClient.get('/admin/analytics/revenue-growth', { params }),
+  getUserEngagement: (params?: any) => apiClient.get('/admin/analytics/user-engagement', { params }),
+  exportAnalytics: (params?: any) => apiClient.get('/admin/analytics/export', { params, responseType: 'blob' }),
 };
 
 export default {

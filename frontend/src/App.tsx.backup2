@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { logger } from './utils/logger';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target, Shield, BookOpen } from 'lucide-react';
-import { supabase } from './lib/supabase';
 import { useMediaQuery } from 'react-responsive';
+import { supabase } from './lib/supabase';
 import { setAuthToken, usersAPI } from './services/api';
 import { UnsubscribePage } from './pages/UnsubscribePage';
 import { AboutPage } from './pages/AboutPage';
@@ -19,12 +18,15 @@ import { OnboardingPage } from './pages/OnboardingPage';
 import { ScrollToTop } from './components/ScrollToTop';
 import { BlogPage } from './pages/BlogPage';
 import { BlogArticlePage } from './pages/BlogArticlePage';
-import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
-import { ConfirmEmailSuccessPage } from './pages/ConfirmEmailSuccessPage';
 
 const LandingPage: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
+  
+  // Responsive breakpoints
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 1023 });
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
+  const isLargeScreen = useMediaQuery({ minWidth: 1920 });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +41,7 @@ const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative ">
+    <div className={} style={{ height: isMobile || isTablet ? 'auto' : '100vh' }} bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative">
       {/* Video Background - Optimized Loading */}
       <video
         key="homepage-video"
@@ -80,7 +82,7 @@ const LandingPage: React.FC = () => {
       <div className="video-overlay"></div>
 
       {/* Simple Auth Header */}
-      <header className="absolute top-0 right-0 z-20 p-4 sm:p-4 md:p-6">
+      <header className="landing-header absolute top-0 right-0 z-20">
         <div className="flex gap-2 sm:gap-3">
           {!isSignedIn ? (
             <>
@@ -132,9 +134,9 @@ const LandingPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-4 py-20 sm:py-20 md:py-24 lg:py-8 relative z-10 pt-24 sm:pt-20 lg:pt-16">
+      <div className="flex-1 flex flex-col items-center justify-center landing-content relative z-10 px-[var(--spacing-md)] py-[var(--spacing-lg)] pt-[calc(var(--spacing-lg)*2)]">
         <div className="text-center max-w-4xl mx-auto w-full">
-          <h1 className="font-handwritten text-7xl sm:text-7xl md:text-8xl lg:text-8xl text-black mb-6 sm:mb-6 md:mb-8 lg:mb-4 leading-tight px-2 transition-colors duration-200">
+          <h1 className="font-handwritten landing-heading landing-content text-black leading-tight px-2 transition-colors duration-200">
             Black Bow Associates
           </h1>
 
@@ -464,6 +466,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
       try {
         const response = await usersAPI.getProfile();
         const onboardingStatus = response.data?.user?.onboardingCompleted;
+        console.log('Onboarding status from API:', onboardingStatus, response.data);
 
         const isCompleted = onboardingStatus === true;
         setOnboardingCompleted(isCompleted);
@@ -471,7 +474,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
         // Cache the status for faster subsequent loads
         localStorage.setItem('onboardingCompleted', String(isCompleted));
       } catch (error) {
-        logger.error('Failed to check onboarding status:', error);
+        console.error('Failed to check onboarding status:', error);
 
         // CRITICAL FIX: Don't set to false on error - this was causing the bug!
         // Only redirect to onboarding if we have no cached status and API fails
@@ -553,8 +556,6 @@ function App() {
           {/* Auth Routes */}
           <Route path="/sign-in" element={<CustomSignInPage />} />
           <Route path="/sign-up" element={<CustomSignUpPage />} />
-          <Route path="/email-confirmation" element={<EmailConfirmationPage />} />
-          <Route path="/confirm-email" element={<ConfirmEmailSuccessPage />} />
           <Route path="/account-blocked" element={<AccountBlocked />} />
 
           {/* Onboarding Route - requires auth but not onboarding completion */}

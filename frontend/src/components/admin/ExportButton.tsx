@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '../../utils/logger';
 import { Download } from 'lucide-react';
 import api from '../../services/api';
 
@@ -39,7 +40,7 @@ export default function ExportButton({
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('Export failed:', error);
       alert('Failed to export data. Please try again.');
     } finally {
       setLoading(false);

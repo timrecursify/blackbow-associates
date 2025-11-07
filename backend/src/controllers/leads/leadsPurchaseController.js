@@ -22,6 +22,30 @@ export const purchaseLead = asyncHandler(async (req, res) => {
   const user = req.user;
   const leadPrice = parseFloat(process.env.LEAD_PRICE || 20);
 
+  // SECURITY: Validate billing address exists before purchase
+  const userWithBilling = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      balance: true,
+      billingAddressLine1: true,
+      billingCity: true,
+      billingState: true,
+      billingZip: true
+    }
+  });
+
+  if (!userWithBilling.billingAddressLine1 || 
+      !userWithBilling.billingCity || 
+      !userWithBilling.billingState || 
+      !userWithBilling.billingZip) {
+    throw new AppError(
+      'Billing address required. Please add your billing information before purchasing leads.',
+      400,
+      'BILLING_ADDRESS_REQUIRED'
+    );
+  }
+
   // Start transaction
   const result = await prisma.$transaction(async (tx) => {
     // SECURITY: Use SELECT FOR UPDATE to lock the lead row and prevent race conditions
@@ -179,6 +203,7 @@ export const submitFeedback = asyncHandler(async (req, res) => {
   }
 
   if (booked && !timeToBook) {
+// SECURITY: Validate timeToBook enum  const validTimeToBook = ["same-day", "1-3-days", "1-week", "2-weeks", "1-month", "2-months", "3-months"];  if (booked && (!timeToBook || !validTimeToBook.includes(timeToBook))) {    throw new AppError("Valid time to book is required when lead booked", 400, "VALIDATION_ERROR");  }
     throw new AppError('Time to book is required when lead booked', 400, 'VALIDATION_ERROR');
   }
 

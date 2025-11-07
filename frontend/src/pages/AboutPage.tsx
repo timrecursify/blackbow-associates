@@ -5,6 +5,45 @@ import { ArrowLeft, Heart, Users, Award, Briefcase } from 'lucide-react';
 export const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative overflow-hidden">
+      {/* Video Background - Optimized Loading */}
+      <video
+        key="about-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload={typeof window !== 'undefined' && window.innerWidth < 768 ? 'metadata' : 'auto'}
+        className="video-background"
+        style={{ objectFit: 'cover' }}
+        onLoadStart={(e) => {
+          const isMobile = window.innerWidth < 768;
+
+          // Skip video on slow connections
+          if ('connection' in navigator) {
+            const conn = (navigator as any).connection;
+            if (conn && (conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g' || conn.effectiveType === '3g')) {
+              e.currentTarget.style.display = 'none';
+              return;
+            }
+
+            // On mobile with 4g, delay load slightly
+            if (isMobile && conn.effectiveType === '4g') {
+              setTimeout(() => {
+                e.currentTarget.load();
+              }, 500);
+            }
+          }
+        }}
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+        }}
+      >
+        <source src="/videos/Demo_Reel_New.mp4" type="video/mp4" />
+      </video>
+
+      {/* Video Overlay */}
+      <div className="video-overlay"></div>
+
       {/* Background Animation */}
       <div className="absolute inset-0 z-0">
         <div className="floating-shapes">
@@ -45,7 +84,7 @@ export const AboutPage: React.FC = () => {
           {/* Content Sections */}
           <div className="space-y-8">
             {/* Our Story */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
+            <div className="bg-white/30 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30">
               <div className="flex items-center mb-4">
                 <Heart className="mr-3 text-black" size={28} strokeWidth={1.5} />
                 <h2 className="text-2xl font-bold text-gray-900">Our Story</h2>
@@ -64,7 +103,7 @@ export const AboutPage: React.FC = () => {
             </div>
 
             {/* Our Mission */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
+            <div className="bg-white/30 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30">
               <div className="flex items-center mb-4">
                 <Award className="mr-3 text-black" size={28} strokeWidth={1.5} />
                 <h2 className="text-2xl font-bold text-gray-900">Our Mission</h2>
@@ -78,7 +117,7 @@ export const AboutPage: React.FC = () => {
             </div>
 
             {/* How We Work */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
+            <div className="bg-white/30 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30">
               <div className="flex items-center mb-4">
                 <Briefcase className="mr-3 text-black" size={28} strokeWidth={1.5} />
                 <h2 className="text-2xl font-bold text-gray-900">How We Work</h2>
@@ -87,10 +126,10 @@ export const AboutPage: React.FC = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">For Wedding Vendors:</h3>
                   <p>
-                    Join our association free during our launch period. Receive qualified leads matched to your 
-                    services and expertise. Quote your rates, connect with couples, and only pay a commission 
-                    when you successfully book a client. No upfront fees, no monthly charges - just pure growth 
-                    opportunity.
+                    Join our professional association and access qualified leads matched to your
+                    services and expertise. Purchase leads that match your criteria, quote your rates,
+                    and connect with couples ready to book. Pay only for the leads you want - no monthly
+                    fees, just targeted growth opportunities.
                   </p>
                 </div>
                 <div>
@@ -105,7 +144,7 @@ export const AboutPage: React.FC = () => {
             </div>
 
             {/* Our Values */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
+            <div className="bg-white/30 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30">
               <div className="flex items-center mb-4">
                 <Users className="mr-3 text-black" size={28} strokeWidth={1.5} />
                 <h2 className="text-2xl font-bold text-gray-900">Our Values</h2>
@@ -121,7 +160,7 @@ export const AboutPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Fair Partnership</h3>
-                  <p className="text-sm">Commission-only model ensures vendors only pay when they succeed.</p>
+                  <p className="text-sm">Pay-per-lead model ensures vendors only invest in opportunities they choose.</p>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Community</h3>
@@ -131,7 +170,7 @@ export const AboutPage: React.FC = () => {
             </div>
 
             {/* Parent Company */}
-            <div className="bg-gradient-to-r from-gray-900 to-black rounded-2xl p-8 shadow-xl text-white">
+            <div className="bg-black rounded-2xl p-8 shadow-2xl text-white">
               <h2 className="text-2xl font-bold mb-4">About Precious Pics Pro</h2>
               <p className="text-gray-200 leading-relaxed mb-4">
                 Our parent company, <strong>Precious Pics Pro</strong>, is a full-service wedding photography and 
@@ -160,10 +199,10 @@ export const AboutPage: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/leads-signup"
+                to="/sign-up"
                 className="inline-flex items-center justify-center space-x-2 bg-black text-white px-8 py-4 text-lg font-bold rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-lg"
               >
-                <span>Join Free Now</span>
+                <span>Get Started Today</span>
               </Link>
               <Link
                 to="/"

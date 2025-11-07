@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { logger } from './utils/logger';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target, Shield, BookOpen } from 'lucide-react';
 import { supabase } from './lib/supabase';
-import { useMediaQuery } from 'react-responsive';
 import { setAuthToken, usersAPI } from './services/api';
 import { UnsubscribePage } from './pages/UnsubscribePage';
 import { AboutPage } from './pages/AboutPage';
@@ -19,12 +17,9 @@ import { OnboardingPage } from './pages/OnboardingPage';
 import { ScrollToTop } from './components/ScrollToTop';
 import { BlogPage } from './pages/BlogPage';
 import { BlogArticlePage } from './pages/BlogArticlePage';
-import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
-import { ConfirmEmailSuccessPage } from './pages/ConfirmEmailSuccessPage';
 
 const LandingPage: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +34,7 @@ const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative ">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative overflow-hidden lg:max-h-screen lg:overflow-y-auto">
       {/* Video Background - Optimized Loading */}
       <video
         key="homepage-video"
@@ -464,6 +459,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
       try {
         const response = await usersAPI.getProfile();
         const onboardingStatus = response.data?.user?.onboardingCompleted;
+        console.log('Onboarding status from API:', onboardingStatus, response.data);
 
         const isCompleted = onboardingStatus === true;
         setOnboardingCompleted(isCompleted);
@@ -471,7 +467,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
         // Cache the status for faster subsequent loads
         localStorage.setItem('onboardingCompleted', String(isCompleted));
       } catch (error) {
-        logger.error('Failed to check onboarding status:', error);
+        console.error('Failed to check onboarding status:', error);
 
         // CRITICAL FIX: Don't set to false on error - this was causing the bug!
         // Only redirect to onboarding if we have no cached status and API fails
@@ -553,8 +549,6 @@ function App() {
           {/* Auth Routes */}
           <Route path="/sign-in" element={<CustomSignInPage />} />
           <Route path="/sign-up" element={<CustomSignUpPage />} />
-          <Route path="/email-confirmation" element={<EmailConfirmationPage />} />
-          <Route path="/confirm-email" element={<ConfirmEmailSuccessPage />} />
           <Route path="/account-blocked" element={<AccountBlocked />} />
 
           {/* Onboarding Route - requires auth but not onboarding completion */}

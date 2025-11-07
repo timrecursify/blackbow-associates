@@ -184,7 +184,7 @@ export const LeadsSignupPage: React.FC = () => {
             Join Black Bow Associates
           </h1>
           <p className="text-sm text-gray-600">
-            Get qualified leads for free. Commission only.
+            Access qualified leads matched to your expertise.
           </p>
         </div>
 
@@ -392,7 +392,7 @@ export const LeadsSignupPage: React.FC = () => {
                 ) : (
                   <>
                     <Send size={16} />
-                    <span>Join Free Now</span>
+                    <span>Get Started Today</span>
                   </>
                 )}
               </button>
@@ -407,7 +407,7 @@ export const LeadsSignupPage: React.FC = () => {
             </div>
 
             <p className="text-center text-xs text-gray-400">
-              Free membership. Commission only when you book.
+              Pay per lead. Only receive leads that match your criteria.
             </p>
           </form>
         </div>

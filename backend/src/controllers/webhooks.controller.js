@@ -35,32 +35,106 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
       const userId = paymentIntent.metadata.userId;
       const amount = paymentIntent.amount / 100; // Convert from cents
 
-      // Update user balance
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-
-      if (!user) {
-        logger.error('User not found for payment', { userId, paymentIntentId: paymentIntent.id });
-        break;
-      }
-
-      const newBalance = parseFloat(user.balance) + amount;
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: { balance: newBalance }
-      });
-
-      // Create transaction record
-      await prisma.transaction.create({
-        data: {
+      // SECURITY: Validate amount bounds to prevent manipulation
+      if (amount < 0 || amount > 10000) {
+        logger.error('Invalid payment amount in webhook', {
           userId,
           amount,
-          type: 'DEPOSIT',
-          stripePaymentId: paymentIntent.id,
-          balanceAfter: newBalance,
-          metadata: { paymentIntent: paymentIntent.id }
+          paymentIntentId: paymentIntent.id
+        });
+        break; // Reject invalid amounts
+      }
+
+      // SECURITY: Use transaction to prevent race conditions and duplicate processing
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          // Check if payment already processed (prevent duplicate credits)
+          const existingTransaction = await tx.transaction.findFirst({
+            where: {
+              stripePaymentId: paymentIntent.id,
+              userId: userId
+            }
+          });
+
+          if (existingTransaction) {
+            logger.warn('Payment already processed via webhook - duplicate event', {
+              userId,
+              paymentIntentId: paymentIntent.id,
+              transactionId: existingTransaction.id
+            });
+            return { alreadyProcessed: true, transaction: existingTransaction };
+          }
+
+          // Get user with lock
+          const user = await tx.user.findUnique({ 
+            where: { id: userId },
+            select: { id: true, email: true, balance: true }
+          });
+
+          if (!user) {
+            logger.error('User not found for payment', { userId, paymentIntentId: paymentIntent.id });
+            throw new Error('User not found');
+          }
+
+          // Atomic balance update
+          const updatedUser = await tx.user.update({
+            where: { id: userId },
+            data: { balance: { increment: amount } },
+            select: { balance: true }
+          });
+
+          const newBalance = parseFloat(updatedUser.balance);
+
+          // Create transaction record atomically
+          const transaction = await tx.transaction.create({
+            data: {
+              userId,
+              amount,
+              type: 'DEPOSIT',
+              stripePaymentId: paymentIntent.id,
+              balanceAfter: newBalance,
+              metadata: { 
+                paymentIntent: paymentIntent.id,
+                processedVia: 'stripe_webhook',
+                timestamp: new Date().toISOString()
+              }
+            }
+          });
+
+          return { alreadyProcessed: false, transaction, user, amount, newBalance };
+        });
+
+        if (result.alreadyProcessed) {
+          logger.info('Payment already processed - skipping duplicate webhook', {
+            userId,
+            paymentIntentId: paymentIntent.id
+          });
+          break;
         }
-      });
+
+        logger.info('Deposit processed successfully via webhook', {
+          userId: result.user.id,
+          email: result.user.email,
+          amount: result.amount,
+          newBalance: result.newBalance,
+          paymentIntentId: paymentIntent.id,
+          timestamp: new Date().toISOString()
+        });
+
+        await notifyTelegram(
+          `💰 Deposit successful: ${result.user.email} added $${result.amount}`,
+          'success'
+        );
+      } catch (error) {
+        logger.error('Failed to process payment webhook', {
+          error: error.message,
+          stack: error.stack,
+          userId,
+          paymentIntentId: paymentIntent.id
+        });
+        // Don't break - let webhook handler continue (Stripe will retry)
+        throw error;
+      }
 
       logger.info('Deposit processed successfully via webhook', {
         userId,

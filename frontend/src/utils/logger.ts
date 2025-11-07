@@ -74,7 +74,6 @@ class Logger {
       }
     } catch (error) {
       // Fail silently to prevent logging from breaking the application
-      console.warn('Failed to send log to external service:', error);
     }
   }
 
@@ -82,7 +81,6 @@ class Logger {
     // Sentry integration would go here
     // For now, just console log in development
     if (import.meta.env.DEV) {
-      console.warn('Sentry not configured for:', logEntry);
     }
   }
 
@@ -90,7 +88,6 @@ class Logger {
     // LogRocket integration would go here
     // For now, just console log in development
     if (import.meta.env.DEV) {
-      console.info('LogRocket not configured for:', logEntry);
     }
   }
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { Navbar } from '../components/Navbar';
 import { DepositModal } from '../components/DepositModal';
+import { BillingAddressModal } from '../components/BillingAddressModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Notification from '../components/Notification';
 import { Search, SlidersHorizontal, List, Grid, Table as TableIcon, ChevronDown, ChevronRight, X, Star, ShoppingCart } from 'lucide-react';
@@ -37,6 +39,8 @@ export const MarketplacePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [hasBillingAddress, setHasBillingAddress] = useState<boolean | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
@@ -59,6 +63,28 @@ export const MarketplacePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
 
+  
+  const fetchBillingStatus = async () => {
+    try {
+      const response = await usersAPI.getProfile();
+      const billing = response.data.user.billing;
+      
+      // Check if billing address exists (at least addressLine1, city, state, zip)
+      const hasAddress = !!(
+        billing?.addressLine1 &&
+        billing?.city &&
+        billing?.state &&
+        billing?.zip
+      );
+      
+      setHasBillingAddress(hasAddress);
+    } catch (error) {
+      logger.error('Failed to fetch billing status:', error);
+      setHasBillingAddress(false);
+    }
+  };
+
+
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filters change
   }, [favoritesOnly]);
@@ -67,6 +93,7 @@ export const MarketplacePage: React.FC = () => {
     fetchLeads();
     fetchBalance();
     fetchPurchasedLeads();
+    fetchBillingStatus();
   }, [favoritesOnly, currentPage]);
 
   useEffect(() => {
@@ -91,7 +118,7 @@ export const MarketplacePage: React.FC = () => {
         setPagination(response.data.pagination);
       }
     } catch (error) {
-      console.error('Failed to fetch leads:', error);
+      logger.error('Failed to fetch leads:', error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +141,7 @@ export const MarketplacePage: React.FC = () => {
         )
       );
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      logger.error('Failed to toggle favorite:', error);
     }
   };
 
@@ -124,7 +151,7 @@ export const MarketplacePage: React.FC = () => {
       const userData = response.data.user || response.data;
       setBalance(userData.balance !== undefined && userData.balance !== null ? userData.balance : 0);
     } catch (error) {
-      console.error('Failed to fetch balance:', error);
+      logger.error('Failed to fetch balance:', error);
     }
   };
 
@@ -134,7 +161,7 @@ export const MarketplacePage: React.FC = () => {
       const purchasedIds = new Set((response.data.leads || []).map((lead: any) => lead.leadId));
       setPurchasedLeadIds(purchasedIds);
     } catch (error) {
-      console.error('Failed to fetch purchased leads:', error);
+      logger.error('Failed to fetch purchased leads:', error);
     }
   };
 
@@ -189,10 +216,32 @@ export const MarketplacePage: React.FC = () => {
 
   const handleBuyClick = (lead: Lead) => {
     setSelectedLead(lead);
+    
+    // STEP 1: Check if user has billing address
+    if (hasBillingAddress === false) {
+      setShowBillingModal(true);
+      return;
+    }
+    
+    // STEP 2: Check balance
     if (balance < lead.price) {
       setShowDepositModal(true);
     } else {
       setShowConfirmModal(true);
+    }
+  };
+
+  const handleBillingSuccess = () => {
+    setShowBillingModal(false);
+    setHasBillingAddress(true);
+    
+    // Re-trigger purchase flow now that billing exists
+    if (selectedLead) {
+      if (balance < selectedLead.price) {
+        setShowDepositModal(true);
+      } else {
+        setShowConfirmModal(true);
+      }
     }
   };
 
@@ -268,7 +317,7 @@ export const MarketplacePage: React.FC = () => {
           successfulPurchases.push(lead.id);
         } catch (error: any) {
           failedPurchases.push(lead.id);
-          console.error(`Failed to purchase lead ${lead.id}:`, error);
+          logger.error(`Failed to purchase lead ${lead.id}:`, error);
         }
       }
 
@@ -288,7 +337,7 @@ export const MarketplacePage: React.FC = () => {
         navigate('/account?tab=leads');
       }
     } catch (error) {
-      console.error('Bulk purchase error:', error);
+      logger.error('Bulk purchase error:', error);
       setNotification({ message: 'Some purchases failed. Please try again.', type: 'error' });
     } finally {
       setBulkPurchasing(false);
@@ -1015,7 +1064,18 @@ export const MarketplacePage: React.FC = () => {
         </div>
       )}
 
-      <DepositModal
+      {/* Billing Address Modal */}
+      <BillingAddressModal
+        isOpen={showBillingModal}
+        onClose={() => {
+          setShowBillingModal(false);
+          setSelectedLead(null);
+        }}
+        onSuccess={handleBillingSuccess}
+        leadInfo={selectedLead ? { id: selectedLead.id, price: selectedLead.price } : undefined}
+      />
+
+            <DepositModal
         isOpen={showDepositModal}
         onClose={() => {
           setShowDepositModal(false);

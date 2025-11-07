@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils/logger';
 import { Card, Title } from '@tremor/react';
 import { CheckCircle, Clock, DollarSign, RefreshCw } from 'lucide-react';
 import KPICard from '../../components/admin/KPICard';
@@ -58,7 +59,7 @@ export default function FeedbackTab() {
         setError('No data received from server');
       }
     } catch (error: any) {
-      console.error('Failed to fetch feedback analytics:', error);
+      logger.error('Failed to fetch feedback analytics:', error);
       setError(error.response?.data?.message || 'Failed to load feedback data');
     } finally {
       setLoading(false);

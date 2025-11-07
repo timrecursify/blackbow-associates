@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils/logger';
 import { Card, Title } from '@tremor/react';
 import { DollarSign, Users, FileText, TrendingUp, RefreshCw, Activity } from 'lucide-react';
 import KPICard from '../../components/admin/KPICard';
@@ -104,7 +105,7 @@ export default function OverviewTab() {
       setRefundRate(revenueGrowthRes.data.refundRate || 0);
       setUserEngagement(userEngagementRes.data || null);
     } catch (error) {
-      console.error('Failed to fetch analytics data:', error);
+      logger.error('Failed to fetch analytics data:', error);
     } finally {
       setLoading(false);
     }

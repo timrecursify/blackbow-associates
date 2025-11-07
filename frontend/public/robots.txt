@@ -1,0 +1,91 @@
+# BlackBow Associates - Robots.txt
+# Premium Wedding Lead Marketplace
+
+User-agent: *
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+Allow: /about
+Allow: /marketplace
+Allow: /sign-up
+Allow: /sign-in
+
+# Disallow private/auth pages
+Disallow: /account
+Disallow: /account/*
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /onboarding
+Disallow: /leads/*
+Disallow: /account-blocked
+Disallow: /unsubscribe
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://blackbowassociates.com/sitemap.xml
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+
+User-agent: Bingbot
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+
+User-agent: Slurp
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+
+User-agent: DuckDuckBot
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+
+User-agent: Baiduspider
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+
+User-agent: YandexBot
+Allow: /
+Allow: /blog/
+Allow: /blog/*
+
+# Block AI scrapers that don't respect content
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+# Block generic scrapers
+User-agent: AhrefsBot
+Crawl-delay: 5
+
+User-agent: SemrushBot
+Crawl-delay: 5
+
+User-agent: MJ12bot
+Crawl-delay: 10
+
+User-agent: DotBot
+Crawl-delay: 10
+

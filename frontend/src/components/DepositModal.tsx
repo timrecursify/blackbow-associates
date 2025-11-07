@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { X, DollarSign, CheckCircle, Loader } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -53,12 +54,12 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
       profileLoadedRef.current = false;
       return;
     }
-    
+
     // Only load profile once when modal opens
     if (profileLoadedRef.current) {
       return;
     }
-    
+
     const loadProfile = async () => {
       try {
         setLoadingProfile(true);
@@ -66,9 +67,9 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         const response = await usersAPI.getProfile();
         const userData = response.data.user || response.data;
         const billing = userData.billing;
-        
+
         // Check if billing address exists and has required fields
-        if (!billing || !billing.addressLine1 || 
+        if (!billing || !billing.addressLine1 ||
             !billing.city || !billing.state || !billing.zip) {
           // No billing address - show error and close modal
           setError('Billing address is required. Please complete your registration first.');
@@ -78,7 +79,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
           }, 3000);
           return;
         }
-        
+
         // Check if company or individual name is provided
         if (!billing.isCompany && (!billing.firstName || !billing.lastName)) {
           setError('Billing address is incomplete. Please update your billing address in Account settings.');
@@ -88,7 +89,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
           }, 3000);
           return;
         }
-        
+
         if (billing.isCompany && !billing.companyName) {
           setError('Billing address is incomplete. Please update your billing address in Account settings.');
           setLoadingProfile(false);
@@ -97,17 +98,17 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
           }, 3000);
           return;
         }
-        
+
         // Billing address exists - proceed to payment
         setLoadingProfile(false);
       } catch (error) {
-        console.error('Failed to load profile:', error);
+        logger.error('Failed to load profile:', error);
         setError('Failed to load profile. Please try again.');
         setLoadingProfile(false);
         profileLoadedRef.current = false; // Allow retry on error
       }
     };
-    
+
     loadProfile();
   }, [isOpen, onClose]);
 
@@ -156,17 +157,16 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         try {
           // Try to verify payment immediately (fallback if webhook fails)
           const verifyResponse = await paymentsAPI.verifyPayment(paymentIntentId);
-          
+
           if (verifyResponse.data.success) {
-            console.log('Payment verified immediately', { paymentIntentId });
             // Payment verified and credited
             setDepositAmount(depositAmount);
             setSuccess(true);
             setIsProcessing(false);
-            
+
             // Trigger balance update event
             window.dispatchEvent(new CustomEvent('balanceUpdated'));
-            
+
             // Call success callback and close modal immediately
             onSuccess();
             // Close modal after a brief delay to show success message
@@ -178,7 +178,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
             setDepositAmount(depositAmount);
             setSuccess(true);
             setIsProcessing(false);
-            
+
             // Get initial balance before polling
             let initialBalance = 0;
             try {
@@ -186,12 +186,12 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
               const userData = profileResponse.data.user || profileResponse.data;
               initialBalance = userData.balance !== undefined && userData.balance !== null ? userData.balance : 0;
             } catch (error) {
-              console.error('Failed to get initial balance:', error);
+              logger.error('Failed to get initial balance:', error);
             }
-            
+
             // Poll for balance update (webhook is async)
             pollForBalanceUpdate(initialBalance, depositAmount);
-            
+
             // Call success callback and close modal immediately
             onSuccess();
             // Close modal after a brief delay to show success message
@@ -200,12 +200,12 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
             }, 1500);
           }
         } catch (verifyError) {
-          console.error('Payment verification failed, will rely on webhook:', verifyError);
+          logger.error('Payment verification failed, will rely on webhook:', verifyError);
           // If verification fails, rely on webhook polling
           setDepositAmount(depositAmount);
           setSuccess(true);
           setIsProcessing(false);
-          
+
           // Get initial balance before polling
           let initialBalance = 0;
           try {
@@ -213,12 +213,12 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
             const userData = profileResponse.data.user || profileResponse.data;
             initialBalance = userData.balance !== undefined && userData.balance !== null ? userData.balance : 0;
           } catch (error) {
-            console.error('Failed to get initial balance:', error);
+            logger.error('Failed to get initial balance:', error);
           }
-          
+
           // Poll for balance update (webhook is async)
           pollForBalanceUpdate(initialBalance, depositAmount);
-          
+
           // Close modal FIRST to prevent reopening issues
           onClose();
           // Call success callback AFTER closing modal
@@ -237,14 +237,14 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
     // Poll every 1 second for up to 10 seconds
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     const pollInterval = setInterval(async () => {
       attempts++;
       try {
         const response = await usersAPI.getProfile();
         const userData = response.data.user || response.data;
         const currentBalance = userData.balance !== undefined && userData.balance !== null ? userData.balance : 0;
-        
+
         // Check if balance increased by the deposit amount (indicating webhook processed)
         const expectedBalance = initialBalance + depositAmount;
         if (Math.abs(currentBalance - expectedBalance) < 0.01) { // Allow small rounding differences
@@ -257,7 +257,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
           window.dispatchEvent(new CustomEvent('balanceUpdated'));
         }
       } catch (error) {
-        console.error('Failed to poll balance:', error);
+        logger.error('Failed to poll balance:', error);
         if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
         }
@@ -291,7 +291,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
             setSuccess(false);
             onClose();
           }}
-          className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200"
+          className="w-full px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 min-h-[48px]"
         >
           Close
         </button>
@@ -318,7 +318,7 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         </div>
         <button
           onClick={onClose}
-          className="w-full px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200"
+          className="w-full px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 min-h-[48px]"
         >
           Close
         </button>
@@ -341,9 +341,9 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         </p>
       </div>
 
-      {/* Amount Input */}
+      {/* Amount Input - Mobile Optimized */}
       <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-900 transition-colors duration-200">
+        <label htmlFor="amount" className="block text-sm font-medium text-gray-900 transition-colors duration-200 mb-2">
           Deposit Amount
         </label>
         <div className="relative">
@@ -357,50 +357,50 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
             onChange={(e) => setAmount(e.target.value)}
             min="1"
             step="0.01"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black text-gray-900 transition-colors duration-200"
+            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black text-gray-900 transition-colors duration-200 min-h-[48px] text-base"
             placeholder="0.00"
             required
           />
         </div>
-        <p className="text-xs text-gray-600 hover:text-black transition-colors duration-200">Minimum deposit: $1.00</p>
+        <p className="text-xs text-gray-600 hover:text-black transition-colors duration-200 mt-1">Minimum deposit: $1.00</p>
       </div>
 
-      {/* Quick Amount Buttons */}
-      <div className="flex gap-2">
+      {/* Quick Amount Buttons - Mobile Optimized */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <button
           type="button"
           onClick={() => setAmount('20')}
-          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 min-h-[48px]"
         >
           $20
         </button>
         <button
           type="button"
           onClick={() => setAmount('50')}
-          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 min-h-[48px]"
         >
           $50
         </button>
         <button
           type="button"
           onClick={() => setAmount('100')}
-          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 min-h-[48px]"
         >
           $100
         </button>
         <button
           type="button"
           onClick={() => setAmount('200')}
-          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 min-h-[48px]"
         >
           $200
         </button>
       </div>
 
-      {/* Card Element */}
+      {/* Card Element - Mobile Optimized */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 transition-colors duration-200">Card Details</label>
-        <div className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+        <label className="block text-sm font-medium text-gray-900 transition-colors duration-200 mb-2">Card Details</label>
+        <div className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 min-h-[48px]">
           <CardElement
             options={{
               style: {
@@ -427,12 +427,19 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         </div>
       )}
 
-      {/* Submit Button */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+      {/* Submit Button - Mobile Optimized */}
+      <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 px-5 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors min-h-[48px]"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
           disabled={!stripe || isProcessing}
-          className="flex-1 px-5 py-2.5 bg-black text-white rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+          className="flex-1 px-5 py-3 bg-black text-white rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md min-h-[48px]"
         >
           {isProcessing ? (
             <span className="flex items-center justify-center gap-2">
@@ -463,25 +470,32 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onS
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
-        {/* Close Button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-600 hover:text-black transition-colors duration-200"
-        >
-          <X size={24} />
-        </button>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header - Mobile Optimized */}
+        <div className="sticky top-0 bg-white z-10 flex items-start justify-between p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex-1 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 transition-colors duration-200">Add Funds</h2>
+            <p className="text-sm text-gray-600 transition-colors duration-200 mt-1">
+              Deposit funds to your account to purchase wedding leads
+            </p>
+          </div>
 
-        {/* Header */}
-        <h2 className="text-2xl font-bold text-gray-900 transition-colors duration-200">Add Funds</h2>
-        <p className="text-sm text-gray-600 transition-colors duration-200">
-          Deposit funds to your account to purchase wedding leads
-        </p>
+          {/* Close Button - Mobile Optimized */}
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
-        {/* Form */}
-        <Elements stripe={stripePromise}>
-          <DepositForm onClose={handleClose} onSuccess={handleSuccess} redirectUrl={redirectUrl} isOpen={isOpen} />
-        </Elements>
+        {/* Form - Mobile Optimized */}
+        <div className="p-4 sm:p-6">
+          <Elements stripe={stripePromise}>
+            <DepositForm onClose={handleClose} onSuccess={handleSuccess} redirectUrl={redirectUrl} isOpen={isOpen} />
+          </Elements>
+        </div>
       </div>
     </div>
   );

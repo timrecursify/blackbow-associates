@@ -6,13 +6,17 @@ import { parse } from 'csv-parse/sync';
 // Get all users
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
-  const skip = (page - 1) * limit;
+  
+  // SECURITY: Validate and sanitize pagination parameters
+  const pageNum = Math.max(1, Math.min(1000, parseInt(page) || 1));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 100));
+  const skip = (pageNum - 1) * limitNum;
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      skip: parseInt(skip),
-      take: parseInt(limit),
+      skip: skip,
+      take: limitNum,
       select: {
         id: true,
         email: true,
@@ -44,10 +48,10 @@ export const getAllUsers = asyncHandler(async (req, res) => {
       transactionCount: u._count.transactions
     })),
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limitNum)
     }
   });
 });
@@ -55,16 +59,21 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 // Get all leads (including sold)
 export const getAllLeads = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 50 } = req.query;
-  const skip = (page - 1) * limit;
-
-  const where = status ? { status } : {};
+  
+  // SECURITY: Validate and sanitize pagination parameters
+  const pageNum = Math.max(1, Math.min(1000, parseInt(page) || 1));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 100));
+  const skip = (pageNum - 1) * limitNum;
+  
+  // SECURITY: Validate status enum
+  const where = status && ['AVAILABLE', 'SOLD', 'EXPIRED'].includes(status) ? { status } : {};
 
   const [leads, total] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip: parseInt(skip),
-      take: parseInt(limit),
+      skip: skip,
+      take: limitNum,
       include: {
         _count: {
           select: { purchases: true }
@@ -93,10 +102,10 @@ export const getAllLeads = asyncHandler(async (req, res) => {
       createdAt: l.createdAt
     })),
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limitNum)
     }
   });
 });
@@ -167,9 +176,11 @@ export const adjustBalance = asyncHandler(async (req, res) => {
     throw new AppError('Amount cannot be zero', 400, 'VALIDATION_ERROR');
   }
 
-  if (!reason || reason.trim().length === 0) {
+  // SECURITY: Validate and sanitize reason input
+  if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
     throw new AppError('Reason is required for balance adjustments', 400, 'VALIDATION_ERROR');
   }
+  reason = reason.trim().substring(0, 500); // Limit length
 
   const user = await prisma.user.findUnique({ where: { id } });
 
@@ -232,7 +243,16 @@ export const adjustBalance = asyncHandler(async (req, res) => {
 // Block user
 export const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { reason } = req.body;
+  let { reason } = req.body;
+
+  // SECURITY: Validate and sanitize reason input
+  if (reason !== undefined && reason !== null) {
+    if (typeof reason !== 'string') {
+      throw new AppError('Reason must be a string', 400, 'VALIDATION_ERROR');
+    }
+    // Trim and limit length
+    reason = reason.trim().substring(0, 500);
+  }
 
   const user = await prisma.user.findUnique({ where: { id } });
 

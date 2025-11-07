@@ -138,14 +138,18 @@ export const updateProfile = asyncHandler(async (req, res) => {
 export const getTransactions = asyncHandler(async (req, res) => {
   const user = req.user;
   const { page = 1, limit = 50 } = req.query;
-  const skip = (page - 1) * limit;
+  
+  // SECURITY: Validate and sanitize pagination parameters
+  const pageNum = Math.max(1, Math.min(1000, parseInt(page) || 1));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 50));
+  const skip = (pageNum - 1) * limitNum;
 
   const [transactions, total] = await Promise.all([
     prisma.transaction.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
-      skip: parseInt(skip),
-      take: parseInt(limit)
+      skip: skip,
+      take: limitNum
     }),
     prisma.transaction.count({ where: { userId: user.id } })
   ]);
@@ -158,10 +162,10 @@ export const getTransactions = asyncHandler(async (req, res) => {
       balanceAfter: parseFloat(t.balanceAfter)
     })),
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limitNum)
     }
   });
 });
@@ -170,7 +174,11 @@ export const getTransactions = asyncHandler(async (req, res) => {
 export const getPurchasedLeads = asyncHandler(async (req, res) => {
   const user = req.user;
   const { page = 1, limit = 50 } = req.query;
-  const skip = (page - 1) * limit;
+  
+  // SECURITY: Validate and sanitize pagination parameters
+  const pageNum = Math.max(1, Math.min(1000, parseInt(page) || 1));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 50));
+  const skip = (pageNum - 1) * limitNum;
 
   const [purchases, total] = await Promise.all([
     prisma.purchase.findMany({
@@ -185,8 +193,8 @@ export const getPurchasedLeads = asyncHandler(async (req, res) => {
         }
       },
       orderBy: { purchasedAt: 'desc' },
-      skip: parseInt(skip),
-      take: parseInt(limit)
+      skip: skip,
+      take: limitNum
     }),
     prisma.purchase.count({ where: { userId: user.id } })
   ]);
@@ -216,10 +224,10 @@ export const getPurchasedLeads = asyncHandler(async (req, res) => {
       phone: purchase.lead.phone
     })),
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limitNum)
     }
   });
 });
@@ -229,6 +237,20 @@ export const updateLeadNote = asyncHandler(async (req, res) => {
   const user = req.user;
   const { leadId } = req.params;
   const { note } = req.body;
+
+  // SECURITY: Validate and sanitize note input
+  if (note !== undefined && note !== null) {
+    if (typeof note !== 'string') {
+      throw new AppError('Note must be a string', 400, 'VALIDATION_ERROR');
+    }
+    // Trim and limit length
+    const sanitizedNote = note.trim().substring(0, 5000);
+    if (sanitizedNote.length === 0 && note.length > 0) {
+      throw new AppError('Note cannot be empty after sanitization', 400, 'VALIDATION_ERROR');
+    }
+    // Use sanitized note
+    note = sanitizedNote;
+  }
 
   // Verify user owns this lead
   const purchase = await prisma.purchase.findUnique({

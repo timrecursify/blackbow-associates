@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { logger } from '../utils/logger';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { DollarSign, ShoppingCart, User, Shield, LogOut, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -76,7 +77,7 @@ export const Navbar: React.FC = () => {
       setBalance(userData.balance !== undefined && userData.balance !== null ? userData.balance : 0);
       setIsAdmin(userData.isAdmin === true);
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      logger.error('Failed to fetch user profile:', error);
     }
   };
 
@@ -85,7 +86,7 @@ export const Navbar: React.FC = () => {
       await supabase.auth.signOut();
       navigate('/');
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      logger.error('Failed to sign out:', error);
     }
   };
 

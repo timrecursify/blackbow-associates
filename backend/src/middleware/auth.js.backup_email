@@ -100,7 +100,7 @@ export const attachUser = async (req, res, next) => {
         adminVerifiedAt: true,
         isBlocked: true,
         blockedAt: true,
-        blockedReason: true,        emailConfirmed: true,
+        blockedReason: true,
         createdAt: true,
         updatedAt: true
       }
@@ -145,8 +145,8 @@ export const attachUser = async (req, res, next) => {
             adminVerifiedAt: true,
             isBlocked: true,
             blockedAt: true,
-            blockedReason: true,        emailConfirmed: true,
-        createdAt: true,
+            blockedReason: true,
+            createdAt: true,
             updatedAt: true
           }
         });
@@ -178,8 +178,8 @@ export const attachUser = async (req, res, next) => {
                 adminVerifiedAt: true,
                 isBlocked: true,
                 blockedAt: true,
-                blockedReason: true,        emailConfirmed: true,
-        createdAt: true,
+                blockedReason: true,
+                createdAt: true,
                 updatedAt: true
               }
             });
@@ -192,10 +192,6 @@ export const attachUser = async (req, res, next) => {
           // Extract metadata from user_metadata or app_metadata
           const userMetadata = authUser.user.user_metadata || {};
           const appMetadata = authUser.user.app_metadata || {};
-
-          // SECURITY: Detect OAuth providers - they are pre-verified by Google/Facebook
-          const authProvider = appMetadata.provider || 'email';
-          const isOAuthUser = authProvider === 'google' || authProvider === 'facebook';
 
           let businessName = userMetadata.businessName || appMetadata.businessName || null;
 
@@ -217,9 +213,6 @@ export const attachUser = async (req, res, next) => {
             vendorType = 'Other';
           }
 
-          // Check if email is confirmed in Supabase (using Supabase's built-in confirmation)
-          const emailConfirmed = !!authUser.user.email_confirmed_at;
-
           // Use upsert to handle race conditions safely
           user = await prisma.user.upsert({
             where: { email },
@@ -232,7 +225,6 @@ export const attachUser = async (req, res, next) => {
               businessName,
               vendorType,
               balance: 0,
-              emailConfirmed, // Use Supabase's email confirmation status
               onboardingCompleted: false
             },
             select: {
@@ -246,15 +238,14 @@ export const attachUser = async (req, res, next) => {
               about: true,
               onboardingCompleted: true,
               isAdmin: true,
-              adminVerifiedAt: true,        emailConfirmed: true,
-        createdAt: true,
+              adminVerifiedAt: true,
+              createdAt: true,
               updatedAt: true
             }
           });
 
           logger.info('User created/updated successfully', {
             userId: user.id,
-              emailConfirmed, // Email confirmation status from Supabase
             authUserId,
             email,
             source: 'Supabase Auth auto-sync'
@@ -285,8 +276,8 @@ export const attachUser = async (req, res, next) => {
                 about: true,
                 onboardingCompleted: true,
                 isAdmin: true,
-                adminVerifiedAt: true,        emailConfirmed: true,
-        createdAt: true,
+                adminVerifiedAt: true,
+                createdAt: true,
                 updatedAt: true
               }
             });
@@ -307,8 +298,8 @@ export const attachUser = async (req, res, next) => {
                   about: true,
                   onboardingCompleted: true,
                   isAdmin: true,
-                  adminVerifiedAt: true,        emailConfirmed: true,
-        createdAt: true,
+                  adminVerifiedAt: true,
+                  createdAt: true,
                   updatedAt: true
                 }
               });
@@ -355,7 +346,6 @@ export const attachUser = async (req, res, next) => {
         'ACCOUNT_BLOCKED',
         { blockedAt: user.blockedAt }
       );
-// SECURITY: Enforce email confirmation - prevent unconfirmed users from accessing protected routes    // Allow access to confirmation endpoints and auth endpoints    const allowedPaths = ["/api/auth/confirm-email", "/api/auth/resend-confirmation", "/api/auth/me", "/api/users/profile"];    const isAllowedPath = allowedPaths.some(path => req.path.includes(path));        if (!user.emailConfirmed && !isAllowedPath) {      logger.warn("Unconfirmed user attempted access", {        userId: user.id,        email: user.email,        path: req.path      });      throw new AppError(        "Please confirm your email address to continue. Check your inbox for the confirmation link.",        403,        "EMAIL_NOT_CONFIRMED",        { email: user.email }      );    }
     }
 
     req.user = user;

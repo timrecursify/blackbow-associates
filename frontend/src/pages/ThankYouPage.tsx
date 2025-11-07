@@ -7,6 +7,9 @@ export const ThankYouPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background Animation */}
       <div className="absolute inset-0 z-0">
+        {/* White Overlay for Better Readability */}
+        <div className="white-overlay"></div>
+
         <div className="floating-shapes">
           <div className="shape shape-1"></div>
           <div className="shape shape-2"></div>
@@ -15,7 +18,7 @@ export const ThankYouPage: React.FC = () => {
           <div className="shape shape-5"></div>
           <div className="shape shape-6"></div>
         </div>
-        
+
         <div className="wave-container">
           <svg className="wave wave-1" viewBox="0 0 1200 120" preserveAspectRatio="none">
             <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="currentColor"></path>
@@ -30,16 +33,16 @@ export const ThankYouPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-12 relative z-10 text-center">
+      <div className="max-w-2xl w-full bg-white/30 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/30 p-8 md:p-12 relative z-10 text-center">
         <div className="mb-6">
           <CheckCircle className="mx-auto text-green-600 mb-6" size={72} strokeWidth={1.5} />
           <h1 className="font-handwritten text-4xl md:text-5xl text-black mb-4">
             Thank You!
           </h1>
-          <h2 className="font-handwritten-script text-xl md:text-2xl text-gray-700 mb-6">
+          <h2 className="font-handwritten-script text-xl md:text-2xl text-gray-900 mb-6">
             Welcome to Black Bow Associates
           </h2>
-          <p className="text-lg text-gray-600 mb-2">
+          <p className="text-lg text-gray-900 mb-2">
             We've received your application and are excited to have you join our professional association!
           </p>
         </div>

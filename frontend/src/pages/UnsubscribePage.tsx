@@ -64,6 +64,9 @@ export const UnsubscribePage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 relative overflow-hidden">
         {/* Background Animation */}
         <div className="absolute inset-0 z-0">
+          {/* White Overlay for Better Readability */}
+          <div className="white-overlay"></div>
+
           <div className="floating-shapes">
             <div className="shape shape-1"></div>
             <div className="shape shape-2"></div>
@@ -72,7 +75,7 @@ export const UnsubscribePage: React.FC = () => {
             <div className="shape shape-5"></div>
             <div className="shape shape-6"></div>
           </div>
-          
+
           <div className="wave-container">
             <svg className="wave wave-1" viewBox="0 0 1200 120" preserveAspectRatio="none">
               <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="currentColor"></path>
@@ -86,13 +89,13 @@ export const UnsubscribePage: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 relative z-10 text-center">
+        <div className="max-w-md w-full bg-white/30 backdrop-blur-lg rounded-lg shadow-2xl border border-white/30 p-8 relative z-10 text-center">
           <div className="mb-6">
             <CheckCircle className="mx-auto text-green-600 mb-4" size={48} />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Successfully Unsubscribed
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-900">
               We're sorry to see you go! You have been successfully unsubscribed from our newsletter.
             </p>
           </div>
@@ -145,6 +148,9 @@ export const UnsubscribePage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background Animation */}
       <div className="absolute inset-0 z-0">
+        {/* White Overlay for Better Readability */}
+        <div className="white-overlay"></div>
+
         <div className="floating-shapes">
           <div className="shape shape-1"></div>
           <div className="shape shape-2"></div>
@@ -153,7 +159,7 @@ export const UnsubscribePage: React.FC = () => {
           <div className="shape shape-5"></div>
           <div className="shape shape-6"></div>
         </div>
-        
+
         <div className="wave-container">
           <svg className="wave wave-1" viewBox="0 0 1200 120" preserveAspectRatio="none">
             <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="currentColor"></path>
@@ -167,12 +173,12 @@ export const UnsubscribePage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 relative z-10">
+      <div className="max-w-md w-full bg-white/30 backdrop-blur-lg rounded-lg shadow-2xl border border-white/30 p-8 relative z-10">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Unsubscribe from Newsletter
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-900">
             We're sorry to see you go. Enter your email address to unsubscribe from our wedding photography newsletter.
           </p>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { DepositModal } from '../components/DepositModal';
@@ -140,7 +141,7 @@ export const AccountPage: React.FC = () => {
         setLeadsPagination(leadsRes.data.pagination);
       }
     } catch (error) {
-      console.error('Failed to fetch account data:', error);
+      logger.error('Failed to fetch account data:', error);
     } finally {
       setLoading(false);
     }
@@ -153,7 +154,7 @@ export const AccountPage: React.FC = () => {
       setIsEditingProfile(false);
       setNotification({ message: 'Profile updated successfully', type: 'success' });
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      logger.error('Failed to update profile:', error);
       setNotification({ message: 'Failed to update profile', type: 'error' });
     }
   };
@@ -203,7 +204,7 @@ export const AccountPage: React.FC = () => {
       setIsEditingBilling(false);
       setNotification({ message: 'Billing address updated successfully', type: 'success' });
     } catch (error: any) {
-      console.error('Failed to update billing address:', error);
+      logger.error('Failed to update billing address:', error);
       setNotification({ message: error.response?.data?.message || 'Failed to update billing address', type: 'error' });
     }
   };
@@ -222,7 +223,7 @@ export const AccountPage: React.FC = () => {
       setNoteText('');
       setNotification({ message: 'Note saved successfully', type: 'success' });
     } catch (error) {
-      console.error('Failed to save note:', error);
+      logger.error('Failed to save note:', error);
       setNotification({ message: 'Failed to save note', type: 'error' });
     } finally {
       setSavingNote(false);

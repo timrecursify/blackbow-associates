@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Email - Black Bow Associates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #ffffff;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+        }
+        .email-container { max-width: 580px; margin: 0 auto; background-color: #ffffff; }
+        .header { padding: 48px 24px 40px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+        .brand-name {
+            font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 500;
+            color: #1a1a1a; margin-bottom: 8px; letter-spacing: -0.5px;
+        }
+        .tagline { font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; font-weight: 400; }
+        .content { padding: 40px 24px; }
+        .greeting { font-size: 16px; color: #2c2c2c; margin-bottom: 32px; }
+        .main-content { font-size: 16px; line-height: 1.7; color: #444; margin-bottom: 36px; }
+        .main-content p { margin-bottom: 20px; }
+        .main-content ul { padding-left: 20px; margin: 15px 0; }
+        .main-content li { margin-bottom: 8px; }
+        .cta-section { text-align: center; margin: 40px 0; }
+        .cta-button {
+            display: inline-block; background-color: #000000; color: #ffffff !important;
+            padding: 14px 32px; text-decoration: none; font-size: 14px; font-weight: 500;
+            letter-spacing: 0.5px; text-transform: uppercase; border: 2px solid #000000;
+        }
+        .cta-button:hover { background-color: #333333; border-color: #333333; }
+        .alternative-link { text-align: center; margin: 24px 0; padding-top: 24px; border-top: 1px solid #f0f0f0; }
+        .alternative-link p { font-size: 13px; color: #888; margin-bottom: 8px; }
+        .alternative-link a { color: #666; text-decoration: none; font-size: 12px; word-break: break-all; }
+        .footer { padding: 40px 24px; border-top: 1px solid #f0f0f0; text-align: center; }
+        .footer-brand p { font-size: 14px; color: #888; margin-bottom: 4px; }
+        .social-links { margin: 24px 0; }
+        .social-links a { color: #888; text-decoration: none; font-size: 13px; margin: 0 16px; }
+        .footer-legal { font-size: 12px; color: #aaa; margin-top: 24px; }
+        @media (max-width: 600px) {
+            .email-container { margin: 0; }
+            .header, .content, .footer { padding: 24px 16px; }
+            .brand-name { font-size: 28px; }
+            .cta-button { padding: 12px 24px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1 class="brand-name">Black Bow Associates</h1>
+            <p class="tagline">Wedding Lead Marketplace</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Hi {{businessName}},</div>
+            <div class="main-content">
+                <p>Welcome to Black Bow Associates! We're excited to have you join our exclusive marketplace for wedding vendors.</p>
+                <p>To get started and access premium wedding leads in your area, please confirm your email address by clicking the button below:</p>
+            </div>
+            <div class="cta-section">
+                <a href="{{confirmationUrl}}" class="cta-button">Confirm My Email</a>
+            </div>
+            <div class="alternative-link">
+                <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                <a href="{{confirmationUrl}}">{{confirmationUrl}}</a>
+            </div>
+            <div class="main-content">
+                <p><strong>This confirmation link will expire in 24 hours.</strong></p>
+                <p>Once confirmed, you'll have full access to:</p>
+                <ul>
+                    <li>Browse exclusive wedding leads</li>
+                    <li>Purchase lead contact information</li>
+                    <li>Manage your account and balance</li>
+                    <li>Track your purchased leads</li>
+                </ul>
+                <p style="margin-top: 24px;">If you didn't create an account with us, you can safely ignore this email.</p>
+                <p style="margin-top: 32px;">Looking forward to partnering with you,<br><strong>The Black Bow Associates Team</strong></p>
+            </div>
+        </div>
+        <div class="footer">
+            <div class="footer-brand">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>Premium Wedding Lead Marketplace</p>
+            </div>
+            <div class="social-links">
+                <a href="https://blackbowassociates.com">Website</a>
+                <a href="https://blackbowassociates.com/about">About Us</a>
+            </div>
+            <div class="footer-legal">
+                <p>© 2025 Black Bow Associates</p>
+                <p style="margin-top: 8px; font-size: 11px;">You're receiving this because you created an account at blackbowassociates.com</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

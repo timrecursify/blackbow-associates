@@ -46,12 +46,8 @@ export const setAuthToken = (token: string | (() => string) | null) => {
 // Auth API
 export const authAPI = {
   syncUser: (userData: { clerkUserId: string; email: string }) =>
-    apiClient.post("/auth/sync", userData),
-  getCurrentUser: () => apiClient.get("/auth/me"),
-  sendInitialConfirmation: (data: { email: string; businessName: string }) =>
-    apiClient.post("/auth/send-confirmation", data),
-  confirmEmail: (token: string) => apiClient.get(`/auth/confirm-email/${token}`),
-  resendConfirmation: (email: string) => apiClient.post("/auth/resend-confirmation", { email }),
+    apiClient.post('/auth/sync', userData),
+  getCurrentUser: () => apiClient.get('/auth/me'),
 };
 
 // Users API

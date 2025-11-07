@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { logger } from '../utils/logger';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { authAPI } from '../services/api';
 
 export const CustomSignUpPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,10 +26,10 @@ export const CustomSignUpPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/marketplace`,
+          emailRedirectTo: undefined, // Disable email confirmation redirect
           data: {
             first_name: formData.firstName,
-            last_name: formData.lastName,
+            lastName: formData.lastName,
           },
         },
       });
@@ -40,40 +38,18 @@ export const CustomSignUpPage: React.FC = () => {
         throw signUpError;
       }
 
-      if (data.user) {
-        // Create temporary business name from first and last name
-        const temporaryBusinessName = `${formData.firstName} ${formData.lastName}`.trim() || 'New User';
-        
-        // Send initial confirmation email and create user in database
-        try {
-          const response = await authAPI.sendInitialConfirmation({
-            email: formData.email,
-            businessName: temporaryBusinessName
-          });
-        } catch (confirmationError: any) {
-          // Log detailed error
-          logger.error('Failed to send confirmation email:', {
-            error: confirmationError,
-            message: confirmationError?.response?.data?.message || confirmationError?.message,
-            status: confirmationError?.response?.status,
-            statusText: confirmationError?.response?.statusText,
-            data: confirmationError?.response?.data,
-            url: confirmationError?.config?.url
-          });
-          // Show error to user but don't block signup
-          setError('Account created! However, confirmation email failed. Please use the resend button on the next page.');
-        }
-        
-        // Redirect to confirmation page
-        navigate('/email-confirmation', {
-          state: { email: formData.email }
-        });
+      if (data.session) {
+        // User is automatically signed in (autoConfirm enabled)
+        navigate('/onboarding');
+      } else if (data.user && !data.session) {
+        // This shouldn't happen with autoConfirm, but handle gracefully
+        setError('Account created but could not sign you in. Please try signing in.');
       }
     } catch (err: any) {
       // Improved error handling
       const errorMessage = err.message || 'Failed to create account. Please try again.';
       setError(errorMessage);
-      logger.error('Signup error:', err);
+      console.error('Signup error:', err);
     } finally {
       setLoading(false);
     }
@@ -108,34 +84,45 @@ export const CustomSignUpPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-12 transition-colors duration-200">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-6 lg:py-4 transition-colors duration-200">
       <div className="w-full max-w-md">
+        {/* Back to Home Button */}
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <Link to="/" className="inline-block">
-            <h1 className="font-handwritten text-4xl text-black transition-colors duration-200">
+            <h1 className="font-handwritten text-3xl lg:text-4xl text-black transition-colors duration-200">
               Black Bow Associates
             </h1>
           </Link>
-          <p className="text-gray-600 transition-colors duration-200">Create your account</p>
+          <p className="text-gray-600 transition-colors duration-200 text-sm">Create your account</p>
         </div>
 
         {/* Sign Up Form */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-6 sm:p-8 transition-colors duration-200">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-6 lg:p-8 transition-colors duration-200">
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-3 transition-colors duration-200 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-3 transition-colors duration-200 mb-4">
               <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5 transition-colors duration-200" size={18} />
               <p className="text-red-800 text-sm transition-colors duration-200">{error}</p>
             </div>
           )}
 
           {/* OAuth Buttons - MOVED TO TOP */}
-          <div className="space-y-3 mb-6">
+          <div className="space-y-2 mb-4">
             <button
               onClick={() => handleOAuthSignUp('google')}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -149,7 +136,7 @@ export const CustomSignUpPage: React.FC = () => {
             <button
               onClick={() => handleOAuthSignUp('facebook')}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -159,17 +146,16 @@ export const CustomSignUpPage: React.FC = () => {
           </div>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200 transition-colors duration-200"></div>
             </div>
-            <div className="relative flex justify-center text-xs sm:text-sm">
-              <span className="px-4 bg-white text-gray-500">Or sign up with email</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3 bg-white text-gray-500">Or sign up with email</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* First Name Field */}
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 transition-colors duration-200">
@@ -184,7 +170,7 @@ export const CustomSignUpPage: React.FC = () => {
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="John"
                   disabled={loading}
                 />
@@ -205,7 +191,7 @@ export const CustomSignUpPage: React.FC = () => {
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="Doe"
                   disabled={loading}
                 />
@@ -226,7 +212,7 @@ export const CustomSignUpPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="you@example.com"
                   disabled={loading}
                 />
@@ -248,12 +234,12 @@ export const CustomSignUpPage: React.FC = () => {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className="w-full pl-11 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-600 transition-colors duration-200">Minimum 6 characters</p>
+              <p className="mt-1 text-xs text-gray-500 transition-colors duration-200">Minimum 6 characters</p>
             </div>
 
             {/* Submit Button */}
@@ -277,10 +263,10 @@ export const CustomSignUpPage: React.FC = () => {
           </form>
 
           {/* Divider */}
-          <div className="mt-6 pt-6 border-t border-gray-200 transition-colors duration-200">
-            <p className="text-center text-sm text-gray-600 transition-colors duration-200">
+          <div className="mt-4 pt-4 border-t border-gray-200 transition-colors duration-200">
+            <p className="text-center text-xs text-gray-600 transition-colors duration-200">
               Already have an account?{' '}
-              <Link to="/sign-in" className="text-black transition-colors duration-200">
+              <Link to="/sign-in" className="text-black font-medium transition-colors duration-200">
                 Sign in
               </Link>
             </p>
@@ -288,7 +274,7 @@ export const CustomSignUpPage: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-600 transition-colors duration-200">
+        <div className="mt-4 text-center text-xs text-gray-500 transition-colors duration-200">
           <p>© 2025 Black Bow Associates. All rights reserved.</p>
         </div>
       </div>

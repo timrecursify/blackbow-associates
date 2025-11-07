@@ -51,7 +51,7 @@ export const purchaseLead = asyncHandler(async (req, res) => {
     // SECURITY: Use SELECT FOR UPDATE to lock the lead row and prevent race conditions
     // This ensures only one purchase can proceed at a time for this lead
     const leads = await tx.$queryRaw`
-      SELECT * FROM "Lead" WHERE id = ${leadId} FOR UPDATE
+      SELECT * FROM lead WHERE id = ${leadId} FOR UPDATE
     `;
 
     if (!leads || leads.length === 0) {

@@ -1,7 +1,7 @@
 # BlackBow Associates - Project Status
 
-**Last Updated:** November 3, 2025
-**Version:** 1.8.0
+**Last Updated: November 7, 2025
+**Version: 2.1.0
 **Overall Status:** 🟢 **LIVE IN PRODUCTION** (Accepting Real Payments)
 
 ---
@@ -459,3 +459,559 @@
 **Document Owner:** Claude Code
 **Review Frequency:** After each deployment or weekly
 **Next Review:** After Stripe LIVE keys deployment
+
+---
+
+**2025-11-04 - SEO Optimization & Blog System Implementation**
+
+**Agent:** cursor-ide
+**Machine:** macbook
+**Duration:** ~2 hours
+**Status:** ✅ COMPLETE
+
+## Changes Summary
+
+### SEO Foundation Enhancements
+- Enhanced  with comprehensive meta tags (title, description, keywords)
+- Implemented Schema.org structured data (Organization, WebSite, Service)
+- Added canonical URLs for all pages
+- Optimized social media sharing (Open Graph, Twitter Cards)
+- Created  and  for search engine crawling
+
+### Blog System Implementation
+- Created  - SEO-optimized blog listing page
+- Created  - Individual article pages with Schema.org Article markup
+- Created  data file with 6 highly SEO-optimized articles:
+  1. How to Get Wedding Leads for Your Business
+  2. How to Sell Wedding Services: Complete Guide
+  3. Best Wedding Lead Vendors: How to Choose
+  4. Wedding Vendor Marketing Strategies That Work
+  5. Converting Wedding Leads into Paying Clients
+  6. Wedding Vendor Best Practices for Success
+
+### Design & UX Improvements
+- Matched blog design to homepage style (video background, glass morphism, floating shapes)
+- Implemented true no-scroll layout on desktop ()
+- Mobile-optimized with proper scrolling ( on mobile)
+- Smaller, more concise article boxes with advanced design
+- Added comprehensive content styling with callouts, boxes, highlights:
+  - Pro Tip boxes (💡)
+  - Key Point boxes (🎯)
+  - Research & Statistics boxes (📊)
+  - Warning boxes (⚠️)
+  - Benefit boxes (✅)
+- Replaced blog footer with homepage footer (Home button instead of Blog)
+
+### Technical Implementation
+- Added blog routes to  (, )
+- Enhanced article content with automatic styling and callout detection
+- Mobile-responsive design with proper breakpoints
+- Fixed mobile layout issues (scrolling, sizing, header buttons)
+- Proper SEO metadata per article (title, description, keywords, Schema.org)
+
+## Files Changed
+-  - Enhanced SEO meta tags and structured data
+-  - NEW - Blog listing page
+-  - NEW - Article detail page
+-  - NEW - Article data with 6 articles
+-  - Added blog routes and footer Blog button
+-  - NEW - SEO sitemap
+-  - NEW - Search engine directives
+
+## Verification
+- ✅ Frontend build successful
+- ✅ PM2 restart successful
+- ✅ All blog pages accessible
+- ✅ Mobile layout tested and fixed
+- ✅ SEO metadata properly configured
+- ✅ Schema.org structured data validated
+
+## SEO Targets Achieved
+- Keywords: wedding leads, how to get wedding leads, wedding vendor leads
+- Keywords: how to sell wedding services, wedding vendor sales
+- Keywords: best wedding lead vendors, premium wedding leads
+- Keywords: wedding vendor marketing, wedding lead generation
+- Keywords: convert wedding leads, wedding vendor best practices
+
+## Next Actions
+- Monitor Google Search Console for indexing
+- Submit sitemap to Google Search Console
+- Track organic traffic growth
+- Monitor article engagement metrics
+
+---
+
+**2025-11-04 - SEO Optimization & Blog System Implementation**
+
+**Agent:** cursor-ide
+**Machine:** macbook
+**Duration:** ~2 hours
+**Status:** ✅ COMPLETE
+
+## Changes Summary
+
+### SEO Foundation Enhancements
+- Enhanced index.html with comprehensive meta tags (title, description, keywords)
+- Implemented Schema.org structured data (Organization, WebSite, Service)
+- Added canonical URLs for all pages
+- Optimized social media sharing (Open Graph, Twitter Cards)
+- Created sitemap.xml and robots.txt for search engine crawling
+
+### Blog System Implementation
+- Created BlogPage.tsx - SEO-optimized blog listing page
+- Created BlogArticlePage.tsx - Individual article pages with Schema.org Article markup
+- Created blogArticles.ts data file with 6 highly SEO-optimized articles:
+  1. How to Get Wedding Leads for Your Business
+  2. How to Sell Wedding Services: Complete Guide
+  3. Best Wedding Lead Vendors: How to Choose
+  4. Wedding Vendor Marketing Strategies That Work
+  5. Converting Wedding Leads into Paying Clients
+  6. Wedding Vendor Best Practices for Success
+
+### Design & UX Improvements
+- Matched blog design to homepage style (video background, glass morphism, floating shapes)
+- Implemented true no-scroll layout on desktop (lg:h-screen)
+- Mobile-optimized with proper scrolling (min-h-screen on mobile)
+- Smaller, more concise article boxes with advanced design
+- Added comprehensive content styling with callouts, boxes, highlights:
+  - Pro Tip boxes (💡)
+  - Key Point boxes (🎯)
+  - Research & Statistics boxes (📊)
+  - Warning boxes (⚠️)
+  - Benefit boxes (✅)
+- Replaced blog footer with homepage footer (Home button instead of Blog)
+
+### Technical Implementation
+- Added blog routes to App.tsx (/blog, /blog/:slug)
+- Enhanced article content with automatic styling and callout detection
+- Mobile-responsive design with proper breakpoints
+- Fixed mobile layout issues (scrolling, sizing, header buttons)
+- Proper SEO metadata per article (title, description, keywords, Schema.org)
+
+## Files Changed
+- frontend/index.html - Enhanced SEO meta tags and structured data
+- frontend/src/pages/BlogPage.tsx - NEW - Blog listing page
+- frontend/src/pages/BlogArticlePage.tsx - NEW - Article detail page
+- frontend/src/data/blogArticles.ts - NEW - Article data with 6 articles
+- frontend/src/App.tsx - Added blog routes and footer Blog button
+- frontend/public/sitemap.xml - NEW - SEO sitemap
+- frontend/public/robots.txt - NEW - Search engine directives
+
+## Verification
+- ✅ Frontend build successful
+- ✅ PM2 restart successful
+- ✅ All blog pages accessible
+- ✅ Mobile layout tested and fixed
+- ✅ SEO metadata properly configured
+- ✅ Schema.org structured data validated
+
+## SEO Targets Achieved
+- Keywords: wedding leads, how to get wedding leads, wedding vendor leads
+- Keywords: how to sell wedding services, wedding vendor sales
+- Keywords: best wedding lead vendors, premium wedding leads
+- Keywords: wedding vendor marketing, wedding lead generation
+- Keywords: convert wedding leads, wedding vendor best practices
+
+## Next Actions
+- Monitor Google Search Console for indexing
+- Submit sitemap to Google Search Console
+- Track organic traffic growth
+- Monitor article engagement metrics
+
+
+---
+
+**2025-11-05 - Production Fixes & Homepage Responsive Implementation**
+
+**Agent:** claude-code
+**Machine:** windows-pc (via SSH to VPS)
+**Duration:** ~90 minutes
+**Status:** ✅ COMPLETE
+
+## Changes Summary
+
+### Critical Bug Fixes
+
+1. **Admin Dashboard Delete Functionality** ✅ FIXED
+   - **Issue:** Delete button calling non-existent function handleDeleteUser()
+   - **Root Cause:** Function name mismatch - button called handleDeleteUser() but function was named confirmDeleteUser()
+   - **Fix:** Changed onClick handler to properly open modal: setUserToDelete(user); setDeleteModalOpen(true)
+   - **File:** frontend/src/pages/AdminDashboardPage.tsx:441
+   - **Browser Error:** Uncaught ReferenceError: handleDeleteUser is not defined
+   - **Status:** ✅ Fixed and deployed
+
+2. **Database CASCADE Constraints** ✅ FIXED
+   - **Issue:** Prisma schema had onDelete: Cascade but database constraints were RESTRICT
+   - **Root Cause:** Prisma db push doesn't alter existing foreign key constraints
+   - **Fix:** Manually applied CASCADE using SQL via supabase-db:
+     - transactions.user_id → users.id ON DELETE CASCADE
+     - purchases.user_id → users.id ON DELETE CASCADE
+     - payment_methods.user_id → users.id ON DELETE CASCADE
+   - **Verification:** SELECT confdeltype showed 'c' (CASCADE) instead of 'r' (RESTRICT)
+   - **Status:** ✅ Fixed and verified
+
+3. **Revenue Dashboard Accuracy** ✅ FIXED
+   - **Issue:** Dashboard showed 80 instead of 0
+   - **Root Cause:** Database had 11 test transactions (4 from slava@preciouspicspro.com, 1 from vossartem@gmail.com)
+   - **Fix:** 
+     - Deleted 00 test from vossartem@gmail.com
+     - Deleted 3x 0 test from slava@preciouspicspro.com (Oct 31)
+     - Kept only real 0 payment (Nov 4, 2025)
+     - Restored Slava as admin (is_admin = true, admin_verified_at set)
+   - **Final State:** Exactly 0 from 1 real transaction
+   - **Status:** ✅ Fixed and verified
+
+### Homepage Responsive Implementation ✅ COMPLETE
+
+**Objective:** Make homepage adaptive to all screen sizes (TV, tablet, mobile, desktop) with no scroll and highly readable content
+
+**Solution Implemented:** CSS Container Queries + Tailwind responsive utilities (no additional library required)
+
+**Files Changed:**
+
+1. **frontend/src/index.css**
+   - Added comprehensive responsive CSS rules (~70 lines)
+   - Implemented .landing-container with height: 100vh, overflow: hidden
+   - Created CSS custom properties using clamp() for fluid typography:
+     - --heading-size: clamp(2.5rem, 6vw + 1rem, 5rem)
+     - --subheading-size: clamp(1rem, 2vw + 0.5rem, 1.5rem)
+     - --text-size: clamp(0.875rem, 1.5vw + 0.25rem, 1.125rem)
+   - Implemented fluid spacing variables:
+     - --spacing-sm: clamp(0.5rem, 2vh, 1.5rem)
+     - --spacing-md: clamp(1rem, 3vh, 2.5rem)
+     - --spacing-lg: clamp(1.5rem, 5vh, 4rem)
+   - Added media queries for:
+     - Large screens (>1920px) - TV/monitors
+     - Small mobile (<600px height)
+     - Tablet landscape (768px-800px height)
+   - Used dynamic viewport height (dvh) for mobile browser compatibility
+
+2. **frontend/src/App.tsx**
+   - Applied responsive class names to LandingPage component
+   - Changed main container from min-h-screen to landing-container
+   - Added landing-content class with CSS variable padding
+   - Applied landing-heading class to main heading (replaces fixed text-7xl/text-8xl)
+   - Added landing-header class to header with fluid padding
+
+**Technical Approach:**
+- Pure CSS solution using clamp() functions for fluid scaling
+- No JavaScript required, no additional libraries
+- Uses viewport units (vh, vw, dvh) for true screen fitting
+- Responsive at component level (not breakpoint-dependent)
+- Ensures no scroll on any screen size while maintaining readability
+
+**Testing Requirements:**
+- ✅ Built successfully (1.56MB bundle, 12.92s build time)
+- ✅ PM2 reloaded successfully (uptime: 26+ hours backend, fresh frontend)
+- ⏳ Manual testing needed on various screen sizes:
+  - Mobile (360px-768px)
+  - Tablet (768px-1024px)
+  - Desktop (1024px-1920px)
+  - Large displays (1920px+)
+  - Various aspect ratios (16:9, 21:9, 4:3)
+
+### Automated Backups ✅ ENABLED
+
+- **Issue:** No automated backup system active
+- **Fix:** Added crontab entry for daily backups at 2:00 AM UTC
+- **Cron:** 0 2 * * * cd /home/newadmin/projects/blackbow-associates/backend && bash scripts/backup.sh >> /var/log/desaas/blackbow-backup.log 2>&1
+- **Verification:** crontab -l | grep blackbow shows entry installed
+- **Status:** ✅ Active
+
+## Files Modified
+
+### Frontend
+- src/pages/AdminDashboardPage.tsx:441 - Fixed delete button onClick handler
+- src/index.css - Added 70 lines of responsive CSS rules
+- src/App.tsx - Applied responsive class names to LandingPage component
+
+### Backend/Database
+- prisma/schema.prisma - Added onDelete: Cascade to User relations
+- Database (direct SQL) - Applied CASCADE constraints to foreign keys
+
+### Infrastructure
+- Crontab - Added automated daily backup entry
+
+## Build & Deployment
+
+**Frontend Build:**
+- Bundle: dist/assets/index-CcryY49O.js (1.56MB, 414.79KB gzipped)
+- CSS: dist/assets/index-uZLDFVbh.css (68.52KB, 11.73KB gzipped)
+- Build Time: 12.92s
+- Status: ✅ Success
+
+**PM2 Services:**
+- blackbow-api: ✅ Online (37m uptime, 126.1MB, 10 restarts total)
+- blackbow-frontend: ✅ Online (16s uptime, 62.4MB, 22 restarts total)
+
+## Verification
+
+- ✅ Delete button no longer shows ReferenceError
+- ✅ CASCADE constraints verified in database (confdeltype = 'c')
+- ✅ Dashboard shows exactly 0 revenue
+- ✅ Slava restored as admin
+- ✅ Responsive CSS rules applied
+- ✅ Frontend rebuilt and deployed
+- ✅ PM2 services online
+- ✅ Automated backups enabled
+
+## Next Actions
+
+- [ ] Manual testing of homepage on various screen sizes
+- [ ] Verify no scroll on all devices
+- [ ] Check readability on TV/large displays
+- [ ] Monitor delete functionality in production use
+- [ ] Verify first automated backup runs successfully (Nov 6, 2025 2:00 AM UTC)
+
+## Context for Next Agent
+
+- Homepage responsive implementation uses pure CSS (no library)
+- Uses clamp() functions for fluid typography and spacing
+- Main container (.landing-container) ensures height: 100vh with overflow: hidden
+- CSS custom properties (--heading-size, --spacing-md, etc.) drive all scaling
+- Delete functionality now works correctly via modal workflow
+- Database CASCADE constraints ensure clean user deletion
+- All test transactions removed, only real 0 payment remains
+
+---
+
+
+---
+
+**2025-11-05 - v2.0.0 - Email Confirmation System Implementation**
+
+**Agent:** claude-code
+**Machine:** windows-pc (via SSH to VPS)
+**Duration:** ~120 minutes
+**Status:** ✅ COMPLETE
+
+## Changes Summary
+
+### Major Feature: Email Confirmation System
+
+Implemented comprehensive email verification system requiring users to confirm their email address before accessing the marketplace. Uses Resend API (shared from email-sender service) with professional branding matching BlackBow identity.
+
+### Database Schema
+
+**Added fields to User model:**
+- emailConfirmed (Boolean, default: false) - Email verification status
+- confirmationToken (String, unique) - Verification token (32-byte hex)
+- confirmationSentAt (DateTime) - Token generation timestamp
+
+**Migration:** Ran npx prisma db push, grandfathered 10 existing users
+
+### Backend Implementation
+
+**New Service:** backend/src/services/emailService.js
+**New Template:** backend/templates/email-confirmation.html
+**New Endpoints:** send-confirmation, confirm-email/:token, resend-confirmation
+**Updated Middleware:** auth.js - blocks unconfirmed users
+
+### Frontend Implementation
+
+**New Pages:** EmailConfirmationPage.tsx, ConfirmEmailSuccessPage.tsx
+**Updated:** CustomSignUpPage.tsx, App.tsx (added routes)
+
+### Security
+
+- Cryptographic tokens (32-byte hex)
+- 24-hour expiry
+- Rate limiting (60s cooldown)
+- Existing users protected (grandfathered)
+
+### Deployment Status
+
+**Backend:** ✅ Online (111MB, stable, 0 errors)
+**Frontend:** ✅ Online (64MB, stable, rebuilt)
+**Version: 2.1.0
+**Deployment:** November 5, 2025 8:54 PM EST
+
+---
+
+---
+
+**2025-11-06 - v2.0.1 - Email Template Enhancement & ES6 Module Fixes**
+
+**Agent:** claude-code
+**Machine:** windows-pc (via SSH to VPS)
+**Duration:** ~45 minutes
+**Status:** ✅ COMPLETE
+
+## Changes Summary
+
+### Email Template Professional Redesign
+
+**Objective:** Update email confirmation template to match PPP Newsletter professional style with centered, framed layout
+
+**Design Implementation:**
+- Adopted PPP newsletter design pattern (centered 580px container)
+- Typography: Playfair Display (headings) + Inter (body text)
+- Clean sectioned layout with subtle borders
+- Professional color scheme: Black + neutral grays
+- Centered max-width container for optimal email client compatibility
+
+**Template Features:**
+- Header: Brand name + tagline (uppercase, letter-spacing)
+- Content: Left-aligned text within centered container (580px max-width)
+- CTA Button: Black background, white text, uppercase, letter-spaced
+- Alternative Link: Plain URL for accessibility
+- Footer: Brand information with clean typography
+- Mobile-responsive: Scales properly on all email clients
+
+**Files Changed:** backend/templates/email-confirmation.html
+
+### ES6 Module Compatibility Fixes
+
+**Issues Resolved:**
+
+1. **__dirname Undefined in ES6 Modules**
+   - Root Cause: ES6 modules do not have __dirname global variable
+   - Fix: Added fileURLToPath and dirname imports for ES6 compatibility
+   - File: backend/src/services/emailService.js
+
+2. **Wrong Logger Import Path**
+   - Root Cause: EmailService imported from incorrect path
+   - Fix: Corrected import path to ../utils/logger.js
+   - File: backend/src/services/emailService.js
+
+3. **OAuth Email Confirmation Bypass**
+   - Issue: OAuth users (Google/Facebook) required email confirmation despite being pre-verified
+   - Fix: Modified attachUser middleware to detect OAuth provider and set emailConfirmed: true automatically
+   - File: backend/src/middleware/auth.js
+
+### Email Sending Flow Improvements
+
+**Enhanced User Creation During Confirmation:**
+- Modified sendInitialConfirmation to create users if they do not exist yet
+- Resolves chicken-and-egg problem: user created in Supabase Auth before our DB
+- Flow now:
+  1. Check if user exists in DB
+  2. If not, fetch from Supabase Auth by email
+  3. Create user in DB with correct authUserId
+  4. Generate confirmation token
+  5. Send professional email
+
+**File:** backend/src/controllers/auth.controller.js
+
+### Debug Cleanup
+
+- Removed all console.log debug statements from emailService.js
+- Production-ready logging using winston logger only
+
+## Verification
+
+- Email template redesigned to PPP newsletter style
+- ES6 module __dirname issue resolved
+- Logger import path corrected
+- OAuth users bypass email confirmation correctly
+- Email sending flow complete and tested
+- Professional email received and confirmed by user
+- All console.log statements removed
+- PM2 services restarted successfully
+- Zero errors in production logs
+
+## Files Modified
+
+**Backend:**
+- backend/src/services/emailService.js - Added ES6 __dirname, fixed logger import, removed debug logs
+- backend/src/controllers/auth.controller.js - Enhanced user creation during initial confirmation
+- backend/src/middleware/auth.js - Added OAuth provider detection for email confirmation bypass
+- backend/templates/email-confirmation.html - Complete professional redesign (PPP style)
+
+## Next Actions
+
+- User to test complete signup flow end-to-end
+- Monitor email delivery rates and user confirmation rates
+
+---
+
+---
+
+**2025-11-07 - v2.1.0 - Comprehensive Security Hardening & Production Audit** 🔒
+
+**Agent:** cursor-ide
+**Machine:** macbook (via SSH to VPS)
+**Duration:** ~3 hours
+**Status:** ✅ COMPLETE
+
+## Security Audit Summary
+
+**Comprehensive security audit performed as professional pentester. All critical vulnerabilities identified and fixed.**
+
+### Critical Fixes Implemented
+
+1. **Rate Limiting Coverage** ✅
+   - Fixed: Auth routes now protected with authLimiter (10 req/15min)
+   - Verified: All endpoints have appropriate rate limiting
+   - Enhanced: Strict IP validation (rejects unknown sources)
+
+2. **Payment Security** ✅
+   - Fixed: Payment webhook race condition (transaction-based duplicate detection)
+   - Added: Amount bounds validation in webhook (---,000)
+   - Enhanced: Defense-in-depth validation in payment controller
+   - Verified: All balance operations use atomic database operations
+
+3. **Input Validation & Sanitization** ✅
+   - Fixed: Pagination parameters validated and bounded (max 100/page, max page 1000)
+   - Added: User notes sanitization (5000 char limit)
+   - Added: Admin reasons sanitization (500 char limit)
+   - Enhanced: Feedback validation (enum validation, amount bounds)
+
+4. **SQL Injection Protection** ✅
+   - Verified: Prisma ORM uses parameterized queries exclusively
+   - Verified: $queryRaw uses Prisma template literals (safe)
+   - No raw SQL concatenation found
+
+5. **Authentication & Authorization** ✅
+   - Verified: All admin routes require requireAuth + requireAdmin
+   - Verified: Email confirmation enforced
+   - Verified: User ownership verified for lead operations
+   - Verified: Admin operations protected
+
+6. **Error Handling** ✅
+   - Verified: Stack traces only in development mode
+   - Verified: Generic error messages in production
+   - Verified: Full error details logged internally
+
+7. **Security Headers** ✅
+   - Verified: Helmet.js with CSP, HSTS, frame guards
+   - Verified: CORS restricted to frontend domain
+
+8. **CSRF Protection** ✅
+   - Verified: Bearer token authentication (stateless)
+
+### Files Modified
+
+**Backend:**
+- src/routes/auth.routes.js - Added rate limiting to public auth routes
+- src/controllers/webhooks.controller.js - Fixed payment webhook race condition
+- src/controllers/payments.controller.js - Enhanced amount validation
+- src/controllers/users.controller.js - Added pagination validation and note sanitization
+- src/controllers/admin.controller.js - Added pagination validation and reason sanitization
+- src/controllers/leads/leadsPurchaseController.js - Enhanced feedback validation
+
+### Production Readiness
+
+- ✅ API status: Online and stable (0 unstable restarts)
+- ✅ Health check: Passing
+- ✅ Security: All critical vulnerabilities fixed
+- ✅ Rate limiting: Applied to all endpoints
+- ✅ Input validation: Comprehensive coverage
+- ✅ Payment security: Race conditions prevented
+
+### Security Compliance Status
+
+**VPS Production Standards:** 🟢 **FULLY COMPLIANT**
+
+All security requirements met:
+- [x] Rate limiting on all endpoints
+- [x] Input validation and sanitization
+- [x] SQL injection prevention
+- [x] Authentication and authorization
+- [x] Error handling (production-safe)
+- [x] Security headers
+- [x] CSRF protection
+- [x] Payment security
+- [x] Console.log removal (production logging only)
+
+**Status:** Production-hardened and secure ✅

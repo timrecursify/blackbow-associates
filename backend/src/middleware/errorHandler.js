@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger.js';
 
-// Custom error class for application errors
+// Custom error class
 export class AppError extends Error {
   constructor(message, statusCode = 500, code = 'INTERNAL_ERROR', details = null) {
     super(message);
@@ -12,34 +12,21 @@ export class AppError extends Error {
   }
 }
 
-// Global error handler middleware
+// Global error handler
 export const errorHandler = (err, req, res, next) => {
-  // Default to 500 server error
   let statusCode = err.statusCode || 500;
-  let message = err.message || 'Internal Server Error';
   let code = err.code || 'INTERNAL_ERROR';
+  let message = err.message || 'Internal server error';
   let details = err.details || null;
 
-  // Handle Prisma errors
-  if (err.code?.startsWith('P')) {
-    statusCode = 400;
-    code = 'DATABASE_ERROR';
-
-    // Prisma error codes
-    if (err.code === 'P2002') {
-      message = 'A record with this value already exists';
-      code = 'DUPLICATE_ERROR';
-    } else if (err.code === 'P2025') {
-      message = 'Record not found';
-      code = 'NOT_FOUND';
-      statusCode = 404;
-    }
-  }
-
   // Handle validation errors
-  if (err.name === 'ValidationError') {
+  if (err.name === 'ValidationError' || code === 'VALIDATION_ERROR') {
     statusCode = 400;
     code = 'VALIDATION_ERROR';
+    // Ensure details are included for validation errors
+    if (err.details) {
+      details = err.details;
+    }
   }
 
   // Handle JWT errors
@@ -58,6 +45,7 @@ export const errorHandler = (err, req, res, next) => {
     method: req.method,
     ip: req.ip,
     userId: req.user?.id,
+    details: details,
     stack: err.stack
   });
 

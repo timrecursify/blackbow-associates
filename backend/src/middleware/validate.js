@@ -1,5 +1,6 @@
 import { validationResult, body, param, query } from 'express-validator';
 import { AppError } from './errorHandler.js';
+import { logger } from '../utils/logger.js';
 
 // Middleware to check validation results
 export const validate = (req, res, next) => {
@@ -8,8 +9,19 @@ export const validate = (req, res, next) => {
     const errorDetails = errors.array().map(err => ({
       field: err.path,
       message: err.msg,
-      value: err.value
+      value: err.value,
+      location: err.location,
+      type: err.type
     }));
+
+    // Log validation errors for debugging
+    logger.warn('Validation failed', {
+      path: req.path,
+      method: req.method,
+      errors: errorDetails,
+      params: req.params,
+      body: req.body
+    });
 
     throw new AppError(
       'Validation failed',
@@ -125,7 +137,9 @@ export const validations = {
   purchaseLead: [
     param('id')
       .isString()
+      .withMessage('Lead ID must be a string')
       .isLength({ min: 8, max: 8 })
+      .withMessage('Lead ID must be exactly 8 characters')
       .matches(/^[A-Z]{2}\d{6}$/)
       .withMessage('Invalid lead ID format (expected format: XX123456)'),
     validate

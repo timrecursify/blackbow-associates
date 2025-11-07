@@ -152,10 +152,14 @@ const gracefulShutdown = async (signal) => {
 
   try {
     await disconnect();
-    await notifyTelegram(`Server shutting down (${signal})`, 'info');
+    // Don't send Telegram notification for graceful shutdowns (PM2 restarts)
+    // Only log locally to avoid notification spam
+    logger.info('Server shutdown gracefully', { signal });
     process.exit(0);
   } catch (error) {
     logger.error('Error during shutdown', { error: error.message });
+    // Only notify on shutdown errors, not normal restarts
+    await notifyTelegram(`❌ Server shutdown error: ${error.message}`, 'error');
     process.exit(1);
   }
 };
@@ -175,14 +179,18 @@ const server = app.listen(PORT, HOST, async () => {
   try {
     // Test database connection on startup
     await testConnection();
-    await notifyTelegram(`✅ BlackBow API started on port ${PORT}`, 'success');
+    // Don't send notification on every restart - only log locally
+    // PM2 restarts are normal operations, not events worth notifying
+    logger.info('Server started successfully', { port: PORT, host: HOST });
 
     // Initialize Pipedrive sync cron scheduler
     initCronScheduler();
     logger.info('Pipedrive sync scheduler initialized');
   } catch (error) {
     logger.error('Failed to connect to database on startup', { error: error.message });
-    await notifyTelegram(`❌ BlackBow API started but database connection failed`, 'error');
+    // Database connection failed - log error but don't spam notifications
+    // PM2 will auto-restart and we'll try again
+    logger.error('Database connection failed on startup', { error: error.message });
   }
 });
 

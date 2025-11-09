@@ -70,3 +70,4 @@ coverage/
 # Misc
 .wrangler/
 frontend/.env.production
+frontend/public/videos/*.mp4

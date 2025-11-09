@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertCircle, CheckCircle, KeyRound } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3450';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,12 +17,18 @@ export const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
 
-      if (resetError) {
-        throw resetError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send password reset email');
       }
 
       setSuccess(true);

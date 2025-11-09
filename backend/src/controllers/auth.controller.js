@@ -322,4 +322,249 @@ export const sendInitialConfirmation = asyncHandler(async (req, res) => {
 });
 
 
-export default { getCurrentUser, confirmEmail, resendConfirmation, sendInitialConfirmation };
+/**
+ * Password Reset endpoints
+ */
+
+// Request password reset
+export const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email is required'
+    });
+  }
+
+  // Find user by email
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  // Don't reveal if user exists or not for security
+  if (!user) {
+    return res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  }
+
+  // Check rate limiting - max 1 request per 5 minutes
+  if (user.passwordResetSentAt) {
+    const timeSinceLastSend = Date.now() - new Date(user.passwordResetSentAt).getTime();
+    const FIVE_MINUTES = 5 * 60 * 1000;
+
+    if (timeSinceLastSend < FIVE_MINUTES) {
+      const waitMinutes = Math.ceil((FIVE_MINUTES - timeSinceLastSend) / 60000);
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${waitMinutes} minute(s) before requesting another password reset email`,
+        waitMinutes
+      });
+    }
+  }
+
+  // Generate reset token
+  const resetToken = EmailService.generatePasswordResetToken();
+  const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+  // Update user with reset token
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordResetToken: resetToken,
+      passwordResetExpires: resetExpires,
+      passwordResetSentAt: new Date()
+    }
+  });
+
+  // Send password reset email
+  try {
+    await EmailService.sendPasswordResetEmail(user.email, user.businessName, resetToken);
+
+    logger.info('Password reset email sent', {
+      userId: user.id,
+      email: user.email
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset email sent! Please check your inbox.'
+    });
+  } catch (error) {
+    logger.error('Failed to send password reset email', {
+      userId: user.id,
+      email: user.email,
+      error: error.message,
+      stack: error.stack
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send password reset email. Please try again later.'
+    });
+  }
+});
+
+// Verify reset token
+export const verifyResetToken = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: 'Reset token is required'
+    });
+  }
+
+  // Find user by reset token
+  const user = await prisma.user.findUnique({
+    where: { passwordResetToken: token }
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid or expired reset token'
+    });
+  }
+
+  // Check token expiry
+  if (!user.passwordResetExpires || new Date() > new Date(user.passwordResetExpires)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Reset token has expired. Please request a new one.',
+      expired: true
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Token is valid',
+    email: user.email
+  });
+});
+
+// Reset password with token
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Token and new password are required'
+    });
+  }
+
+  // Validate password strength
+  if (newPassword.length < 8) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 8 characters long'
+    });
+  }
+
+  // Find user by reset token
+  const user = await prisma.user.findUnique({
+    where: { passwordResetToken: token }
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid or expired reset token'
+    });
+  }
+
+  // Check token expiry
+  if (!user.passwordResetExpires || new Date() > new Date(user.passwordResetExpires)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Reset token has expired. Please request a new one.',
+      expired: true
+    });
+  }
+
+  // Update password in Supabase Auth
+  try {
+    // Check if user has authUserId
+    if (!user.authUserId) {
+      // Try to find Supabase auth user by email
+      const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+
+      if (listError) {
+        throw new Error(`Failed to list auth users: ${listError.message}`);
+      }
+
+      const authUser = authUsers.users.find(u => u.email === user.email);
+
+      if (!authUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'User account not properly configured. Please contact support.'
+        });
+      }
+
+      // Update database with found authUserId
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { authUserId: authUser.id }
+      });
+
+      user.authUserId = authUser.id;
+    }
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      user.authUserId,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      throw new Error(`Failed to update password: ${updateError.message}`);
+    }
+
+    // Clear reset token from database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        passwordResetSentAt: null
+      }
+    });
+
+    logger.info('Password reset successfully', {
+      userId: user.id,
+      email: user.email
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully! You can now sign in with your new password.'
+    });
+  } catch (error) {
+    logger.error('Failed to reset password', {
+      userId: user.id,
+      email: user.email,
+      error: error.message,
+      stack: error.stack
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password. Please try again later.'
+    });
+  }
+});
+
+
+export default {
+  getCurrentUser,
+  confirmEmail,
+  resendConfirmation,
+  sendInitialConfirmation,
+  requestPasswordReset,
+  verifyResetToken,
+  resetPassword
+};

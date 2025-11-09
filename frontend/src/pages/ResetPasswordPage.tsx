@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, ArrowLeft, AlertCircle, CheckCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3450';
 
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,15 +19,20 @@ export const ResetPasswordPage: React.FC = () => {
   const [validatingToken, setValidatingToken] = useState(true);
 
   useEffect(() => {
-    // Check if user has a valid password reset session
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Verify reset token is valid
+    const verifyToken = async () => {
+      if (!token) {
+        setError('No reset token provided. Please request a new password reset link.');
+        setValidatingToken(false);
+        return;
+      }
 
-        if (sessionError || !session) {
-          setError('Invalid or expired password reset link. Please request a new one.');
-          setValidatingToken(false);
-          return;
+      try {
+        const response = await fetch(`${API_URL}/auth/verify-reset-token/${token}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.message || 'Invalid or expired reset token. Please request a new one.');
         }
 
         setValidatingToken(false);
@@ -34,8 +42,8 @@ export const ResetPasswordPage: React.FC = () => {
       }
     };
 
-    checkSession();
-  }, []);
+    verifyToken();
+  }, [token]);
 
   const validatePassword = (pwd: string): string | null => {
     if (pwd.length < 8) {
@@ -74,19 +82,28 @@ export const ResetPasswordPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: token,
+          newPassword: password,
+        }),
       });
 
-      if (updateError) {
-        throw updateError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to reset password. Please try again.');
       }
 
       setSuccess(true);
 
-      // Redirect to marketplace after 3 seconds
+      // Redirect to sign-in page after 3 seconds
       setTimeout(() => {
-        navigate('/marketplace');
+        navigate('/sign-in');
       }, 3000);
     } catch (err: any) {
       setError(err.message || 'Failed to reset password. Please try again.');
@@ -242,13 +259,13 @@ export const ResetPasswordPage: React.FC = () => {
                 Your password has been successfully reset. You can now sign in with your new password.
               </p>
               <p className="text-xs text-gray-500 mb-6">
-                Redirecting you to the marketplace in a few seconds...
+                Redirecting you to sign in in a few seconds...
               </p>
               <Link
-                to="/marketplace"
+                to="/sign-in"
                 className="inline-block w-full bg-black text-white px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
               >
-                Go to Marketplace
+                Go to Sign In
               </Link>
             </div>
           )}

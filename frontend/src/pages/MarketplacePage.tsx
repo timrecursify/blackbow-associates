@@ -388,6 +388,16 @@ export const MarketplacePage: React.FC = () => {
     }
   };
 
+  // Mobile-specific date format: MM/DD/YY
+  const formatDateMobile = (date: string | null) => {
+    if (!date) return 'TBD';
+    try {
+      return format(new Date(date), 'MM/dd/yy');
+    } catch {
+      return date;
+    }
+  };
+
   const formatDateTime = (date: string) => {
     try {
       return format(new Date(date), 'MMM d, yyyy h:mm a');
@@ -711,9 +721,10 @@ export const MarketplacePage: React.FC = () => {
                       <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 hidden sm:table-cell transition-colors duration-200">
                         {lead.id.substring(0, 8)}
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-blackspace-nowrap transition-colors duration-200">
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-black whitespace-nowrap transition-colors duration-200">
                         <div className="flex items-center gap-2">
-                          {formatDate(lead.weddingDate)}
+                          <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
+                          <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
                           {lead.tags?.includes('NEW') && (
                             <span className="px-2 py-0.5 text-xs font-bold bg-green-100 transition-colors duration-200">
                               NEW
@@ -721,7 +732,7 @@ export const MarketplacePage: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 sm:table-cell transition-colors duration-200">{formatDate(lead.createdAt)}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 hidden sm:table-cell transition-colors duration-200">{formatDate(lead.createdAt)}</td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
                         <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
                         {lead.state && <div className="text-xs text-gray-500 transition-colors duration-200">{lead.state}</div>}
@@ -806,9 +817,10 @@ export const MarketplacePage: React.FC = () => {
                     </button>
                     <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
                     <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-black transition-colors duration-200">
-                      {formatDate(lead.weddingDate)}
+                      <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
+                      <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
                       {lead.tags?.includes('NEW') && (
-                        <span className="px-2 py-0.5 text-xs font-bold bg-green-100sition-colors duration-200">
+                        <span className="px-2 py-0.5 text-xs font-bold bg-green-100 transition-colors duration-200">
                           NEW
                         </span>
                       )}
@@ -872,7 +884,8 @@ export const MarketplacePage: React.FC = () => {
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-medium text-black transition-colors duration-200">
-                  {formatDate(lead.weddingDate)}
+                  <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
+                  <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
                   {lead.tags?.includes('NEW') && (
                     <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-300 rounded-full">
                       NEW
@@ -1057,7 +1070,7 @@ export const MarketplacePage: React.FC = () => {
 
             {/* Lead Details */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-2 text-sm transition-colors duration-200">
-              <div><span className="text-gray-600">Wedding Date:</span> <span className="font-medium text-black">{formatDate(selectedLead.weddingDate)}</span></div>
+              <div><span className="text-gray-600">Wedding Date:</span> <span className="font-medium text-black"><span className="block sm:hidden">{formatDateMobile(selectedLead.weddingDate)}</span><span className="hidden sm:block">{formatDate(selectedLead.weddingDate)}</span></span></div>
               <div><span className="text-gray-600">Location:</span> <span className="font-medium text-black">{selectedLead.location}</span></div>
               <div><span className="text-gray-600">Services:</span> <span className="font-medium text-black">{selectedLead.servicesNeeded.join(', ')}</span></div>
             </div>

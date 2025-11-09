@@ -449,8 +449,27 @@ export const verifyResetToken = asyncHandler(async (req, res) => {
 // Reset password with token
 export const resetPassword = asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
+  const requestContext = {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    origin: req.get('origin'),
+    method: req.method,
+    path: req.path
+  };
+
+  // Log request attempt
+  logger.info('Password reset request received', {
+    ...requestContext,
+    hasToken: !!token,
+    passwordLength: newPassword?.length || 0
+  });
 
   if (!token || !newPassword) {
+    logger.warn('Password reset validation failed', {
+      ...requestContext,
+      missingToken: !token,
+      missingPassword: !newPassword
+    });
     return res.status(400).json({
       success: false,
       message: 'Token and new password are required'
@@ -459,6 +478,10 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   // Validate password strength
   if (newPassword.length < 8) {
+    logger.warn('Password reset validation failed - password too short', {
+      ...requestContext,
+      passwordLength: newPassword.length
+    });
     return res.status(400).json({
       success: false,
       message: 'Password must be at least 8 characters long'
@@ -471,6 +494,10 @@ export const resetPassword = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
+    logger.warn('Password reset failed - invalid token', {
+      ...requestContext,
+      tokenPrefix: token.substring(0, 8) + '...'
+    });
     return res.status(400).json({
       success: false,
       message: 'Invalid or expired reset token'
@@ -479,6 +506,12 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   // Check token expiry
   if (!user.passwordResetExpires || new Date() > new Date(user.passwordResetExpires)) {
+    logger.warn('Password reset failed - token expired', {
+      ...requestContext,
+      userId: user.id,
+      email: user.email,
+      expiresAt: user.passwordResetExpires
+    });
     return res.status(400).json({
       success: false,
       message: 'Reset token has expired. Please request a new one.',
@@ -488,39 +521,100 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   // Update password in Supabase Auth
   try {
+    logger.info('Processing password reset', {
+      ...requestContext,
+      userId: user.id,
+      email: user.email,
+      hasAuthUserId: !!user.authUserId
+    });
+
     // Check if user has authUserId
     if (!user.authUserId) {
-      // Try to find Supabase auth user by email
-      const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-
-      if (listError) {
-        throw new Error(`Failed to list auth users: ${listError.message}`);
-      }
-
-      const authUser = authUsers.users.find(u => u.email === user.email);
-
-      if (!authUser) {
-        return res.status(400).json({
-          success: false,
-          message: 'User account not properly configured. Please contact support.'
-        });
-      }
-
-      // Update database with found authUserId
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { authUserId: authUser.id }
+      logger.info('User missing authUserId, attempting to link', {
+        ...requestContext,
+        userId: user.id,
+        email: user.email
       });
 
-      user.authUserId = authUser.id;
+      try {
+        // Try to find Supabase auth user by email
+        const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+
+        if (listError) {
+          logger.error('Failed to list Supabase auth users', {
+            ...requestContext,
+            userId: user.id,
+            email: user.email,
+            error: listError.message,
+            errorCode: listError.code
+          });
+          throw new Error(`Failed to list auth users: ${listError.message}`);
+        }
+
+        if (!authUsers || !authUsers.users) {
+          logger.error('Invalid response from Supabase listUsers', {
+            ...requestContext,
+            userId: user.id,
+            email: user.email
+          });
+          throw new Error('Invalid response from authentication service');
+        }
+
+        const authUser = authUsers.users.find(u => u.email === user.email);
+
+        if (!authUser) {
+          logger.error('User not found in Supabase Auth', {
+            ...requestContext,
+            userId: user.id,
+            email: user.email
+          });
+          return res.status(400).json({
+            success: false,
+            message: 'User account not properly configured. Please contact support.'
+          });
+        }
+
+        // Update database with found authUserId
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { authUserId: authUser.id }
+        });
+
+        user.authUserId = authUser.id;
+        logger.info('Successfully linked authUserId', {
+          ...requestContext,
+          userId: user.id,
+          email: user.email,
+          authUserId: authUser.id
+        });
+      } catch (linkError) {
+        logger.error('Failed to link authUserId', {
+          ...requestContext,
+          userId: user.id,
+          email: user.email,
+          error: linkError.message,
+          stack: linkError.stack,
+          isTimeout: linkError.message.includes('timeout')
+        });
+        throw linkError;
+      }
     }
 
+    // Update password in Supabase
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       user.authUserId,
       { password: newPassword }
     );
 
     if (updateError) {
+      logger.error('Supabase password update failed', {
+        ...requestContext,
+        userId: user.id,
+        email: user.email,
+        authUserId: user.authUserId,
+        error: updateError.message,
+        errorCode: updateError.code
+      });
       throw new Error(`Failed to update password: ${updateError.message}`);
     }
 
@@ -534,7 +628,8 @@ export const resetPassword = asyncHandler(async (req, res) => {
       }
     });
 
-    logger.info('Password reset successfully', {
+    logger.info('Password reset successfully completed', {
+      ...requestContext,
       userId: user.id,
       email: user.email
     });
@@ -544,16 +639,27 @@ export const resetPassword = asyncHandler(async (req, res) => {
       message: 'Password reset successfully! You can now sign in with your new password.'
     });
   } catch (error) {
-    logger.error('Failed to reset password', {
-      userId: user.id,
-      email: user.email,
+    logger.error('Failed to reset password - critical error', {
+      ...requestContext,
+      userId: user?.id,
+      email: user?.email,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      errorName: error.name,
+      isTimeout: error.message.includes('timeout')
     });
+
+    // Provide more specific error messages based on error type
+    let errorMessage = 'Failed to reset password. Please try again later.';
+    if (error.message.includes('network') || error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (error.message.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+    }
 
     res.status(500).json({
       success: false,
-      message: 'Failed to reset password. Please try again later.'
+      message: errorMessage
     });
   }
 });

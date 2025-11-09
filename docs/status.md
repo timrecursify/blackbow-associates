@@ -1,7 +1,7 @@
 # BlackBow Associates - Project Status
 
-**Last Updated:** November 9, 2025
-**Version:** 1.10.0
+**Last Updated:** November 9, 2025 (Session 13)
+**Version:** 2.2.0
 **Overall Status:** 🟢 **LIVE IN PRODUCTION** (Accepting Real Payments)
 **Session:** 12 - Critical Production Fixes & Database Cleanup
 
@@ -18,6 +18,104 @@
 | Onboarding Flow | 🟢 **Functional** | Form state persistence added, auto-save to localStorage |
 | Cloudflare Tunnel | 🟢 **Configured** | Domains routed to services |
 | Security | 🟢 **Hardened** | v1.8.0 security audit complete, 9 critical vulnerabilities patched |
+
+---
+
+**2025-11-09 - v2.2.0 - Password Reset Production Fixes for Cross-Platform Compatibility** 🔧
+
+**Agent:** cursor-ide
+**Machine:** macbook (via SSH to VPS)
+**Duration:** ~2 hours
+**Status:** ✅ COMPLETE
+
+## Critical Issues Resolved
+
+### 1. Password Reset 500 Errors on Windows Browsers ✅ FIXED
+- **Issue:** Password reset failing with 500 errors on Windows browsers (Arc, Chrome, Edge, Firefox)
+- **Root Cause:** Complex Promise.race timeout logic causing race conditions with Supabase API calls
+- **Solution:** Simplified Supabase API calls, removed problematic Promise.race wrappers
+- **Impact:** Password reset now works reliably across all platforms
+
+### 2. CORS Configuration Issues ✅ FIXED
+- **Issue:** CORS errors preventing API calls on Windows browsers and mobile devices
+- **Root Cause:** CORS configured as static string, not handling multiple origins properly
+- **Solution:** Implemented dynamic CORS handler with:
+  - Support for multiple origins (www and non-www variants)
+  - Mobile device support (allows requests with no origin)
+  - Proper preflight handling with 24-hour cache
+  - All required headers (Content-Type, Authorization, etc.)
+- **File:** backend/src/index.js
+- **Impact:** All API calls now work on Windows browsers and mobile devices
+
+### 3. Stripe Integration Errors on Password Reset Pages ✅ FIXED
+- **Issue:** Stripe SDK loading on all pages, causing errors on password reset pages
+- **Root Cause:** Stripe loaded at module level in DepositModal component
+- **Solution:** Implemented lazy loading - Stripe loads only when deposit modal is opened
+- **File:** frontend/src/components/DepositModal.tsx
+- **Impact:** Eliminates Stripe-related errors on password reset pages
+
+### 4. Missing Environment Variables ✅ FIXED
+- **Issue:** Frontend missing .env.production file causing Supabase initialization errors
+- **Solution:** Recreated .env.production with all required variables:
+  - VITE_API_URL
+  - VITE_SUPABASE_URL
+  - VITE_SUPABASE_ANON_KEY
+  - VITE_STRIPE_PUBLISHABLE_KEY
+- **Impact:** Site loads correctly with proper Supabase authentication
+
+### 5. Enhanced Password Reset Error Handling ✅ IMPROVED
+- **Added:** Comprehensive request context logging (User-Agent, Origin, IP)
+- **Added:** Validation logging at each step
+- **Added:** Better error messages (network vs timeout vs other errors)
+- **Added:** Improved Supabase API error handling
+- **File:** backend/src/controllers/auth.controller.js
+- **Impact:** Better debugging and user experience
+
+## Files Changed
+
+**Backend:**
+- backend/src/index.js - Enhanced CORS configuration (already committed in 00c072c)
+- backend/src/controllers/auth.controller.js - Improved password reset error handling
+
+**Frontend:**
+- frontend/src/components/DepositModal.tsx - Stripe lazy loading implementation
+- frontend/.env.production - Recreated with all required environment variables
+
+**Git:**
+- Removed large video file (109MB) from git tracking
+- Removed secrets from git history (.env.backup, .env.pre_supabase_migration, IMPLEMENTATION_PLAN.md)
+- Added video files to .gitignore
+
+## Testing & Verification
+
+- ✅ Mac browsers (Arc, Safari, Chrome) - Working
+- ✅ Windows browsers (Arc, Chrome, Edge, Firefox) - Fixed
+- ✅ Mobile devices (iOS Safari, Android Chrome) - Fixed
+- ✅ Password reset flow - Working end-to-end
+- ✅ CORS preflight requests - Working correctly
+- ✅ Stripe loading - Only on deposit modal pages
+- ✅ Environment variables - All configured correctly
+
+## Deployment
+
+**Backend:** ✅ Restarted via PM2 (blackbow-api)
+**Frontend:** ✅ Rebuilt and reloaded via PM2 (blackbow-frontend)
+**Git:** ✅ All changes pushed to origin/main
+**Status:** Production-ready, all platforms supported
+
+## Commits
+
+- 4499e4d - chore: remove large video file from git tracking
+- 97cdf73 - fix(production): Password reset fixes for Windows browsers and mobile devices
+- c01b12e - feat(cors): improve CORS configuration for production
+
+## Background Video Location
+
+- **Path:** 
+- **Physical Location:**  (on server, not in git)
+- **Used In:** AboutPage.tsx, BlogArticlePage.tsx
+- **Note:** Video file is now in .gitignore and should be deployed directly to server
+
 | Backups | 🟢 **Automated** | Daily backups at 2:00 AM UTC, 7-day retention |
 | API Keys | 🟢 **LIVE Mode** | Stripe LIVE keys deployed - accepting real payments |
 | **Telegram Notifications** | 🟢 **Active** | @blackbowadmin_bot sending lead purchase & sync alerts to admin |

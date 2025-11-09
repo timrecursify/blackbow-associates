@@ -28,7 +28,7 @@ export const CustomSignUpPage: React.FC = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/marketplace`,
+          emailRedirectTo: `${window.location.origin}/onboarding`,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
@@ -91,7 +91,9 @@ export const CustomSignUpPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      logger.info(`Starting OAuth sign-up with ${provider}`);
+      
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/onboarding`,
@@ -99,13 +101,19 @@ export const CustomSignUpPage: React.FC = () => {
       });
 
       if (oauthError) {
+        logger.error(`OAuth sign-up error: ${oauthError.message}`);
         throw oauthError;
       }
+
+      logger.info('OAuth initiated successfully - browser will redirect', { url: data?.url });
+
+      // Manual redirect using window.location.href
     } catch (err: any) {
+      logger.error(`OAuth sign-up failed: ${err.message}`);
       setError(err.message || `Failed to sign up with ${provider}`);
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-12 transition-colors duration-200">

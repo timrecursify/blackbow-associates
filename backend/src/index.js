@@ -81,7 +81,13 @@ if (process.env.NODE_ENV === 'development') {
 app.use(cors(corsOptions));
 
 // Body parsers
-app.use(express.json());
+// Exclude Stripe webhook from JSON parsing (needs raw body for signature verification)
+app.use((req, res, next) => {
+  if (req.path === "/api/webhooks/stripe") {
+    return next(); // Skip JSON parsing for Stripe webhook
+  }
+  express.json()(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging

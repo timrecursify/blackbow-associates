@@ -66,17 +66,67 @@ app.use(helmet({
   }
 }));
 
-// CORS configuration
+// CORS configuration - Production-ready for all browsers and mobile devices
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'https://blackbowassociates.com',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
 
-// Development CORS - allow localhost
-if (process.env.NODE_ENV === 'development') {
-  corsOptions.origin = ['http://localhost:5173', 'http://localhost:3000', process.env.FRONTEND_URL];
-}
+    // Build allowed origins list
+    const allowedOrigins = [
+      'https://blackbowassociates.com',
+      'https://www.blackbowassociates.com',
+      'http://blackbowassociates.com', // HTTP fallback
+      'http://www.blackbowassociates.com' // HTTP fallback
+    ];
+
+    // Add environment-specific frontend URL if set
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+      // Also add www variant if not already present
+      if (process.env.FRONTEND_URL.includes('blackbowassociates.com') && !process.env.FRONTEND_URL.includes('www')) {
+        allowedOrigins.push(process.env.FRONTEND_URL.replace('blackbowassociates.com', 'www.blackbowassociates.com'));
+      }
+    }
+
+    // Development - allow localhost
+    if (process.env.NODE_ENV === 'development') {
+      allowedOrigins.push(
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://localhost:5174',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5174'
+      );
+    }
+
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Log blocked origin for debugging
+      logger.warn('CORS blocked origin', { origin, allowedOrigins });
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+  maxAge: 86400 // 24 hours - cache preflight requests
+};
 
 app.use(cors(corsOptions));
 

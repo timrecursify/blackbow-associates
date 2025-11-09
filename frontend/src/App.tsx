@@ -21,6 +21,8 @@ import { BlogPage } from './pages/BlogPage';
 import { BlogArticlePage } from './pages/BlogArticlePage';
 import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
 import { ConfirmEmailSuccessPage } from './pages/ConfirmEmailSuccessPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 const LandingPage: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -603,6 +605,8 @@ function App() {
           {/* Auth Routes */}
           <Route path="/sign-in" element={<CustomSignInPage />} />
           <Route path="/sign-up" element={<CustomSignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/email-confirmation" element={<EmailConfirmationPage />} />
           <Route path="/confirm-email" element={<ConfirmEmailSuccessPage />} />
           <Route path="/account-blocked" element={<AccountBlocked />} />

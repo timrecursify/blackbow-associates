@@ -153,9 +153,14 @@ export const CustomSignInPage: React.FC = () => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 transition-colors duration-200">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 transition-colors duration-200">
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-xs text-gray-600 hover:text-black transition-colors duration-200">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200" size={20} />
                 <input

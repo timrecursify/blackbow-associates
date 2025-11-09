@@ -670,8 +670,9 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 {/* Desktop Table View */}
-                <div className="hidden sm:block bg-white rounded-lg shadow-sm border border-gray-200 transition-colors duration-200">
-                  <table className="w-full">
+                <div className="hidden sm:block bg-white rounded-lg shadow-sm border border-gray-200 transition-colors duration-200 overflow-x-auto -mx-3 sm:mx-0">
+                  <div className="min-w-full inline-block">
+                    <table className="w-full min-w-[800px]">
                     <thead>
                       <tr className="bg-gray-50 transition-colors duration-200">
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Date</th>
@@ -720,6 +721,7 @@ export const AccountPage: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </>
             )}

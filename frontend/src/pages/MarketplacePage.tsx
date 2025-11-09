@@ -89,6 +89,37 @@ export const MarketplacePage: React.FC = () => {
     setCurrentPage(1); // Reset to page 1 when filters change
   }, [favoritesOnly]);
 
+  // Restore saved filters on mount
+  useEffect(() => {
+    const savedFilters = localStorage.getItem('marketplaceFilters');
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        if (parsed.searchTerm) setSearchTerm(parsed.searchTerm);
+        if (parsed.selectedStates) setSelectedStates(parsed.selectedStates);
+        if (parsed.selectedServices) setSelectedServices(parsed.selectedServices);
+        if (parsed.sortBy) setSortBy(parsed.sortBy);
+        if (parsed.viewMode) setViewMode(parsed.viewMode);
+        logger.info('Restored marketplace filters from localStorage');
+      } catch (error) {
+        logger.error('Failed to restore marketplace filters:', error);
+        localStorage.removeItem('marketplaceFilters');
+      }
+    }
+  }, []);
+
+  // Auto-save filters to localStorage whenever they change
+  useEffect(() => {
+    const filters = {
+      searchTerm,
+      selectedStates,
+      selectedServices,
+      sortBy,
+      viewMode
+    };
+    localStorage.setItem('marketplaceFilters', JSON.stringify(filters));
+  }, [searchTerm, selectedStates, selectedServices, sortBy, viewMode]);
+
   useEffect(() => {
     fetchLeads();
     fetchBalance();
@@ -624,8 +655,9 @@ export const MarketplacePage: React.FC = () => {
 
         {/* Table View */}
         {viewMode === 'table' && (
-          <div className="border border-gray-200 transition-colors duration-200">
-            <table className="w-full min-w-[800px]">
+          <div className="border border-gray-200 transition-colors duration-200 overflow-x-auto -mx-3 sm:mx-0">
+            <div className="min-w-full inline-block">
+              <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="bg-gray-50 transition-colors duration-200">
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-12 transition-colors duration-200">
@@ -745,6 +777,7 @@ export const MarketplacePage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 

@@ -81,6 +81,9 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         const response = await usersAPI.getProfile();
         const userData = response.data.user || response.data;
         const billing = userData.billing;
+        
+        // Billing address validation is now handled in AccountPage
+        // Proceed to payment
         // Billing address validation is now handled in AccountPage
         // Billing address validation is now handled in AccountPage
         // Proceed to payment

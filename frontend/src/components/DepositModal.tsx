@@ -84,5 +84,9 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         
         // Billing address validation is now handled in AccountPage
         // Proceed to payment
+        setLoadingProfile(false);
+        
+        // Billing address validation is now handled in AccountPage
+        // Proceed to payment
         // Billing address validation is now handled in AccountPage
 

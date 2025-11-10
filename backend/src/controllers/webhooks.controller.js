@@ -32,8 +32,19 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
   switch (event.type) {
     case 'payment_intent.succeeded': {
       const paymentIntent = event.data.object;
-      const userId = paymentIntent.metadata.userId;
+      const userId = paymentIntent.metadata?.userId;
       const amount = paymentIntent.amount / 100; // Convert from cents
+
+      // Validate userId exists in metadata
+      if (!userId || typeof userId !== 'string') {
+        logger.error('Missing or invalid userId in payment intent metadata', {
+          paymentIntentId: paymentIntent.id,
+          metadata: paymentIntent.metadata,
+          customerId: paymentIntent.customer
+        });
+        res.status(200).json({ received: true, error: 'Missing userId in metadata' });
+        return;
+      }
 
       // SECURITY: Validate amount bounds to prevent manipulation
       if (amount < 0 || amount > 10000) {
@@ -72,8 +83,13 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
           });
 
           if (!user) {
-            logger.error('User not found for payment', { userId, paymentIntentId: paymentIntent.id });
-            throw new Error('User not found');
+            logger.error('User not found for payment', { 
+              userId, 
+              paymentIntentId: paymentIntent.id,
+              customerId: paymentIntent.customer,
+              metadata: paymentIntent.metadata
+            });
+            throw new Error(`User not found: ${userId}`);
           }
 
           // Atomic balance update

@@ -3,6 +3,7 @@ import { logger } from '../utils/logger';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { DepositModal } from '../components/DepositModal';
+import { BillingAddressModal } from '../components/BillingAddressModal';
 import Notification from '../components/Notification';
 import { LeadFeedbackModal, FeedbackData } from '../components/LeadFeedbackModal';
 import { FeedbackSuccessModal } from '../components/FeedbackSuccessModal';
@@ -67,6 +68,7 @@ export const AccountPage: React.FC = () => {
   const [purchasedLeads, setPurchasedLeads] = useState<PurchasedLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leads'>('overview');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingBilling, setIsEditingBilling] = useState(false);
@@ -145,6 +147,27 @@ export const AccountPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddFunds = () => {
+    // Check if billing address exists
+    if (!profile?.billing || !profile.billing.addressLine1 || 
+        !profile.billing.city || !profile.billing.state || !profile.billing.zip ||
+        (!profile.billing.isCompany && (!profile.billing.firstName || !profile.billing.lastName)) ||
+        (profile.billing.isCompany && !profile.billing.companyName)) {
+      // Billing address missing, show billing modal
+      setShowBillingModal(true);
+    } else {
+      // Billing address exists, show deposit modal
+      setShowDepositModal(true);
+    }
+  };
+
+  const handleBillingSuccess = async () => {
+    // After billing address is saved, refresh profile and show deposit modal
+    await fetchData();
+    setShowBillingModal(false);
+    setShowDepositModal(true);
   };
 
   const handleSaveProfile = async () => {
@@ -293,7 +316,7 @@ export const AccountPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setShowDepositModal(true)}
+              onClick={handleAddFunds}
               className="w-full sm:w-auto px-6 py-2.5 sm:py-3 bg-black text-white sm:text-base font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-md hover:shadow-lg"
             >
               Add Funds
@@ -1094,6 +1117,13 @@ export const AccountPage: React.FC = () => {
           </div>
         )}
       </div>
+
+            {/* Billing Address Modal */}
+      <BillingAddressModal
+        isOpen={showBillingModal}
+        onClose={() => setShowBillingModal(false)}
+        onSuccess={handleBillingSuccess}
+      />
 
       {/* Deposit Modal */}
       <DepositModal

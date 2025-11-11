@@ -1,0 +1,293 @@
+/**
+ * BlackBow Associates - Design Token System
+ * Version: 1.0.0
+ * Follows DeSaaS design-ux-playbook standards
+ * Matches homepage design language
+ */
+
+:root {
+  /* ===== COLOR SYSTEM ===== */
+
+  /* Brand Colors */
+  --color-brand-black: #000000;
+  --color-brand-white: #ffffff;
+  --color-brand-gray-50: #f9fafb;
+  --color-brand-gray-100: #f3f4f6;
+  --color-brand-gray-200: #e5e7eb;
+  --color-brand-gray-300: #d1d5db;
+  --color-brand-gray-400: #9ca3af;
+  --color-brand-gray-500: #6b7280;
+  --color-brand-gray-600: #4b5563;
+  --color-brand-gray-700: #374151;
+  --color-brand-gray-800: #1f2937;
+  --color-brand-gray-900: #111827;
+
+  /* Semantic Colors - Background */
+  --color-bg-page: #f9fafb;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-overlay: rgba(255, 255, 255, 0.7);
+
+  /* Semantic Colors - Text */
+  --color-text-primary: #000000;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #9ca3af;
+
+  /* Semantic Colors - Borders */
+  --color-border-default: rgba(255, 255, 255, 0.3);
+  --color-border-strong: rgba(255, 255, 255, 0.4);
+  --color-border-subtle: rgba(0, 0, 0, 0.1);
+
+  /* Feedback Colors */
+  --color-success-bg: #f0fdf4;
+  --color-success-text: #16a34a;
+  --color-success-border: #86efac;
+
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #d97706;
+  --color-warning-border: #fcd34d;
+
+  --color-danger-bg: #fef2f2;
+  --color-danger-text: #dc2626;
+  --color-danger-border: #fca5a5;
+
+  --color-info-bg: #eff6ff;
+  --color-info-text: #2563eb;
+  --color-info-border: #93c5fd;
+
+  /* Glass Morphism */
+  --glass-light: rgba(255, 255, 255, 0.3);
+  --glass-medium: rgba(255, 255, 255, 0.35);
+  --glass-strong: rgba(255, 255, 255, 0.4);
+
+  /* ===== TYPOGRAPHY ===== */
+
+  /* Font Families */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-handwritten: 'Kaushan Script', 'Brush Script MT', cursive, -apple-system, sans-serif;
+  --font-handwritten-script: 'Dancing Script', 'Brush Script MT', cursive, -apple-system, sans-serif;
+
+  /* Font Sizes - Modular Scale (1.25) */
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+  --font-size-3xl: 1.875rem;    /* 30px */
+  --font-size-4xl: 2.25rem;     /* 36px */
+  --font-size-5xl: 3rem;        /* 48px */
+  --font-size-6xl: 3.75rem;     /* 60px */
+  --font-size-7xl: 4.5rem;      /* 72px */
+  --font-size-8xl: 6rem;        /* 96px */
+
+  /* Fluid Typography (clamp) */
+  --fluid-heading-hero: clamp(2.5rem, 8vw, 6rem);
+  --fluid-heading-1: clamp(2rem, 6vw, 4.5rem);
+  --fluid-heading-2: clamp(1.75rem, 5vw, 3.75rem);
+  --fluid-heading-3: clamp(1.5rem, 4vw, 3rem);
+  --fluid-heading-4: clamp(1.25rem, 3vw, 2.25rem);
+  --fluid-body-large: clamp(1.125rem, 2vw, 1.25rem);
+  --fluid-body-base: clamp(1rem, 1.5vw, 1.125rem);
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 1.75;
+
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* ===== SPACING SYSTEM ===== */
+  /* 4px base scale */
+  --space-0: 0;
+  --space-1: 0.25rem;     /* 4px */
+  --space-2: 0.5rem;      /* 8px */
+  --space-3: 0.75rem;     /* 12px */
+  --space-4: 1rem;        /* 16px */
+  --space-5: 1.25rem;     /* 20px */
+  --space-6: 1.5rem;      /* 24px */
+  --space-7: 1.75rem;     /* 28px */
+  --space-8: 2rem;        /* 32px */
+  --space-10: 2.5rem;     /* 40px */
+  --space-12: 3rem;       /* 48px */
+  --space-16: 4rem;       /* 64px */
+  --space-20: 5rem;       /* 80px */
+  --space-24: 6rem;       /* 96px */
+  --space-32: 8rem;       /* 128px */
+
+  /* Fluid Spacing (responsive) */
+  --spacing-section: clamp(3rem, 8vw, 8rem);
+  --spacing-component: clamp(1.5rem, 4vw, 4rem);
+
+  /* ===== BORDER RADII ===== */
+  --radius-none: 0;
+  --radius-sm: 0.25rem;       /* 4px */
+  --radius-base: 0.375rem;    /* 6px */
+  --radius-md: 0.5rem;        /* 8px */
+  --radius-lg: 0.75rem;       /* 12px */
+  --radius-xl: 1rem;          /* 16px */
+  --radius-2xl: 1.5rem;       /* 24px */
+  --radius-3xl: 2rem;         /* 32px */
+  --radius-full: 9999px;
+
+  /* ===== SHADOWS (Elevation) ===== */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+
+  /* Glass Shadow */
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.35);
+  --shadow-glass-strong: 0 8px 32px 0 rgba(31, 38, 135, 0.4);
+
+  /* ===== MOTION ===== */
+
+  /* Durations */
+  --duration-instant: 0ms;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-moderate: 300ms;
+  --duration-slow: 400ms;
+  --duration-overlay: 280ms;
+
+  /* Easing Functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Combined */
+  --motion-fast: 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-base: 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-slow: 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-overlay: 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ===== Z-INDEX LAYERS ===== */
+  --z-below: -1;
+  --z-base: 0;
+  --z-raised: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-popover: 50;
+  --z-toast: 60;
+
+  /* ===== BREAKPOINTS (for reference) ===== */
+  --screen-sm: 640px;
+  --screen-md: 768px;
+  --screen-lg: 1024px;
+  --screen-xl: 1280px;
+  --screen-2xl: 1536px;
+
+  /* ===== BACKDROP BLUR ===== */
+  --blur-sm: 4px;
+  --blur-base: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+}
+
+/* ===== DARK MODE TOKENS ===== */
+[data-theme="dark"] {
+  /* Background */
+  --color-bg-page: #0f172a;
+  --color-bg-surface: #1e293b;
+  --color-bg-elevated: #334155;
+  --color-bg-overlay: rgba(15, 23, 42, 0.7);
+
+  /* Text */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #0f172a;
+
+  /* Borders */
+  --color-border-default: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.2);
+
+  /* Glass Morphism (darker) */
+  --glass-light: rgba(15, 23, 42, 0.3);
+  --glass-medium: rgba(15, 23, 42, 0.5);
+  --glass-strong: rgba(15, 23, 42, 0.7);
+}
+
+/* ===== REDUCED MOTION ===== */
+/* Honor user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-moderate: 0ms;
+    --duration-slow: 0ms;
+    --duration-overlay: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.bg-surface {
+  background-color: var(--color-bg-surface);
+}
+
+.bg-glass {
+  background: var(--glass-light);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+}
+
+.bg-glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+}
+
+.shadow-glass {
+  box-shadow: var(--shadow-glass);
+}
+
+.border-glass {
+  border: 1px solid var(--color-border-default);
+}
+
+.rounded-glass {
+  border-radius: var(--radius-2xl);
+}

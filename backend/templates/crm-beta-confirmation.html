@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Beta Application Received - Black Bow Associates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #ffffff;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+        }
+        .email-container { max-width: 580px; margin: 0 auto; background-color: #ffffff; }
+        .header { padding: 48px 24px 40px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+        .brand-name {
+            font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 500;
+            color: #1a1a1a; margin-bottom: 8px; letter-spacing: -0.5px;
+        }
+        .tagline { font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; font-weight: 400; }
+        .content { padding: 40px 24px; }
+        .greeting { font-size: 16px; color: #2c2c2c; margin-bottom: 32px; }
+        .main-content { font-size: 16px; line-height: 1.7; color: #444; margin-bottom: 36px; }
+        .main-content p { margin-bottom: 20px; }
+        .main-content ul { padding-left: 20px; margin: 15px 0; }
+        .main-content li { margin-bottom: 8px; }
+        .highlight-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #000000;
+            padding: 20px 24px;
+            margin: 32px 0;
+        }
+        .highlight-box p { margin-bottom: 8px; font-weight: 500; color: #2c2c2c; }
+        .footer { padding: 40px 24px; border-top: 1px solid #f0f0f0; text-align: center; }
+        .footer-brand p { font-size: 14px; color: #888; margin-bottom: 4px; }
+        .social-links { margin: 24px 0; }
+        .social-links a { color: #888; text-decoration: none; font-size: 13px; margin: 0 16px; }
+        .footer-legal { font-size: 12px; color: #aaa; margin-top: 24px; }
+        @media (max-width: 600px) {
+            .email-container { margin: 0; }
+            .header, .content, .footer { padding: 24px 16px; }
+            .brand-name { font-size: 28px; }
+            .highlight-box { padding: 16px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1 class="brand-name">Black Bow Associates</h1>
+            <p class="tagline">Wedding CRM Beta Program</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Hi {{name}},</div>
+            <div class="main-content">
+                <p><strong>Thank you for your interest in the Black Bow CRM Beta Program!</strong></p>
+                <p>We've received your application for {{companyName}} and we're excited to have you join us in building the first AI-powered CRM designed specifically for wedding vendors.</p>
+
+                <div class="highlight-box">
+                    <p>🎯 Your Application Status: Under Review</p>
+                </div>
+
+                <p><strong>What Happens Next:</strong></p>
+                <ul>
+                    <li><strong>Review Process:</strong> Our team will review your application within the next 48 hours</li>
+                    <li><strong>Beta Access:</strong> If accepted, you'll receive an exclusive invitation with early access pricing</li>
+                    <li><strong>Onboarding:</strong> We'll schedule a personalized walkthrough of the CRM and AI agent features</li>
+                    <li><strong>Your Feedback Matters:</strong> As a beta user, you'll have direct input on features and development</li>
+                </ul>
+
+                <p style="margin-top: 32px;"><strong>What Makes Our CRM Different:</strong></p>
+                <p>Unlike generic CRM tools, Black Bow CRM is built from the ground up for wedding vendors:</p>
+                <ul>
+                    <li>AI Sales Agent that automatically nurtures leads 24/7</li>
+                    <li>Pre-built pipelines designed for photographers, videographers, florists, and planners</li>
+                    <li>Smart form tracking that captures leads directly from your website</li>
+                    <li>Automated contract workflows and client communication</li>
+                </ul>
+
+                <p style="margin-top: 32px;">We'll be in touch very soon. If you have any questions in the meantime, feel free to reply to this email.</p>
+
+                <p style="margin-top: 32px;">Looking forward to partnering with you,<br><strong>The Black Bow Associates Team</strong></p>
+            </div>
+        </div>
+        <div class="footer">
+            <div class="footer-brand">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>AI-Powered CRM for Wedding Vendors</p>
+            </div>
+            <div class="social-links">
+                <a href="https://blackbowassociates.com">Website</a>
+                <a href="https://blackbowassociates.com/crm">CRM Info</a>
+                <a href="https://blackbowassociates.com/about">About Us</a>
+            </div>
+            <div class="footer-legal">
+                <p>© 2025 Black Bow Associates</p>
+                <p style="margin-top: 8px; font-size: 11px;">You're receiving this because you signed up for the CRM Beta Program at blackbowassociates.com</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

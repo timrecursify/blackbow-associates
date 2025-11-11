@@ -131,6 +131,19 @@ export const Navbar: React.FC = () => {
                   </Link>
                 )}
 
+                {/* CRM Link */}
+                <Link
+                  to="/crm"
+                  className={`hidden sm:flex items-center space-x-1 font-medium transition-colors rounded-lg hover:bg-transparent ${
+                    location.pathname === '/crm'
+                      ? 'text-black'
+                      : 'text-gray-700'
+                  }`}
+                  title="CRM"
+                >
+                  <span>CRM</span>
+                </Link>
+
                 {/* Account Link - Hidden on mobile (balance + user menu provide access) */}
                 <Link
                   to="/account"
@@ -246,6 +259,14 @@ export const Navbar: React.FC = () => {
               </>
             ) : (
               <>
+                <Link
+                  to="/crm"
+                  className={`hidden sm:block text-gray-700 hover:text-black font-medium transition-colors text-sm sm:text-base px-2 sm:px-0 ${
+                    location.pathname === '/crm' ? 'text-black' : ''
+                  }`}
+                >
+                  CRM
+                </Link>
                 <Link
                   to="/sign-in"
                   className="text-gray-700 hover:text-black font-medium transition-colors text-sm sm:text-base px-2 sm:px-0"

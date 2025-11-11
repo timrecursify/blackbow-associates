@@ -23,6 +23,7 @@ import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
 import { ConfirmEmailSuccessPage } from './pages/ConfirmEmailSuccessPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import CRMPage from './pages/CRMPage';
 
 const LandingPage: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -598,6 +599,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/crm" element={<CRMPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogArticlePage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />

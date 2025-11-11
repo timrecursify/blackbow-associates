@@ -17,6 +17,7 @@ import adminRoutes from './routes/admin.routes.js';
 import webhookRoutes from './routes/webhooks.routes.js';
 import pipedriveRoutes from './routes/pipedrive.routes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
+import crmBetaRoutes from './routes/crmBeta.routes.js';
 
 // Import cron jobs
 import { initCronScheduler } from './jobs/pipedrive-sync.job.js';
@@ -195,6 +196,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/pipedrive', pipedriveRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
+app.use('/api/crm-beta', crmBetaRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

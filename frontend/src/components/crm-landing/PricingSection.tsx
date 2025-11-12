@@ -29,7 +29,7 @@ const PricingSection: React.FC = () => {
     setError(null);
 
     try {
-      const response = await apiClient.post('/api/crm-beta/signup', {
+      const response = await apiClient.post('/crm-beta/signup', {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),

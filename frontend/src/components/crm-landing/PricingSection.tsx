@@ -102,6 +102,7 @@ const PricingSection: React.FC = () => {
                     type="text"
                     id="name"
                     name="name"
+                    autoComplete="name"
                     required
                     minLength={2}
                     maxLength={100}
@@ -120,6 +121,7 @@ const PricingSection: React.FC = () => {
                     type="email"
                     id="email"
                     name="email"
+                    autoComplete="email"
                     required
                     disabled={loading}
                     value={formData.email}
@@ -140,6 +142,7 @@ const PricingSection: React.FC = () => {
                     type="tel"
                     id="phone"
                     name="phone"
+                    autoComplete="tel"
                     required
                     disabled={loading}
                     value={formData.phone}
@@ -156,6 +159,7 @@ const PricingSection: React.FC = () => {
                     type="text"
                     id="companyName"
                     name="companyName"
+                    autoComplete="organization"
                     required
                     minLength={2}
                     maxLength={100}
@@ -267,6 +271,7 @@ const PricingSection: React.FC = () => {
                     type="url"
                     id="companyWebsite"
                     name="companyWebsite"
+                    autoComplete="url"
                     disabled={loading}
                     value={formData.companyWebsite}
                     onChange={handleChange}

@@ -50,6 +50,8 @@ const AdminDashboardContent: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [crmBetaSignups, setCrmBetaSignups] = useState<CrmBetaSignup[]>([]);
   const [crmBetaTotal, setCrmBetaTotal] = useState(0);
+  const [selectedSignup, setSelectedSignup] = useState<CrmBetaSignup | null>(null);
+  const [signupModalOpen, setSignupModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
 
@@ -444,22 +446,12 @@ const AdminDashboardContent: React.FC = () => {
                         <td className="py-3 px-4 text-sm">
                           <button
                             onClick={() => {
-                              const details = `
-Name: ${signup.name}
-Email: ${signup.email}
-Phone: ${signup.phone}
-Company: ${signup.companyName}
-${signup.companyWebsite ? `Website: ${signup.companyWebsite}` : ''}
-Vendor Type: ${signup.vendorType}
-${signup.message ? `Message: ${signup.message}` : ''}
-Status: ${signup.status}
-Created: ${format(new Date(signup.createdAt), 'PPP')}
-                              `.trim();
-                              alert(details);
+                              setSelectedSignup(signup);
+                              setSignupModalOpen(true);
                             }}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
                           >
-                            View Details
+                            View Submission
                           </button>
                         </td>
                       </tr>
@@ -743,6 +735,135 @@ Created: ${format(new Date(signup.createdAt), 'PPP')}
       </div>
 
       {/* Delete Confirmation Modal */}
+      {/* CRM Beta Signup Details Modal */}
+      {signupModalOpen && selectedSignup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-2xl w-full mx-4 shadow-2xl my-8">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-6 border-b border-gray-200 pb-4">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">Beta Application Details</h3>
+                <p className="text-sm text-gray-500">Submitted {format(new Date(selectedSignup.createdAt), 'PPP')}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setSignupModalOpen(false);
+                  setSelectedSignup(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Status Badge */}
+            <div className="mb-6">
+              <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-semibold ${
+                selectedSignup.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                selectedSignup.status === 'approved' ? 'bg-green-100 text-green-800' :
+                selectedSignup.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                selectedSignup.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {selectedSignup.status.charAt(0).toUpperCase() + selectedSignup.status.slice(1)}
+              </span>
+            </div>
+
+            {/* Details Grid */}
+            <div className="space-y-5">
+              {/* Contact Information */}
+              <div className="bg-gray-50 rounded-xl p-5">
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Contact Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
+                    <p className="text-base font-medium text-gray-900 mt-1">{selectedSignup.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                    <p className="text-base text-gray-900 mt-1">
+                      <a href={`mailto:${selectedSignup.email}`} className="text-blue-600 hover:underline">
+                        {selectedSignup.email}
+                      </a>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</label>
+                    <p className="text-base text-gray-900 mt-1">
+                      <a href={`tel:${selectedSignup.phone}`} className="text-blue-600 hover:underline">
+                        {selectedSignup.phone}
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Business Information */}
+              <div className="bg-gray-50 rounded-xl p-5">
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Business Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Company Name</label>
+                    <p className="text-base font-medium text-gray-900 mt-1">{selectedSignup.companyName}</p>
+                  </div>
+                  {selectedSignup.companyWebsite && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Website</label>
+                      <p className="text-base text-gray-900 mt-1">
+                        <a 
+                          href={selectedSignup.companyWebsite} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                        >
+                          {selectedSignup.companyWebsite}
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Vendor Type</label>
+                    <p className="text-base text-gray-900 mt-1 capitalize">{selectedSignup.vendorType?.replace(/-/g, ' ')}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message */}
+              {selectedSignup.message && (
+                <div className="bg-gray-50 rounded-xl p-5">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Challenge Description</h4>
+                  <p className="text-base text-gray-900 leading-relaxed whitespace-pre-wrap">{selectedSignup.message}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-end mt-8 pt-6 border-t border-gray-200">
+              <a
+                href={`mailto:${selectedSignup.email}?subject=BlackBow CRM Beta Application`}
+                className="px-5 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium text-center"
+              >
+                Email Applicant
+              </a>
+              <button
+                onClick={() => {
+                  setSignupModalOpen(false);
+                  setSelectedSignup(null);
+                }}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 shadow-xl">

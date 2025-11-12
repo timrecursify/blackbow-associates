@@ -1,5 +1,6 @@
 import express from 'express';
 import { getAllUsers, getAllLeads, importLeads, adjustBalance, blockUser, unblockUser, deleteUser, updateLeadStatus } from '../controllers/admin.controller.js';
+import { getAllBetaSignups, getBetaSignupById, updateSignupStatus, exportBetaSignups } from '../controllers/crmBeta.controller.js';
 import { requireAuth, attachUser, requireAdmin } from '../middleware/auth.js';
 import { validations } from '../middleware/validate.js';
 
@@ -19,5 +20,11 @@ router.delete('/users/:id', deleteUser);
 router.get('/leads', getAllLeads);
 router.post('/leads/import', validations.importLeads, importLeads);
 router.put('/leads/:id/status', updateLeadStatus);
+
+// CRM Beta Signups management
+router.get('/crm-beta-signups', getAllBetaSignups);
+router.get('/crm-beta-signups/export', exportBetaSignups);
+router.get('/crm-beta-signups/:id', getBetaSignupById);
+router.patch('/crm-beta-signups/:id/status', updateSignupStatus);
 
 export default router;

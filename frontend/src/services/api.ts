@@ -139,6 +139,16 @@ export const adminAPI = {
   getRevenueGrowth: (params?: any) => apiClient.get('/admin/analytics/revenue-growth', { params }),
   getUserEngagement: (params?: any) => apiClient.get('/admin/analytics/user-engagement', { params }),
   exportAnalytics: (params?: any) => apiClient.get('/admin/analytics/export', { params, responseType: 'blob' }),
+
+  // CRM Beta Signups management
+  getCrmBetaSignups: (page: number = 1, limit: number = 20, status?: string) => 
+    apiClient.get('/admin/crm-beta-signups', { params: { page, limit, status } }),
+  getCrmBetaSignupById: (signupId: string) =>
+    apiClient.get(`/admin/crm-beta-signups/${signupId}`),
+  updateCrmBetaSignupStatus: (signupId: string, status: string) =>
+    apiClient.patch(`/admin/crm-beta-signups/${signupId}/status`, { status }),
+  exportCrmBetaSignups: () =>
+    apiClient.get('/admin/crm-beta-signups/export', { responseType: 'blob' }),
 };
 
 export default {

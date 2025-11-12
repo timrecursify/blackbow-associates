@@ -29,12 +29,27 @@ interface Lead {
   createdAt: string;
 }
 
+interface CrmBetaSignup {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  companyName: string;
+  companyWebsite?: string;
+  vendorType: string;
+  message?: string;
+  status: string;
+  createdAt: string;
+}
+
 type TabType = 'overview' | 'users' | 'leads' | 'feedback' | 'crm-beta';
 
 const AdminDashboardContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [users, setUsers] = useState<User[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [crmBetaSignups, setCrmBetaSignups] = useState<CrmBetaSignup[]>([]);
+  const [crmBetaTotal, setCrmBetaTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
 
@@ -52,7 +67,7 @@ const AdminDashboardContent: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   useEffect(() => {
-    if (activeTab === 'users' || activeTab === 'leads') {
+    if (activeTab === 'users' || activeTab === 'leads' || activeTab === 'crm-beta') {
       fetchData();
     }
   }, [activeTab]);
@@ -66,6 +81,10 @@ const AdminDashboardContent: React.FC = () => {
       } else if (activeTab === 'leads') {
         const response = await adminAPI.getAllLeads(1, 100);
         setLeads(response.data.leads);
+      } else if (activeTab === 'crm-beta') {
+        const response = await adminAPI.getCrmBetaSignups(1, 100);
+        setCrmBetaSignups(response.data.signups || []);
+        setCrmBetaTotal(response.data.total || 0);
       }
     } catch (error) {
       logger.error('Failed to fetch data:', error);
@@ -239,6 +258,34 @@ const AdminDashboardContent: React.FC = () => {
     }
   };
 
+  // CRM Beta Signup handlers
+  const handleUpdateSignupStatus = async (signupId: string, newStatus: string) => {
+    try {
+      await adminAPI.updateCrmBetaSignupStatus(signupId, newStatus);
+      alert('Status updated successfully');
+      fetchData();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const handleExportSignups = async () => {
+    try {
+      const response = await adminAPI.exportCrmBetaSignups();
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `crm-beta-signups-${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error: any) {
+      alert('Failed to export signups');
+    }
+  };
+
   const tabs = [
     { id: 'overview' as TabType, label: 'Overview', icon: BarChart3 },
     { id: 'users' as TabType, label: 'Users', icon: Users },
@@ -290,36 +337,137 @@ const AdminDashboardContent: React.FC = () => {
         {/* CRM Beta Signups Tab */}
         {activeTab === 'crm-beta' && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
-              <Sparkles size={20} />
-              <span>CRM Beta Signups</span>
-            </h2>
-            <p className="text-gray-600 mb-4">
-              View and manage CRM beta program applications. These signups are stored in the <code className="bg-gray-100 px-2 py-1 rounded text-sm">crm_beta_signups</code> table.
-            </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-900">
-                <strong>API Endpoint:</strong> <code className="bg-white px-2 py-1 rounded">GET /api/admin/crm-beta-signups</code>
-              </p>
-              <p className="text-xs text-blue-700 mt-2">
-                To view signups, implement the admin API integration or access the database directly.
-              </p>
+            {/* Header with Actions */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center space-x-2">
+                  <Sparkles size={20} />
+                  <span>CRM Beta Signups</span>
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Total signups: <strong>{crmBetaTotal}</strong>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchData}
+                  disabled={loading}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+                >
+                  <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </button>
+                <button
+                  onClick={handleExportSignups}
+                  className="px-4 py-2 bg-black text-white hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <Upload size={16} />
+                  Export CSV
+                </button>
+              </div>
             </div>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p><strong>Form Fields Collected:</strong></p>
-              <ul className="list-disc list-inside ml-4 space-y-1">
-                <li>Name, Email, Phone</li>
-                <li>Company Name & Website</li>
-                <li>Vendor Type (photographer, florist, planner, etc.)</li>
-                <li>Message/Interest</li>
-              </ul>
-              <p className="mt-4">
-                <strong>Database Table:</strong> <code className="bg-gray-100 px-2 py-1 rounded">crm_beta_signups</code>
-              </p>
-              <p className="mt-2">
-                <strong>Status:</strong> Signups are being collected and stored. Email confirmations are sent via Resend API.
-              </p>
-            </div>
+
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading signups...</p>
+              </div>
+            ) : crmBetaSignups.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Sparkles size={48} className="mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium">No beta signups yet</p>
+                <p className="text-sm mt-2">Signups will appear here once users apply for beta access.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Company</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Type</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Phone</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Created</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {crmBetaSignups.map((signup) => (
+                      <tr key={signup.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm">{signup.name}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <a href={`mailto:${signup.email}`} className="text-blue-600 hover:underline">
+                            {signup.email}
+                          </a>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <div>
+                            <div className="font-medium">{signup.companyName}</div>
+                            {signup.companyWebsite && (
+                              <a 
+                                href={signup.companyWebsite} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-xs text-blue-600 hover:underline"
+                              >
+                                Website
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm capitalize">{signup.vendorType}</td>
+                        <td className="py-3 px-4 text-sm">{signup.phone}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <select
+                            value={signup.status}
+                            onChange={(e) => handleUpdateSignupStatus(signup.id, e.target.value)}
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              signup.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              signup.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              signup.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="contacted">Contacted</option>
+                          </select>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {format(new Date(signup.createdAt), 'MMM dd, yyyy')}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <button
+                            onClick={() => {
+                              const details = `
+Name: ${signup.name}
+Email: ${signup.email}
+Phone: ${signup.phone}
+Company: ${signup.companyName}
+${signup.companyWebsite ? `Website: ${signup.companyWebsite}` : ''}
+Vendor Type: ${signup.vendorType}
+${signup.message ? `Message: ${signup.message}` : ''}
+Status: ${signup.status}
+Created: ${format(new Date(signup.createdAt), 'PPP')}
+                              `.trim();
+                              alert(details);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

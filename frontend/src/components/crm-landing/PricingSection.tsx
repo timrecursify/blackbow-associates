@@ -174,7 +174,7 @@ const PricingSection: React.FC = () => {
               </button>
 
               <p className="text-[10px] sm:text-xs text-center text-gray-500">
-                We'll review your application and reach out within 48 hours
+                We'll contact you when the beta opens
               </p>
             </form>
           </div>
@@ -185,7 +185,7 @@ const PricingSection: React.FC = () => {
             </div>
             <h3 className="text-xl sm:text-2xl lg:text-3xl font-light mb-3 sm:mb-4">Application Received!</h3>
             <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 max-w-lg mx-auto">
-              Thanks for applying, {formData.name}. We'll review your application and send you an email within 48 hours with next steps.
+              Thanks for applying, {formData.name}. We'll contact you when the beta opens with next steps and early access details.
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
               Check your spam folder just in case. We're excited to have you help shape Black Bow!

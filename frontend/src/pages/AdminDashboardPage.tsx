@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { logger } from '../utils/logger';
 import { Navbar } from '../components/Navbar';
-import { BarChart3, Users, Package, MessageSquare, DollarSign, Upload } from 'lucide-react';
+import { BarChart3, Users, Package, MessageSquare, DollarSign, Upload, Sparkles } from 'lucide-react';
 import { adminAPI } from '../services/api';
 import { format } from 'date-fns';
 import OverviewTab from './admin/OverviewTab';
@@ -29,7 +29,7 @@ interface Lead {
   createdAt: string;
 }
 
-type TabType = 'overview' | 'users' | 'leads' | 'feedback';
+type TabType = 'overview' | 'users' | 'leads' | 'feedback' | 'crm-beta';
 
 const AdminDashboardContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -243,7 +243,8 @@ const AdminDashboardContent: React.FC = () => {
     { id: 'overview' as TabType, label: 'Overview', icon: BarChart3 },
     { id: 'users' as TabType, label: 'Users', icon: Users },
     { id: 'leads' as TabType, label: 'Leads', icon: Package },
-    { id: 'feedback' as TabType, label: 'Feedback', icon: MessageSquare }
+    { id: 'feedback' as TabType, label: 'Feedback', icon: MessageSquare },
+    { id: 'crm-beta' as TabType, label: 'CRM Beta', icon: Sparkles }
   ];
 
   return (
@@ -285,6 +286,42 @@ const AdminDashboardContent: React.FC = () => {
         {/* Tab Content */}
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'feedback' && <FeedbackTab />}
+
+        {/* CRM Beta Signups Tab */}
+        {activeTab === 'crm-beta' && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+              <Sparkles size={20} />
+              <span>CRM Beta Signups</span>
+            </h2>
+            <p className="text-gray-600 mb-4">
+              View and manage CRM beta program applications. These signups are stored in the <code className="bg-gray-100 px-2 py-1 rounded text-sm">crm_beta_signups</code> table.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-900">
+                <strong>API Endpoint:</strong> <code className="bg-white px-2 py-1 rounded">GET /api/admin/crm-beta-signups</code>
+              </p>
+              <p className="text-xs text-blue-700 mt-2">
+                To view signups, implement the admin API integration or access the database directly.
+              </p>
+            </div>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p><strong>Form Fields Collected:</strong></p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
+                <li>Name, Email, Phone</li>
+                <li>Company Name & Website</li>
+                <li>Vendor Type (photographer, florist, planner, etc.)</li>
+                <li>Message/Interest</li>
+              </ul>
+              <p className="mt-4">
+                <strong>Database Table:</strong> <code className="bg-gray-100 px-2 py-1 rounded">crm_beta_signups</code>
+              </p>
+              <p className="mt-2">
+                <strong>Status:</strong> Signups are being collected and stored. Email confirmations are sent via Resend API.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Users Tab */}
         {activeTab === 'users' && (

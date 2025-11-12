@@ -3,13 +3,55 @@
  * Optimized for mobile and printing
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const QRPage: React.FC = () => {
   // QR Code generated using Google Charts API pointing to the CRM page
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
     'https://blackbowassociates.com/crm'
   )}`;
+
+  // Update meta tags for SEO and social sharing
+  useEffect(() => {
+    // Update title
+    document.title = 'Scan to Learn About Our AI CRM - BlackBow Associates';
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Scan this QR code to learn about our AI-native CRM for wedding vendors. Stop drowning in client chaos with automated lead management.');
+    }
+    
+    // Update OG tags
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', 'Scan to Learn About Our AI CRM - BlackBow Associates');
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute('content', 'Scan this QR code to learn about our AI-native CRM for wedding vendors. Automated lead management and client communication.');
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute('content', 'https://blackbowassociates.com/qr');
+    
+    // Update Twitter tags
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute('content', 'Scan to Learn About Our AI CRM');
+    
+    const twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    if (twitterDescription) twitterDescription.setAttribute('content', 'AI-native CRM for wedding vendors. Scan to learn more.');
+    
+    // Cleanup: restore original tags on unmount
+    return () => {
+      document.title = 'BlackBow Associates - Premium Wedding Lead Marketplace for Vendors';
+      if (metaDescription) {
+        metaDescription.setAttribute('content', 'Get qualified wedding leads instantly. Premium marketplace for wedding photographers, videographers, planners, florists, caterers, DJs, and venues. Pay only for leads you want. Join free today.');
+      }
+      if (ogTitle) ogTitle.setAttribute('content', 'BlackBow Associates - Premium Wedding Lead Marketplace for Vendors');
+      if (ogDescription) ogDescription.setAttribute('content', 'Get qualified wedding leads instantly. Premium marketplace for wedding photographers, videographers, planners, florists, caterers, DJs, and venues.');
+      if (ogUrl) ogUrl.setAttribute('content', 'https://blackbowassociates.com');
+      if (twitterTitle) twitterTitle.setAttribute('content', 'BlackBow Associates - Premium Wedding Lead Marketplace');
+      if (twitterDescription) twitterDescription.setAttribute('content', 'Get qualified wedding leads instantly. Premium marketplace for wedding vendors. Pay only for leads you want.');
+    };
+  }, []);
 
   return (
     <div className="h-screen w-screen bg-white flex items-center justify-center overflow-hidden p-4 sm:p-6">

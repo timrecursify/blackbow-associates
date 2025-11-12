@@ -295,6 +295,16 @@ const LandingPage: React.FC = () => {
                 <span>Blog</span>
               </Link>
               <Link
+                to="/crm"
+                className="flex items-center space-x-1.5 text-gray-600 hover:text-black transition-colors duration-200 text-sm min-h-[44px]"
+              >
+                <Sparkles size={16} />
+                <span>CRM</span>
+                <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold tracking-wide bg-black text-white rounded uppercase">
+                  New
+                </span>
+              </Link>
+              <Link
                 to="/unsubscribe"
                 className="flex items-center space-x-1.5 text-gray-600 hover:text-black transition-colors duration-200 text-sm min-h-[44px]"
               >
@@ -314,6 +324,16 @@ const LandingPage: React.FC = () => {
               >
                 <BookOpen size={16} />
                 <span>Blog</span>
+              </Link>
+              <Link
+                to="/crm"
+                className="flex items-center space-x-2 text-gray-600 hover:text-black transition-colors duration-200"
+              >
+                <Sparkles size={16} />
+                <span>CRM</span>
+                <span className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide bg-black text-white rounded uppercase">
+                  New
+                </span>
               </Link>
               <Link
                 to="/unsubscribe"

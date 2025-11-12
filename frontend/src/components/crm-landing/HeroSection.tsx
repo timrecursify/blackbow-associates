@@ -44,7 +44,11 @@ const HeroSection: React.FC = () => {
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="#beta-signup"
+              href="#pricing"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
               className="group px-6 py-3 sm:px-8 sm:py-4 bg-white border-2 border-black text-black hover:bg-gray-50 transition-all flex items-center gap-2 sm:gap-3 justify-center rounded-full text-sm sm:text-base font-medium"
             >
               Join the Beta

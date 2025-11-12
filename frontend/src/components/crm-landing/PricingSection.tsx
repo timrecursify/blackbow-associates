@@ -22,9 +22,17 @@ const PricingSection: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Honeypot check - silently reject bots
+    if (honeypot) {
+      setError('Unable to submit your application. Please try again later.');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
@@ -300,6 +308,18 @@ const PricingSection: React.FC = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">{formData.message.length}/1000 characters</p>
               </div>
+
+              {/* Honeypot field - hidden from users, visible to bots */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
 
               {/* Submit Button */}
               <button

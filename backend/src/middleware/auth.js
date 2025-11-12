@@ -355,7 +355,30 @@ export const attachUser = async (req, res, next) => {
         'ACCOUNT_BLOCKED',
         { blockedAt: user.blockedAt }
       );
-// SECURITY: Enforce email confirmation - prevent unconfirmed users from accessing protected routes    // Allow access to confirmation endpoints and auth endpoints    const allowedPaths = ["/api/auth/confirm-email", "/api/auth/resend-confirmation", "/api/auth/me", "/api/users/profile"];    const isAllowedPath = allowedPaths.some(path => req.path.includes(path));        if (!user.emailConfirmed && !isAllowedPath) {      logger.warn("Unconfirmed user attempted access", {        userId: user.id,        email: user.email,        path: req.path      });      throw new AppError(        "Please confirm your email address to continue. Check your inbox for the confirmation link.",        403,        "EMAIL_NOT_CONFIRMED",        { email: user.email }      );    }
+// SECURITY: Enforce email confirmation - prevent unconfirmed users from accessing protected routes
+    // Allow access to confirmation endpoints, auth endpoints, and admin routes
+    const allowedPaths = [
+      "/api/auth/confirm-email", 
+      "/api/auth/resend-confirmation", 
+      "/api/auth/me", 
+      "/api/users/profile",
+      "/api/admin"
+    ];
+    const isAllowedPath = allowedPaths.some(path => req.path.includes(path));
+    
+    if (!user.emailConfirmed && !isAllowedPath) {
+      logger.warn("Unconfirmed user attempted access", {
+        userId: user.id,
+        email: user.email,
+        path: req.path
+      });
+      throw new AppError(
+        "Please confirm your email address to continue. Check your inbox for the confirmation link.",
+        403,
+        "EMAIL_NOT_CONFIRMED",
+        { email: user.email }
+      );
+    }
     }
 
     req.user = user;

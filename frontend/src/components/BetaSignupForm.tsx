@@ -33,6 +33,7 @@ const BetaSignupForm: React.FC<BetaSignupFormProps> = ({ onSuccess }) => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState('');
 
   const vendorTypes = [
     'Photographer',
@@ -122,6 +123,12 @@ const BetaSignupForm: React.FC<BetaSignupFormProps> = ({ onSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Honeypot check - silently reject if filled
+    if (honeypot) {
+      setApiError('Unable to submit your application. Please try again later.');
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -146,7 +153,7 @@ const BetaSignupForm: React.FC<BetaSignupFormProps> = ({ onSuccess }) => {
         setApiError(data.message || 'Something went wrong. Please try again.');
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      // Error already logged by API client, no need for console.error in production
       setApiError('Unable to submit your application. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
@@ -298,6 +305,18 @@ const BetaSignupForm: React.FC<BetaSignupFormProps> = ({ onSuccess }) => {
             disabled={isSubmitting}
           />
         </div>
+
+        {/* Honeypot field - hidden from users, visible to bots */}
+        <input
+          type="text"
+          name="website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+        />
 
         {/* API Error */}
         {apiError && (

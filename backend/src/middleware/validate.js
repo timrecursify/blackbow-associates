@@ -235,6 +235,51 @@ export const validations = {
       .isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100'),
     validate
+  ],
+
+  // CRM Beta Signup validation
+  crmBetaSignup: [
+    body('name')
+      .trim()
+      .notEmpty()
+      .withMessage('Name is required')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Name must be between 2 and 100 characters'),
+    body('email')
+      .trim()
+      .notEmpty()
+      .withMessage('Email is required')
+      .isEmail()
+      .withMessage('Invalid email format')
+      .normalizeEmail(),
+    body('phone')
+      .trim()
+      .notEmpty()
+      .withMessage('Phone is required')
+      .matches(/^[\d\s\-\+\(\)]+$/)
+      .withMessage('Invalid phone format'),
+    body('companyName')
+      .trim()
+      .notEmpty()
+      .withMessage('Company name is required')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Company name must be between 2 and 100 characters'),
+    body('companyWebsite')
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage('Invalid website URL'),
+    body('vendorType')
+      .optional()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Vendor type must be less than 50 characters'),
+    body('message')
+      .optional()
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage('Message must be less than 1000 characters'),
+    validate
   ]
 };
 

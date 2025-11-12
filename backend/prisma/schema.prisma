@@ -211,6 +211,24 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+model CrmBetaSignup {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  phone          String
+  companyName    String   @map("company_name")
+  companyWebsite String?  @map("company_website")
+  vendorType     String?  @map("vendor_type")
+  message        String?
+  status         String   @default("pending")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("crm_beta_signups")
+}
+
 enum LeadStatus {
   AVAILABLE
   SOLD

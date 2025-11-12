@@ -48,14 +48,14 @@ const CRMDashboardSection: React.FC = () => {
               <div className="flex-1 text-center text-[10px] sm:text-xs text-gray-500 font-medium">Black Bow AI-Native CRM</div>
             </div>
 
-            <div className="flex flex-col lg:flex-row">
+            <div className="flex flex-col xl:flex-row h-[900px] md:h-[600px] xl:h-[630px] overflow-hidden">
               {/* Pipeline - scrollable on mobile */}
-              <div className="h-[400px] lg:h-[630px] lg:flex-1">
+              <div className="h-[400px] md:h-full xl:flex-1 min-w-0">
                 <CRMPipelineView />
               </div>
               
               {/* Chat - fixed height on mobile */}
-              <div className="h-[500px] lg:h-[630px]">
+              <div className="h-[500px] md:h-full xl:w-80 flex-shrink-0">
                 <AIConversationPanel />
               </div>
             </div>

@@ -241,7 +241,7 @@ const ClientConversationDemo: React.FC<Props> = ({ mode }) => {
   }, [conversationFlow]);
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2 bg-gradient-to-b from-gray-50 to-white">
+    <div ref={scrollRef} className="p-3 space-y-2 bg-gradient-to-b from-gray-50 to-white h-full">
       {conversationFlow.map((message, index) => {
         const isVisible = visibleMessages.includes(message.id);
         const isCurrentlyTyping = typingMessageId === message.id;

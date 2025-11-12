@@ -77,8 +77,10 @@ const AIConversationPanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Conversation Demo */}
-        <ClientConversationDemo mode={activeMode} />
+        {/* Conversation Demo - Fixed height with scroll */}
+        <div className="flex-1 overflow-y-auto">
+          <ClientConversationDemo mode={activeMode} />
+        </div>
 
         {/* Footer with mode description */}
         <div className="p-3 border-t border-black/5 bg-white">

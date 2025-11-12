@@ -280,7 +280,7 @@ const PricingSection: React.FC = () => {
                     Website <span className="text-gray-400">(optional)</span>
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     id="companyWebsite"
                     name="companyWebsite"
                     autoComplete="url"

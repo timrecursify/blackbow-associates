@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 import { prisma } from '../config/database.js';
-import { logger } from '../utils/logger.js';
+import { logger, logAuthEvent } from '../utils/logger.js';
 import { AppError } from './errorHandler.js';
 
 // Initialize Supabase client for user operations (through Kong gateway)
@@ -61,12 +61,30 @@ export const requireAuth = async (req, res, next) => {
         role: decoded.role
       };
 
+      // Log successful token verification (DeSaaS Compliance)
+      logAuthEvent('token_refresh', {
+        userId: decoded.sub,
+        email: decoded.email,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        requestId: req.id
+      });
+
       next();
     } catch (jwtError) {
       logger.warn('JWT verification failed', {
         error: jwtError.message,
         type: jwtError.name
       });
+      
+      // Log failed authentication attempt (DeSaaS Compliance)
+      logAuthEvent('login_failed', {
+        reason: jwtError.message,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+        requestId: req.id
+      });
+      
       throw new AppError('Invalid or expired authentication token', 401, 'INVALID_TOKEN');
     }
   } catch (error) {
@@ -382,6 +400,18 @@ export const attachUser = async (req, res, next) => {
     }
 
     req.user = user;
+    
+    // Log successful user authentication (DeSaaS Compliance)
+    logAuthEvent('login_success', {
+      userId: user.id,
+      authUserId: user.authUserId,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      requestId: req.id
+    });
+    
     next();
   } catch (error) {
     next(error);

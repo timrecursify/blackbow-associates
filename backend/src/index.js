@@ -7,6 +7,7 @@ import { logger, logRequest, notifyTelegram } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { testConnection, disconnect } from './config/database.js';
+import { requestIdMiddleware } from './middleware/requestId.js';
 
 // Import routes
 import authRoutes from './routes/auth.routes.js';
@@ -29,6 +30,9 @@ const HOST = process.env.HOST || '127.0.0.1';
 
 // Trust proxy (required for rate limiting behind nginx/reverse proxy)
 app.set('trust proxy', true);
+
+// DeSaaS Compliance: Request ID middleware (must be first)
+app.use(requestIdMiddleware);
 
 // Security middleware - Enhanced helmet configuration
 app.use(helmet({

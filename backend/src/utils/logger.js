@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 import os from 'os';
+import { randomUUID } from 'crypto';
 
 const LOG_DIR = process.env.LOG_DIR || '/var/log/desaas';
 
@@ -75,13 +76,14 @@ export const logger = winston.createLogger({
   ]
 });
 
-// Request logging helper
+// Request logging helper with request ID
 export const logRequest = (req, res, next) => {
   const start = Date.now();
 
   res.on('finish', () => {
     const duration = Date.now() - start;
     logger.info('HTTP Request', {
+      requestId: req.id,
       method: req.method,
       url: req.originalUrl,
       status: res.statusCode,
@@ -92,6 +94,48 @@ export const logRequest = (req, res, next) => {
   });
 
   next();
+};
+
+/**
+ * Structured Event Logging for DeSaaS Compliance
+ * Usage: logEvent('auth.login.success', { userId, email, ip })
+ */
+export const logEvent = (event, data = {}) => {
+  logger.info('Security Event', {
+    event,                              // e.g., 'auth.login.success'
+    eventId: randomUUID(),              // Unique event ID for traceability
+    timestamp: new Date().toISOString(),
+    ...data
+  });
+};
+
+/**
+ * Log authentication events for compliance
+ */
+export const logAuthEvent = (eventType, data = {}) => {
+  const eventMap = {
+    'login_success': 'auth.login.success',
+    'login_failed': 'auth.login.failed',
+    'logout': 'auth.logout',
+    'token_refresh': 'auth.token.refresh',
+    'password_change': 'auth.password.change',
+    'email_confirmation': 'auth.email.confirmed'
+  };
+  
+  logEvent(eventMap[eventType] || `auth.${eventType}`, {
+    ...data,
+    status: eventType.includes('success') || eventType.includes('confirmed') ? 'success' : 'failed'
+  });
+};
+
+/**
+ * Log admin actions for compliance
+ */
+export const logAdminAction = (action, data = {}) => {
+  logEvent(`admin.${action}`, {
+    ...data,
+    status: data.status || 'success'
+  });
 };
 
 // Telegram notification helper

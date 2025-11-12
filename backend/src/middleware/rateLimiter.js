@@ -181,4 +181,78 @@ export const feedbackLimiter = rateLimit({
   }
 });
 
-export default { apiLimiter, authLimiter, paymentLimiter, analyticsLimiter, feedbackLimiter };
+// DeSaaS Compliance: Dual Rate Limiting (IP + User)
+// Separate IP-based rate limiter for admin routes
+export const adminIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per IP
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many admin requests from this IP, please try again later.'
+    }
+  },
+  keyGenerator: (req) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
+    return `admin:ip:${ip}`;
+  },
+  handler: (req, res) => {
+    logger.warn('Admin IP rate limit exceeded', {
+      ip: req.ip,
+      userId: req.user?.id,
+      path: req.path
+    });
+    res.status(429).json({
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many admin requests from this IP, please try again later.'
+      }
+    });
+  }
+});
+
+// Separate User-based rate limiter for admin routes
+export const adminUserLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // 50 requests per user (stricter than IP)
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many admin requests from this account, please try again later.'
+    }
+  },
+  keyGenerator: (req) => {
+    if (!req.user?.id) {
+      logger.error('Admin user rate limiter called without user', {
+        ip: req.ip,
+        path: req.path
+      });
+      throw new Error('User authentication required for admin rate limiting');
+    }
+    return `admin:user:${req.user.id}`;
+  },
+  handler: (req, res) => {
+    logger.warn('Admin user rate limit exceeded', {
+      ip: req.ip,
+      userId: req.user?.id,
+      email: req.user?.email,
+      path: req.path
+    });
+    res.status(429).json({
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many admin requests from this account, please try again later.'
+      }
+    });
+  }
+});
+
+export default { 
+  apiLimiter, 
+  authLimiter, 
+  paymentLimiter, 
+  analyticsLimiter, 
+  feedbackLimiter,
+  adminIpLimiter,
+  adminUserLimiter
+};

@@ -3,28 +3,33 @@ import { getAllUsers, getAllLeads, importLeads, adjustBalance, blockUser, unbloc
 import { getAllBetaSignups, getBetaSignupById, updateSignupStatus, exportBetaSignups } from '../controllers/crmBeta.controller.js';
 import { requireAuth, attachUser, requireAdmin } from '../middleware/auth.js';
 import { validations } from '../middleware/validate.js';
+import { auditLog } from '../middleware/auditLogger.js';
+import { adminIpLimiter, adminUserLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
+
+// DeSaaS Compliance: Dual rate limiting (IP + User) applied to all admin routes
+router.use(adminIpLimiter, adminUserLimiter);
 
 // All admin routes require admin authentication
 router.use(requireAuth, attachUser, requireAdmin);
 
-// User management
-router.get('/users', getAllUsers);
-router.post('/users/:id/adjust-balance', validations.adjustBalance, adjustBalance);
-router.post('/users/:id/block', blockUser);
-router.post('/users/:id/unblock', unblockUser);
-router.delete('/users/:id', deleteUser);
+// User management - ALL ROUTES NOW HAVE AUDIT LOGGING
+router.get('/users', auditLog, getAllUsers);
+router.post('/users/:id/adjust-balance', auditLog, validations.adjustBalance, adjustBalance);
+router.post('/users/:id/block', auditLog, blockUser);
+router.post('/users/:id/unblock', auditLog, unblockUser);
+router.delete('/users/:id', auditLog, deleteUser);
 
-// Lead management
-router.get('/leads', getAllLeads);
-router.post('/leads/import', validations.importLeads, importLeads);
-router.put('/leads/:id/status', updateLeadStatus);
+// Lead management - ALL ROUTES NOW HAVE AUDIT LOGGING
+router.get('/leads', auditLog, getAllLeads);
+router.post('/leads/import', auditLog, validations.importLeads, importLeads);
+router.put('/leads/:id/status', auditLog, updateLeadStatus);
 
-// CRM Beta Signups management
-router.get('/crm-beta-signups', getAllBetaSignups);
-router.get('/crm-beta-signups/export', exportBetaSignups);
-router.get('/crm-beta-signups/:id', getBetaSignupById);
-router.patch('/crm-beta-signups/:id/status', updateSignupStatus);
+// CRM Beta Signups management - ALL ROUTES NOW HAVE AUDIT LOGGING
+router.get('/crm-beta-signups', auditLog, getAllBetaSignups);
+router.get('/crm-beta-signups/export', auditLog, exportBetaSignups);
+router.get('/crm-beta-signups/:id', auditLog, getBetaSignupById);
+router.patch('/crm-beta-signups/:id/status', auditLog, updateSignupStatus);
 
 export default router;

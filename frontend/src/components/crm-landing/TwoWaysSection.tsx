@@ -20,10 +20,10 @@ const TwoWaysSection: React.FC = () => {
             <Sparkles className="w-4 h-4" />
             <span className="text-xs tracking-wider font-medium">THREE WAYS TO CONNECT</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-light mb-4 sm:mb-6 tracking-tight">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-6 sm:mb-8 tracking-tight">
             Start Capturing <span className="italic font-serif">Every Lead</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-white/70 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl lg:text-2xl text-white/70 max-w-2xl mx-auto">
             Choose the setup that works for you—or combine them all
           </p>
         </div>

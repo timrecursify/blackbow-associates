@@ -17,10 +17,10 @@ const VendorTypesSection: React.FC = () => {
       <div className="max-w-7xl mx-auto relative">
         {/* Header */}
         <div className="text-center mb-20 sm:mb-24 lg:mb-32">
-          <h2 className="text-4xl sm:text-5xl lg:text-7xl font-light mb-6 tracking-tight leading-tight">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-8 tracking-tight leading-tight">
             Built for <span className="italic font-serif">Every Wedding Professional</span>
           </h2>
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl sm:text-2xl lg:text-3xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Whether you capture moments, create beauty, or orchestrate magic
           </p>
         </div>

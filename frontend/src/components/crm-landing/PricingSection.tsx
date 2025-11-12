@@ -79,10 +79,10 @@ const PricingSection: React.FC = () => {
             <Sparkles className="w-4 h-4" />
             <span className="text-xs tracking-wider font-medium">LIMITED BETA SPOTS</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-light mb-4 sm:mb-6 tracking-tight">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-6 sm:mb-8 tracking-tight">
             Apply for <span className="italic font-serif">Early Access</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 max-w-2xl mx-auto">
             Help us build the perfect AI assistant for wedding vendors. Beta partners get lifetime benefits.
           </p>
         </div>
@@ -193,7 +193,11 @@ const PricingSection: React.FC = () => {
                     disabled={loading}
                     value={formData.vendorType}
                     onChange={handleChange}
-                    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none bg-white bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e')] bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat pr-10"
+                    style={{ 
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none'
+                    }}
                   >
                     <option value="">Select your specialty...</option>
                     <optgroup label="Photography & Video">

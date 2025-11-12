@@ -25,10 +25,10 @@ const CRMDashboardSection: React.FC = () => {
               <span className="text-[10px] sm:text-xs tracking-wider font-medium">BETA</span>
             </div>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-light mb-4 sm:mb-6 tracking-tight">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-6 sm:mb-8 tracking-tight">
             Meet Your <span className="italic font-serif">AI Employee</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 max-w-2xl mx-auto">
             A glimpse at how your AI assistant will manage leads and conversations
           </p>
         </div>
@@ -48,7 +48,7 @@ const CRMDashboardSection: React.FC = () => {
               <div className="flex-1 text-center text-[10px] sm:text-xs text-gray-500 font-medium">Black Bow AI-Native CRM</div>
             </div>
 
-            <div className="flex flex-col lg:flex-row min-h-[500px] lg:h-[630px]">
+            <div className="flex flex-col lg:flex-row h-[600px] lg:h-[630px]">
               <CRMPipelineView />
               <AIConversationPanel />
             </div>

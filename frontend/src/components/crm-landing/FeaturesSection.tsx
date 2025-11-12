@@ -20,10 +20,10 @@ const FeaturesSection: React.FC = () => {
             <Bot className="w-4 h-4" />
             <span className="text-xs tracking-wider font-medium">WHAT WE'RE BUILDING</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-light mb-4 sm:mb-6 tracking-tight">
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-6 sm:mb-8 tracking-tight">
             Three Core <span className="italic font-serif">Capabilities</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl lg:text-2xl text-gray-400 max-w-2xl mx-auto">
             The features that will transform how you run your wedding business
           </p>
         </div>

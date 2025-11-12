@@ -18,11 +18,11 @@ const FinalCTASection: React.FC = () => {
       </div>
 
       <div className="max-w-4xl mx-auto text-center relative">
-        <h2 className="text-4xl lg:text-6xl font-light mb-6 tracking-tight leading-tight">
+        <h2 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-8 tracking-tight leading-tight">
           Ready to Help Us<br />
           <span className="italic font-serif">Build This?</span>
         </h2>
-        <p className="text-xl text-gray-400 mb-12 leading-relaxed max-w-2xl mx-auto">
+        <p className="text-xl sm:text-2xl lg:text-3xl text-gray-400 mb-12 leading-relaxed max-w-2xl mx-auto">
           We're looking for wedding professionals who want to shape the future of wedding business automation. Early access is limited.
         </p>
 

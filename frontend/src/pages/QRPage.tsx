@@ -54,22 +54,22 @@ const QRPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-white flex items-center justify-center overflow-hidden p-4 sm:p-6">
-      <div className="max-w-2xl w-full text-center flex flex-col items-center justify-center">
-        {/* Title */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light leading-tight tracking-tight mb-3 sm:mb-4">
+    <div className="fixed inset-0 w-screen h-screen bg-white flex items-center justify-center overflow-hidden">
+      <div className="max-w-2xl w-full text-center flex flex-col items-center justify-center px-4 sm:px-6">
+        {/* Title - Much bigger on mobile! */}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light leading-tight tracking-tight mb-4 sm:mb-6">
           AI-Native CRM For
           <br />
           <span className="italic font-serif font-normal">Wedding Vendors</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-4 sm:mb-6 max-w-xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
           Stop drowning in client chaos. Let AI handle leads, follow-ups, and paperwork while you focus on creating magic.
         </p>
 
         {/* QR Code */}
-        <div className="inline-block p-4 sm:p-6 bg-white rounded-3xl shadow-2xl border border-black/5 mb-4 sm:mb-6">
+        <div className="inline-block p-4 sm:p-6 bg-white rounded-3xl shadow-2xl border border-black/5 mb-6 sm:mb-8">
           <img
             src={qrCodeUrl}
             alt="QR Code to Black Bow CRM"
@@ -86,13 +86,13 @@ const QRPage: React.FC = () => {
         {/* CTA */}
         <a
           href="https://blackbowassociates.com/crm"
-          className="inline-flex items-center gap-2 px-6 py-2.5 sm:px-8 sm:py-3 bg-black text-white hover:bg-gray-900 transition-all rounded-full shadow-lg hover:shadow-xl text-xs sm:text-sm font-medium"
+          className="inline-flex items-center gap-2 px-6 py-2.5 sm:px-8 sm:py-3 bg-black text-white hover:bg-gray-900 transition-all rounded-full shadow-lg hover:shadow-xl text-sm sm:text-base font-medium"
         >
           View on this device →
         </a>
 
         {/* Footer */}
-        <p className="text-[10px] sm:text-xs text-gray-400 mt-4 sm:mt-6">
+        <p className="text-xs sm:text-sm text-gray-400 mt-6 sm:mt-8">
           © 2025 Black Bow Associates • Crafted for wedding professionals
         </p>
       </div>

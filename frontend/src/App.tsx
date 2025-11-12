@@ -24,6 +24,7 @@ import { ConfirmEmailSuccessPage } from './pages/ConfirmEmailSuccessPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import CRMPage from './pages/CRMPage';
+import QRPage from './pages/QRPage';
 
 const LandingPage: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -600,6 +601,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/crm" element={<CRMPage />} />
+          <Route path="/qr" element={<QRPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogArticlePage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />

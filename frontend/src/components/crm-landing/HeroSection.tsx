@@ -21,7 +21,7 @@ const HeroSection: React.FC = () => {
             <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-600" />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-[1.05] tracking-tight mb-6 sm:mb-8">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light leading-[1.05] tracking-tight mb-6 sm:mb-8">
             Stop Drowning<br />
             in <span className="italic font-serif font-normal relative inline-block">
               Client Chaos
@@ -31,7 +31,7 @@ const HeroSection: React.FC = () => {
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto mb-8 sm:mb-10">
+          <p className="text-xl sm:text-2xl md:text-3xl text-gray-600 leading-relaxed max-w-3xl mx-auto mb-8 sm:mb-10">
             We're building an AI assistant that handles leads, follow-ups, and paperwork—so wedding vendors can focus on what they do best
           </p>
 

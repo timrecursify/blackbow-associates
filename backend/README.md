@@ -3,8 +3,13 @@
 Wedding lead marketplace backend service for BlackBow Associates.
 
 **Version:** 1.6.0
-**Last Updated:** November 2, 2025
+**Last Updated:** November 24, 2025
 **Status:** 🟢 Production
+
+**Recent Fixes:**
+- **2025-11-24: Database Backup Script Fixed** - Added PostgreSQL client installation check to backup script (`scripts/backup.sh`), prevents backup failures when `pg_dump` is missing
+
+**Note:** For full changelog, see [docs/status.md](../../docs/status.md)
 
 ---
 

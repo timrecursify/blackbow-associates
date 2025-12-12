@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { logger, logRequest, notifyTelegram } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -21,7 +22,7 @@ import analyticsRoutes from './routes/analyticsRoutes.js';
 import crmBetaRoutes from './routes/crmBeta.routes.js';
 
 // Import cron jobs
-import { initCronScheduler } from './jobs/pipedrive-sync.job.js';
+import { initRetryScheduler } from './jobs/webhook-retry.job.js';
 
 // Initialize Express app
 const app = express();
@@ -145,6 +146,9 @@ app.use((req, res, next) => {
 });
 app.use(express.urlencoded({ extended: true }));
 
+// Cookie parser (for OAuth sessions)
+app.use(cookieParser());
+
 // Request logging
 app.use(morgan('combined', {
   stream: {
@@ -245,9 +249,9 @@ const server = app.listen(PORT, HOST, async () => {
     // PM2 restarts are normal operations, not events worth notifying
     logger.info('Server started successfully', { port: PORT, host: HOST });
 
-    // Initialize Pipedrive sync cron scheduler
-    initCronScheduler();
-    logger.info('Pipedrive sync scheduler initialized');
+    // Initialize webhook retry scheduler
+    initRetryScheduler();
+    logger.info('Webhook retry scheduler initialized');
   } catch (error) {
     logger.error('Failed to connect to database on startup', { error: error.message });
     // Database connection failed - log error but don't spam notifications

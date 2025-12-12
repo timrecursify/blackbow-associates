@@ -34,45 +34,49 @@ prisma.$on('error', (e) => {
 });
 
 // DeSaaS Compliance: Slow Query Detection (>1s threshold)
-prisma.$use(async (params, next) => {
-  const start = Date.now();
-  
-  try {
-    const result = await next(params);
-    const duration = Date.now() - start;
-    
-    // Log slow queries (>1000ms)
-    if (duration > 1000) {
-      logger.warn('Slow Query Detected', {
-        model: params.model,
-        action: params.action,
-        duration: `${duration}ms`,
-        query: JSON.stringify(params.args).substring(0, 200) + '...',
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Log all queries in development for debugging
-    if (process.env.NODE_ENV !== 'production' && duration > 100) {
-      logger.debug('Query Performance', {
-        model: params.model,
-        action: params.action,
-        duration: `${duration}ms`
-      });
-    }
-    
-    return result;
-  } catch (error) {
-    const duration = Date.now() - start;
-    logger.error('Query Failed', {
-      model: params.model,
-      action: params.action,
-      duration: `${duration}ms`,
-      error: error.message
-    });
-    throw error;
-  }
-});
+// NOTE: prisma.$use() middleware was deprecated in Prisma 5+
+// TODO: Migrate to Prisma Client Extensions API when time permits
+// For now, relying on query event logging above for monitoring
+//
+// prisma.$use(async (params, next) => {
+//   const start = Date.now();
+//
+//   try {
+//     const result = await next(params);
+//     const duration = Date.now() - start;
+//
+//     // Log slow queries (>1000ms)
+//     if (duration > 1000) {
+//       logger.warn('Slow Query Detected', {
+//         model: params.model,
+//         action: params.action,
+//         duration: `${duration}ms`,
+//         query: JSON.stringify(params.args).substring(0, 200) + '...',
+//         timestamp: new Date().toISOString()
+//       });
+//     }
+//
+//     // Log all queries in development for debugging
+//     if (process.env.NODE_ENV !== 'production' && duration > 100) {
+//       logger.debug('Query Performance', {
+//         model: params.model,
+//         action: params.action,
+//         duration: `${duration}ms`
+//       });
+//     }
+//
+//     return result;
+//   } catch (error) {
+//     const duration = Date.now() - start;
+//     logger.error('Query Failed', {
+//       model: params.model,
+//       action: params.action,
+//       duration: `${duration}ms`,
+//       error: error.message
+//     });
+//     throw error;
+//   }
+// });
 
 // Test database connection
 export const testConnection = async () => {

@@ -1,6 +1,6 @@
 # BlackBow Associates - Project Status
 
-**Last Updated:** November 12, 2025 (Session 16)
+**Last Updated:** November 19, 2025
 **Version:** 2.4.0
 **Overall Status:** 🟢 **LIVE IN PRODUCTION** (Accepting Real Payments)
 **Session:** 16 - 100% DeSaaS Compliance Achieved
@@ -1739,3 +1739,131 @@ All security requirements met:
 - [x] Console.log removal (production logging only)
 
 **Status:** Production-hardened and secure ✅
+
+---
+
+## Consolidated Project Changelog
+
+All project changes consolidated from root, backend, and frontend changelogs.  
+For detailed component-specific history, see archived changelogs in respective directories.
+
+### General Changes
+
+#### [1.10.0] - 2025-11-09 (Session 12 - Critical Production Fixes & Database Cleanup)
+
+**Fixed:**
+- **Stripe Webhook Signature Verification** - Fixed 404 errors by excluding /api/webhooks/stripe route from JSON parsing middleware to preserve raw body buffer. Reduced error rate from 30+ failures/day to 0.
+- **Database Schema Sync** - Regenerated Prisma client to match current schema (transactions.description column). Transaction history endpoint now functional.
+- **Email Confirmation Redirect Flow** - Fixed redirection after email confirmation to go directly to onboarding instead of sign-in. Added 500ms delay for Supabase session establishment.
+- **Mobile Zoom Issue** - Updated viewport meta tag to prevent unwanted zoom on mobile devices.
+
+**Changed:**
+- Enhanced OnboardingRoute component to detect email confirmation callbacks via URL hash parameters
+
+**Maintenance:**
+- Database cleanup: removed 4 test users, preserved admin user, created reusable cleanup script
+
+**Deployment:**
+- Backend: 1 restart (Stripe webhook fix)
+- Frontend: 2 restarts (email redirect fix, mobile zoom fix)
+- Zero downtime via PM2 reload
+
+#### [1.9.0] - 2025-11-08 (Session 11 - Production Deployment & Pipedrive Optimization)
+
+**Added:**
+- Telegram Notifications Service for real-time admin notifications
+- Bot: @blackbowadmin_bot (ID: 8548442160), Admin chat ID: 184848778
+
+**Changed:**
+- Pipedrive sync filters: Extended date range from 60 to 90 days
+- Changed filtering from exclusion-based to inclusion-based (only "SB" and "Estimates" stages from Lorena/Maureen)
+- Excluded Ambassadors pipeline
+- Expected deal count increase: 86 → 150-250+ deals
+- Deposit modal UX improvements: Fixed "$1 minimum" → "$20 minimum" with prominent info banner
+
+**Fixed:**
+- Database schema alignment: Removed legacy clerk_user_id column
+- Frontend page refresh issue: Added debouncing (500ms), token caching (5-minute TTL), form state persistence
+- Admin dashboard access: Set admin_verified_at timestamp
+
+### Backend Changes
+
+#### [1.8.0] - 2025-11-03 - Critical Security Fixes
+
+**Security (9 vulnerabilities patched):**
+
+**CRITICAL (4 fixes):**
+1. Blocked User Authentication Bypass - Added enforcement check at auth layer
+2. Race Condition in Balance Deduction - Replaced manual calculation with atomic decrement
+3. Race Condition in Lead Purchase - Implemented row-level locking with SELECT FOR UPDATE
+4. Payment Double-Crediting Vulnerability - Wrapped payment verification in atomic transaction with duplicate detection
+
+**HIGH PRIORITY (5 fixes):**
+5. Feedback Reward Spam Prevention - Added rate limiter: 5 submissions/hour per user
+6. Webhook Timing Attack Vulnerability - Replaced string comparison with crypto.timingSafeEqual()
+7. Admin Balance Adjustment Abuse - Added bounds (-$10,000 to +$10,000), atomic operations
+8. Rate Limiter IP Bypass - Replaced 'unknown' fallback with strict validation
+9. Webhook Sensitive Data Logging - Sanitized payment error logs to exclude card details
+
+**Deployment:**
+- Zero-downtime PM2 reload
+- Health check: 3ms response
+- Memory: 123MB (healthy)
+- Status: Production-stable
+
+#### [1.7.0] - 2025-11-03 - Code Refactoring
+
+**Changed:**
+- Split analyticsController.js (1,044 lines) into 6 modular files:
+  - analyticsHelpers.js - Shared utilities
+  - analyticsOverviewController.js - KPI overview & CSV export (181 lines)
+  - (Additional split files documented in original changelog)
+
+### Frontend Changes
+
+#### [1.1.0] - 2025-11-09
+
+**Added:**
+- Password reset request page (ForgotPasswordPage.tsx)
+- Password reset form page (ResetPasswordPage.tsx)
+- Email confirmation flow with Resend integration
+- Password validation (8+ chars, uppercase, lowercase, numbers)
+- Token expiration handling (1 hour for password reset, 24 hours for email confirmation)
+- Rate limiting UI feedback (5 minutes between requests)
+- Comprehensive issue documentation
+
+**Fixed:**
+- **CRITICAL**: Fixed 404 error on password reset endpoints (duplicate /api in URL paths)
+- **CRITICAL**: Fixed 500 error on password reset for users without authUserId (auto-linking implemented)
+- API URL configuration consistency
+- Marketplace API calls after environment variable changes
+
+**Changed:**
+- Standardized API endpoint paths to use /auth/* instead of /api/auth/* for password reset
+- Maintained .env.production with VITE_API_URL=https://api.blackbowassociates.com/api
+
+**Security:**
+- Password reset tokens expire after 1 hour
+- Rate limiting on password reset requests (5 minute cooldown)
+- Password complexity requirements enforced
+- Reset tokens cleared from database after successful password change
+
+#### [1.0.0] - 2025-11-08 - Initial Release
+
+**Features:**
+- User authentication with Supabase
+- Vendor marketplace for lead browsing
+- Lead purchasing with Stripe integration
+- User dashboard with balance management
+- Admin panel for lead management
+- Mobile-responsive design
+- Dark mode support
+
+---
+
+**Note:** For complete historical details, see archived changelogs:
+- Root: /CHANGELOG.md (moved to archive)
+- Backend: /backend/CHANGELOG.md (moved to archive)
+- Frontend: /frontend/CHANGELOG.md (moved to archive)
+
+**Last Changelog Update:** 2025-11-19

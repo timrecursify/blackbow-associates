@@ -86,7 +86,7 @@ const AdminDashboardContent: React.FC = () => {
       } else if (activeTab === 'crm-beta') {
         const response = await adminAPI.getCrmBetaSignups(1, 100);
         setCrmBetaSignups(response.data.signups || []);
-        setCrmBetaTotal(response.data.pagination?.total || 0);
+        setCrmBetaTotal(response.data.total || 0);
       }
     } catch (error) {
       logger.error('Failed to fetch data:', error);

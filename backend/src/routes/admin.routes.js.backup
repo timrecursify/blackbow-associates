@@ -1,7 +1,6 @@
 import express from 'express';
 import { getAllUsers, getAllLeads, importLeads, adjustBalance, blockUser, unblockUser, deleteUser, updateLeadStatus } from '../controllers/admin.controller.js';
 import { getAllBetaSignups, getBetaSignupById, updateSignupStatus, exportBetaSignups } from '../controllers/crmBeta.controller.js';
-import { getWebhookStats, getWebhookEvents, getFailedWebhooks, retryWebhook, retryAllFailed } from '../controllers/webhook-admin.controller.js';
 import { requireAuth, attachUser, requireAdmin } from '../middleware/auth.js';
 import { validations } from '../middleware/validate.js';
 import { auditLog } from '../middleware/auditLogger.js';
@@ -9,11 +8,11 @@ import { adminIpLimiter, adminUserLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// All admin routes require admin authentication FIRST (needed for user rate limiting)
-router.use(requireAuth, attachUser, requireAdmin);
-
 // DeSaaS Compliance: Dual rate limiting (IP + User) applied to all admin routes
 router.use(adminIpLimiter, adminUserLimiter);
+
+// All admin routes require admin authentication
+router.use(requireAuth, attachUser, requireAdmin);
 
 // User management - ALL ROUTES NOW HAVE AUDIT LOGGING
 router.get('/users', auditLog, getAllUsers);
@@ -32,12 +31,5 @@ router.get('/crm-beta-signups', auditLog, getAllBetaSignups);
 router.get('/crm-beta-signups/export', auditLog, exportBetaSignups);
 router.get('/crm-beta-signups/:id', auditLog, getBetaSignupById);
 router.patch('/crm-beta-signups/:id/status', auditLog, updateSignupStatus);
-
-// Webhook monitoring - ALL ROUTES NOW HAVE AUDIT LOGGING
-router.get('/webhooks/stats', auditLog, getWebhookStats);
-router.get('/webhooks/events', auditLog, getWebhookEvents);
-router.get('/webhooks/failed', auditLog, getFailedWebhooks);
-router.post('/webhooks/retry/:id', auditLog, retryWebhook);
-router.post('/webhooks/retry-all-failed', auditLog, retryAllFailed);
 
 export default router;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { supabase } from '../lib/supabase';
+import { getAccessToken, clearTokens, authAPI } from './authAPI';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.blackbowassociates.com/api';
 
@@ -9,14 +9,15 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Send cookies with requests (for OAuth)
 });
 
-// Add Supabase auth token to requests
+// Request interceptor: Add JWT token to requests
 apiClient.interceptors.request.use(
   async (config) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`;
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -25,21 +26,74 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Set auth token (supports function for dynamic token retrieval)
-export const setAuthToken = (token: string | (() => string) | null) => {
-  if (typeof token === 'function') {
-    // Dynamic token getter
-    apiClient.interceptors.request.use(async (config) => {
-      const tokenValue = token();
-      if (tokenValue) {
-        config.headers.Authorization = `Bearer ${tokenValue}`;
+// Response interceptor: Handle 401 errors and refresh token
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't tried to refresh yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Wait for the token refresh to complete
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => {
+          return apiClient(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
       }
-      return config;
-    });
-  } else if (token) {
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete apiClient.defaults.headers.common['Authorization'];
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Attempt to refresh the token
+        const response = await authAPI.refreshToken();
+        processQueue(null, response.accessToken);
+
+        // Retry the original request with new token
+        originalRequest.headers.Authorization = `Bearer ${response.accessToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, clear tokens and redirect to login
+        processQueue(refreshError as Error, null);
+        clearTokens();
+
+        // Redirect to login page
+        window.location.href = '/sign-in';
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Set auth token (legacy support - now handled by interceptor)
+export const setAuthToken = (token: string | (() => string) | null) => {
+  // This function is kept for backward compatibility but tokens are now managed via authAPI
+  if (token) {
+    console.warn('setAuthToken is deprecated. Use authAPI.login() or authAPI.register() instead.');
   }
 };
 
@@ -118,10 +172,7 @@ export const adminAPI = {
 
   // Balance adjustment
   adjustBalance: (userId: string, amount: number, reason: string) =>
-    apiClient.post('/admin/adjust-balance', { userId, amount, reason }),
-  updateUserBalance: (userId: string, amount: number, reason: string) =>
-    apiClient.post('/admin/adjust-balance', { userId, amount, reason }),
-
+    apiClient.post(`/admin/users/${userId}/adjust-balance`, { amount, reason }),
   // User management actions
   blockUser: (userId: string, reason: string) =>
     apiClient.post(`/admin/users/${userId}/block`, { reason }),

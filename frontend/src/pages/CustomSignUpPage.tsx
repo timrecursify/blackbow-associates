@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { logger } from '../utils/logger';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { authAPI } from '../services/api';
+import { authAPI } from '../services/authAPI';
 
 export const CustomSignUpPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,54 +23,23 @@ export const CustomSignUpPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      // Register using custom JWT authentication
+      const response = await authAPI.register({
         email: formData.email,
         password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/onboarding`,
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-          },
-        },
+        firstName: formData.firstName,
+        lastName: formData.lastName,
       });
 
-      if (signUpError) {
-        throw signUpError;
-      }
-
-      if (data.user) {
-        // Create temporary business name from first and last name
-        const temporaryBusinessName = `${formData.firstName} ${formData.lastName}`.trim() || 'New User';
-        
-        // Send initial confirmation email and create user in database
-        try {
-          const response = await authAPI.sendInitialConfirmation({
-            email: formData.email,
-            businessName: temporaryBusinessName
-          });
-        } catch (confirmationError: any) {
-          // Log detailed error
-          logger.error('Failed to send confirmation email:', {
-            error: confirmationError,
-            message: confirmationError?.response?.data?.message || confirmationError?.message,
-            status: confirmationError?.response?.status,
-            statusText: confirmationError?.response?.statusText,
-            data: confirmationError?.response?.data,
-            url: confirmationError?.config?.url
-          });
-          // Show error to user but don't block signup
-          setError('Account created! However, confirmation email failed. Please use the resend button on the next page.');
-        }
-        
-        // Redirect to confirmation page
+      if (response.user) {
+        // Redirect to email confirmation page
         navigate('/email-confirmation', {
           state: { email: formData.email }
         });
       }
     } catch (err: any) {
       // Improved error handling
-      const errorMessage = err.message || 'Failed to create account. Please try again.';
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create account. Please try again.';
       setError(errorMessage);
       logger.error('Signup error:', err);
     } finally {
@@ -87,33 +55,9 @@ export const CustomSignUpPage: React.FC = () => {
   };
 
   const handleOAuthSignUp = async (provider: 'google' | 'facebook') => {
-    setError('');
-    setLoading(true);
-
-    try {
-      logger.info(`Starting OAuth sign-up with ${provider}`);
-      
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/onboarding`,
-        },
-      });
-
-      if (oauthError) {
-        logger.error(`OAuth sign-up error: ${oauthError.message}`);
-        throw oauthError;
-      }
-
-      logger.info('OAuth initiated successfully - browser will redirect', { url: data?.url });
-
-      // Manual redirect using window.location.href
-    } catch (err: any) {
-      logger.error(`OAuth sign-up failed: ${err.message}`);
-      setError(err.message || `Failed to sign up with ${provider}`);
-      setLoading(false);
-    }
-  }
+    setError('OAuth sign-up is coming soon. Please use email/password for now.');
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-12 transition-colors duration-200">
@@ -138,12 +82,12 @@ export const CustomSignUpPage: React.FC = () => {
             </div>
           )}
 
-          {/* OAuth Buttons - MOVED TO TOP */}
+          {/* OAuth Buttons - MOVED TO TOP - COMING SOON */}
           <div className="space-y-3 mb-6">
             <button
               onClick={() => handleOAuthSignUp('google')}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              disabled={true}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 opacity-60 cursor-not-allowed text-sm sm:text-base relative"
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -152,17 +96,19 @@ export const CustomSignUpPage: React.FC = () => {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               <span className="font-medium text-gray-700 transition-colors duration-200">Continue with Google</span>
+              <span className="absolute top-1 right-2 text-[10px] font-semibold text-gray-500 bg-gray-200 px-2 py-0.5 rounded">Coming Soon</span>
             </button>
 
             <button
               onClick={() => handleOAuthSignUp('facebook')}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              disabled={true}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 opacity-60 cursor-not-allowed text-sm sm:text-base relative"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
               <span className="font-medium text-gray-700 transition-colors duration-200">Continue with Facebook</span>
+              <span className="absolute top-1 right-2 text-[10px] font-semibold text-gray-500 bg-gray-200 px-2 py-0.5 rounded">Coming Soon</span>
             </button>
           </div>
 

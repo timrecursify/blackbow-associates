@@ -266,7 +266,9 @@ export const validations = {
       .withMessage('Company name must be between 2 and 100 characters'),
     body('companyWebsite')
       .optional()
-      .trim(),
+      .trim()
+      .isURL()
+      .withMessage('Invalid website URL'),
     body('vendorType')
       .optional()
       .trim()

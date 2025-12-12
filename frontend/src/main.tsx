@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import './lib/supabase'; // Initialize Supabase client
+// REMOVED: Supabase initialization (migrated to custom JWT auth)
 
 const rootElement = document.getElementById('root');
 

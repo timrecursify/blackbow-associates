@@ -71,7 +71,10 @@ const BetaSignupForm: React.FC<BetaSignupFormProps> = ({ onSuccess }) => {
         return '';
 
       case 'companyWebsite':
-        return ''; // No validation - accept any input
+        if (value && !/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(value)) {
+          return 'Invalid website URL';
+        }
+        return '';
 
       default:
         return '';
@@ -251,7 +254,7 @@ const BetaSignupForm: React.FC<BetaSignupFormProps> = ({ onSuccess }) => {
             Company Website
           </label>
           <input
-            type="text"
+            type="url"
             id="companyWebsite"
             name="companyWebsite"
             value={formData.companyWebsite}

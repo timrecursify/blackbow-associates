@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { logger } from '../utils/logger';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { DollarSign, ShoppingCart, User, Shield, LogOut, ChevronDown } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { usersAPI } from '../services/api';
+import { isAuthenticated, authAPI } from '../services/authAPI';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -17,29 +17,66 @@ export const Navbar: React.FC = () => {
 
   const isMarketplacePage = location.pathname === '/marketplace';
 
-  // Check auth state
+  // Check auth state (works with both localStorage tokens AND OAuth cookies)
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsSignedIn(!!session);
-      setUserEmail(session?.user?.email || null);
+      try {
+        // Try to get current user (works with both localStorage AND cookies)
+        const user = await authAPI.getCurrentUser();
+
+        if (user && user.email) {
+          setIsSignedIn(true);
+          setUserEmail(user.email);
+          setBalance(typeof user.balance === 'number' ? user.balance : 0);
+          setIsAdmin(user.isAdmin === true);
+        } else {
+          // User object invalid
+          setIsSignedIn(false);
+          setUserEmail(null);
+          setBalance(null);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        // If API call fails, user is not authenticated
+        logger.debug('Auth check failed - user not authenticated');
+        setIsSignedIn(false);
+        setUserEmail(null);
+        setBalance(null);
+        setIsAdmin(false);
+      }
     };
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session);
-      setUserEmail(session?.user?.email || null);
-    });
+    // Listen for storage events to detect login/logout in other tabs
+    const handleStorageChange = () => {
+      checkAuth();
+    };
 
-    return () => subscription.unsubscribe();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Refresh profile when location changes (to update balance after purchases)
   useEffect(() => {
-    if (isSignedIn) {
-      fetchUserProfile();
-    }
-  }, [isSignedIn, location.pathname]); // Refresh when location changes
+    const refreshProfile = async () => {
+      if (!isSignedIn) return;
+
+      try {
+        const response = await usersAPI.getProfile();
+        const userData = response?.data?.user || response?.data;
+
+        if (userData) {
+          setBalance(typeof userData.balance === 'number' ? userData.balance : 0);
+          setIsAdmin(userData.isAdmin === true);
+        }
+      } catch (error) {
+        logger.error('Failed to refresh profile:', error);
+      }
+    };
+
+    refreshProfile();
+  }, [location.pathname, isSignedIn]); // Refresh when location changes
 
   // Listen for balance update events
   useEffect(() => {
@@ -83,7 +120,11 @@ export const Navbar: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await authAPI.logout();
+      setIsSignedIn(false);
+      setUserEmail(null);
+      setBalance(null);
+      setIsAdmin(false);
       navigate('/');
     } catch (error) {
       logger.error('Failed to sign out:', error);

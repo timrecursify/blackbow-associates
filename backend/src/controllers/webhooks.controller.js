@@ -3,6 +3,7 @@ import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import * as stripeService from '../services/stripe.service.js';
+import { processWebhookEvent } from '../services/webhook-processor.service.js';
 
 // Stripe webhook handler
 export const stripeWebhook = asyncHandler(async (req, res) => {
@@ -239,51 +240,60 @@ export const pipedriveWebhook = asyncHandler(async (req, res) => {
   if (event === 'added.deal' || event === 'updated.deal') {
     const deal = current;
 
-    // Extract lead information from deal
-    const leadData = {
-      pipedriveDealId: deal.id,
-      weddingDate: deal.wedding_date ? new Date(deal.wedding_date) : null,
-      location: deal.location || 'Unknown',
-      city: deal.city || null,
-      state: deal.state || null,
-      budgetMin: deal.budget_min || null,
-      budgetMax: deal.value || null,
-      servicesNeeded: deal.services_needed ? deal.services_needed.split(',') : [],
-      price: 20,
-      status: 'AVAILABLE',
-      maskedInfo: {
-        couple: `Couple in ${deal.city || deal.location}`,
-        phone: '***-***-****',
-        email: '***@***.***'
-      },
-      fullInfo: {
-        coupleName: deal.person_name || deal.org_name || 'Unknown',
-        email: deal.person_email || null,
-        phone: deal.person_phone || null,
-        notes: deal.notes || ''
-      }
-    };
+    try {
+      // Create webhook event record in database for async processing
+      const webhookEvent = await prisma.webhookEvent.create({
+        data: {
+          source: 'pipedrive',
+          eventType: event,
+          dealId: deal.id,
+          payload: req.body,
+          status: 'PENDING'
+        }
+      });
 
-    // Upsert lead (create or update)
-    const lead = await prisma.lead.upsert({
-      where: { pipedriveDealId: deal.id },
-      update: leadData,
-      create: leadData
-    });
+      logger.info('Webhook event created', {
+        eventId: webhookEvent.id,
+        source: 'pipedrive',
+        eventType: event,
+        dealId: deal.id
+      });
 
-    logger.info('Lead created/updated from Pipedrive', {
-      leadId: lead.id,
-      dealId: deal.id,
-      location: lead.location
-    });
+      // Process asynchronously - don't await to respond to Pipedrive immediately
+      processWebhookEvent(webhookEvent.id)
+        .then(result => {
+          logger.info('Webhook processed successfully', {
+            eventId: webhookEvent.id,
+            result
+          });
+        })
+        .catch(error => {
+          logger.error('Webhook processing failed', {
+            eventId: webhookEvent.id,
+            error: error.message,
+            stack: error.stack
+          });
+        });
 
-    await notifyTelegram(
-      `📋 New lead from Pipedrive: ${lead.location} - ${lead.servicesNeeded.join(', ')}`,
-      'info'
-    );
+      // Acknowledge to Pipedrive immediately (don't wait for processing)
+      res.json({ received: true, eventId: webhookEvent.id });
+    } catch (error) {
+      // Even if webhook event creation fails, acknowledge to Pipedrive
+      // to prevent retries that would fail again
+      logger.error('Failed to create webhook event', {
+        error: error.message,
+        stack: error.stack,
+        dealId: deal.id,
+        eventType: event
+      });
+
+      // Still acknowledge to prevent infinite retries
+      res.json({ received: true, error: 'Failed to queue event' });
+    }
+  } else {
+    // For non-deal events, just acknowledge
+    res.json({ received: true });
   }
-
-  res.json({ received: true });
 });
 
 export default { stripeWebhook, pipedriveWebhook };

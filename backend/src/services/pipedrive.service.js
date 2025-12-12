@@ -1,7 +1,6 @@
 import axios from 'axios';
 import logger from '../utils/logger.js';
 import { generateLeadId } from '../utils/leadIdGeneratorV2.js';
-import * as pipedriveMetadata from './pipedrive-metadata.service.js';
 
 const PIPEDRIVE_API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
 const PIPEDRIVE_BASE_URL = 'https://api.pipedrive.com/v1';
@@ -291,160 +290,10 @@ const buildLocationString = (city, state, comments) => {
   return null;
 };
 
-/**
- * Fetch deals by stage IDs
- */
-export const fetchDealsByStages = async (stageIds, sinceDate = null) => {
-  try {
-    const allDeals = await fetchDeals({ limit: 500 });
-
-    if (!allDeals.success || !allDeals.data) {
-      throw new Error('Failed to fetch deals from Pipedrive');
-    }
-
-    // Filter by stage IDs
-    let filtered = allDeals.data.filter(deal => stageIds.includes(deal.stage_id));
-
-    // Filter by date if provided
-    if (sinceDate) {
-      filtered = filtered.filter(deal => {
-        const addTime = deal.add_time?.split(' ')[0];
-        return addTime >= sinceDate;
-      });
-    }
-
-    logger.info(`Fetched ${filtered.length} deals from stages ${stageIds.join(', ')}`);
-    return filtered;
-  } catch (error) {
-    logger.error('Error fetching deals by stages:', error);
-    throw error;
-  }
-};
-
-/**
- * Fetch eligible deals for automated sync
- *
- * Criteria:
- * - Any status (open, closed, lost)
- * - NOT in "Production" pipeline
- * - NOT in specific stages: "Lead In", "In Contact", "Quote Sent", "Quote Accepted", "Invoice sent" (Lorena & Maureen pipelines)
- * - Created between 3 days and 2 months ago (add_time)
- */
-export const fetchEligibleDeals = async () => {
-  try {
-    logger.info('Fetching eligible deals for sync');
-
-    // Calculate date range (3 days to 2 months old)
-    const now = new Date();
-    const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
-    const twoMonthsAgo = new Date(now);
-    twoMonthsAgo.setMonth(now.getMonth() - 2);
-
-    // Format dates for Pipedrive API (YYYY-MM-DD)
-    const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
-    const twoMonthsAgoStr = twoMonthsAgo.toISOString().split('T')[0];
-
-    logger.info('Date range for eligible deals', {
-      from: twoMonthsAgoStr,
-      to: threeDaysAgoStr
-    });
-
-    // Fetch exclusion lists
-    const excludedPipelineIds = await pipedriveMetadata.getExcludedPipelineIds();
-    const excludedStageIds = await pipedriveMetadata.getExcludedStageIds();
-
-    logger.info('Exclusion filters', {
-      excludedPipelines: excludedPipelineIds,
-      excludedStages: excludedStageIds
-    });
-
-    // Fetch ALL deals with pagination, sorted by add_time descending (most recent first)
-    // This is more efficient - we can stop once we go past the 2-month window
-    logger.info('Fetching all deals from Pipedrive (this may take a minute for large datasets)...');
-    const response = await fetchDeals({
-      status: 'all',
-      sort: 'add_time DESC' // Sort by creation date, newest first
-    }, true); // fetchAll = true
-
-    if (!response.success || !response.data) {
-      throw new Error('Failed to fetch deals from Pipedrive');
-    }
-
-    const allDeals = response.data;
-    logger.info(`Fetched ${allDeals.length} total deals from Pipedrive`);
-
-    // Filter deals by criteria
-    const eligibleDeals = [];
-    let countNoAddTime = 0;
-    let countTooOld = 0;
-    let countTooNew = 0;
-    let countProductionPipeline = 0;
-    let countExcludedStage = 0;
-
-    for (const deal of allDeals) {
-      // 1. Check if deal has add_time
-      if (!deal.add_time) {
-        countNoAddTime++;
-        continue;
-      }
-
-      // 2. Parse add_time (format: "YYYY-MM-DD HH:MM:SS")
-      const dealAddTime = new Date(deal.add_time.split(' ')[0]);
-
-      // 3. Check if too new (< 3 days old)
-      if (dealAddTime > threeDaysAgo) {
-        countTooNew++;
-        continue;
-      }
-
-      // 4. Check if too old (> 2 months old)
-      // Since sorted by add_time DESC, once we hit deals older than 2 months, we can stop
-      if (dealAddTime < twoMonthsAgo) {
-        countTooOld++;
-        // Early exit optimization: all remaining deals will also be too old
-        logger.debug(`Reached deals older than 2 months, stopping filter loop`);
-        break;
-      }
-
-      // 5. Exclude deals in "Production" pipeline
-      if (excludedPipelineIds.includes(deal.pipeline_id)) {
-        countProductionPipeline++;
-        continue;
-      }
-
-      // 6. Exclude deals in specific stages (Lorena & Maureen pipelines)
-      if (excludedStageIds.includes(deal.stage_id)) {
-        countExcludedStage++;
-        continue;
-      }
-
-      // Deal passed all filters
-      eligibleDeals.push(deal);
-    }
-
-    logger.info('Eligible deals filtered', {
-      totalFetched: allDeals.length,
-      eligible: eligibleDeals.length,
-      filtered: {
-        noAddTime: countNoAddTime,
-        tooNew: countTooNew,
-        tooOld: countTooOld,
-        productionPipeline: countProductionPipeline,
-        excludedStage: countExcludedStage
-      }
-    });
-
-    return eligibleDeals;
-  } catch (error) {
-    logger.error('Error fetching eligible deals:', error.message);
-    throw error;
-  }
-};
 
 export default {
   fetchDeals,
   fetchPerson,
   transformDealToLead,
-  fetchDealsByStages,
-  fetchEligibleDeals
+  FIELD_KEYS
 };

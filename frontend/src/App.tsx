@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { logger } from './utils/logger';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target, Shield, BookOpen } from 'lucide-react';
-import { supabase } from './lib/supabase';
 import { useMediaQuery } from 'react-responsive';
-import { setAuthToken, usersAPI } from './services/api';
+import { usersAPI } from './services/api';
+import { isAuthenticated, authAPI as customAuthAPI, getAccessToken } from './services/authAPI';
 import { UnsubscribePage } from './pages/UnsubscribePage';
 import { AboutPage } from './pages/AboutPage';
 import { MarketplacePage } from './pages/MarketplacePage';
@@ -31,15 +31,16 @@ const LandingPage: React.FC = () => {
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSignedIn(!!session);
-    });
+    // Check if user is authenticated via JWT
+    setIsSignedIn(isAuthenticated());
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session);
-    });
+    // Listen for storage events to detect login/logout in other tabs
+    const handleStorageChange = () => {
+      setIsSignedIn(isAuthenticated());
+    };
 
-    return () => subscription.unsubscribe();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   return (
@@ -424,25 +425,22 @@ const LandingPage: React.FC = () => {
   );
 };
 
-// Onboarding Route Wrapper - requires auth but allows loading during OAuth callback
+// Onboarding Route Wrapper - requires auth but allows loading
 const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-const [checkingSession, setCheckingSession] = useState(true);  useEffect(() => {    const checkSession = async () => {      const hashParams = new URLSearchParams(window.location.hash.substring(1));      const hasCallback = hashParams.has("access_token") || hashParams.has("refresh_token");      if (hasCallback) {        logger.info("Email confirmation callback detected");        await new Promise(resolve => setTimeout(resolve, 500));      }      const { data: { session } } = await supabase.auth.getSession();      setIsSignedIn(!!session);      setCheckingSession(false);    };    checkSession();    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {      setIsSignedIn(!!session);      setCheckingSession(false);    });    return () => subscription.unsubscribe();  }, []);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSignedIn(!!session);
-    });
+    const checkAuth = () => {
+      setIsSignedIn(isAuthenticated());
+      setCheckingAuth(false);
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session);
-    });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
-  // Wait for Supabase to finish loading before checking auth status
-  if (checkingSession || isSignedIn === null) {
+  // Wait for auth check to complete
+  if (checkingAuth || isSignedIn === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -465,22 +463,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
-  const [initialCheckComplete, setInitialCheckComplete] = useState(false);
 
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout | null = null;
-
-    const checkAuthAndOnboarding = async (isInitialCheck = false) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const signedIn = !!session;
-      setIsSignedIn(signedIn);
-
-      if (!signedIn) {
-        // Clear cached status on sign out
-        localStorage.removeItem('onboardingCompleted');
-        setLoading(false);
-        return;
-      }
+    const checkAuthAndOnboarding = async () => {
+      // First check localStorage token (email/password login)
+      const hasLocalToken = isAuthenticated();
 
       // Try to load cached status first for faster UX (especially on mobile)
       const cachedStatus = localStorage.getItem('onboardingCompleted');
@@ -488,63 +475,43 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
         setOnboardingCompleted(cachedStatus === 'true');
       }
 
-      // Only fetch fresh status from API on initial check
-      // On subsequent auth state changes, trust the cached status to prevent disruption during form submissions
-      if (isInitialCheck) {
-        try {
-          const response = await usersAPI.getProfile();
-          const onboardingStatus = response.data?.user?.onboardingCompleted;
+      // Fetch fresh status from API (works with both localStorage tokens AND cookies from OAuth)
+      try {
+        const response = await usersAPI.getProfile();
+        const onboardingStatus = response.data?.user?.onboardingCompleted;
 
-          const isCompleted = onboardingStatus === true;
-          setOnboardingCompleted(isCompleted);
+        const isCompleted = onboardingStatus === true;
+        setOnboardingCompleted(isCompleted);
 
-          // Cache the status for faster subsequent loads
-          localStorage.setItem('onboardingCompleted', String(isCompleted));
-        } catch (error) {
-          logger.error('Failed to check onboarding status:', error);
+        // User is authenticated (either via localStorage token OR OAuth cookies)
+        setIsSignedIn(true);
 
-          // Don't set to false on error - keep cached status or current state
-          if (cachedStatus === null) {
-            // First time loading and API failed - assume onboarding needed
-            setOnboardingCompleted(false);
-          }
-        } finally {
-          setLoading(false);
-          setInitialCheckComplete(true);
-        }
-      } else {
-        // On subsequent checks, just verify session exists - don't re-check onboarding
-        // This prevents navigation disruption during form submissions
+        // Cache the status for faster subsequent loads
+        localStorage.setItem('onboardingCompleted', String(isCompleted));
+      } catch (error) {
+        logger.error('Failed to check onboarding status:', error);
+
+        // API call failed - user is NOT authenticated
+        setIsSignedIn(false);
+        localStorage.removeItem('onboardingCompleted');
+      } finally {
         setLoading(false);
       }
     };
 
-    // Run initial check immediately
-    checkAuthAndOnboarding(true);
+    // Run check immediately
+    checkAuthAndOnboarding();
 
-    // On auth state changes, only verify session - don't re-check onboarding
-    // Debounce to prevent rapid re-checks during token refresh
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      if (!initialCheckComplete) return; // Skip if initial check not complete yet
-
-      // Clear any pending debounce timer
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-
-      // Debounce: Only run check after 500ms of no auth state changes
-      debounceTimer = setTimeout(() => {
-        checkAuthAndOnboarding(false); // Don't re-check onboarding, just verify session
-      }, 500);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
+    // Listen for storage events to detect login/logout in other tabs
+    const handleStorageChange = () => {
+      checkAuthAndOnboarding();
     };
-  }, [initialCheckComplete]);
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -569,49 +536,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
 };
 
 function App() {
-  // Set up Supabase auth token for API calls
-  useEffect(() => {
-    const setupAuthToken = async () => {
-      // CRITICAL: Handle OAuth callback - extract session from URL hash
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      
-      if (accessToken || refreshToken) {
-        // OAuth callback detected - get session explicitly
-        logger.info('OAuth callback detected, extracting session from URL');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (session) {
-          logger.info('Session extracted successfully from OAuth callback');
-          setAuthToken(() => session.access_token);
-          // Clean up URL hash
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
-          return;
-        } else if (error) {
-          logger.error('Failed to extract session from OAuth callback', { error });
-        }
-      }
-      
-      // Normal session check
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setAuthToken(() => session.access_token);
-      }
-    };
-
-    setupAuthToken();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        setAuthToken(() => session.access_token);
-      } else {
-        setAuthToken(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // No Supabase auth setup needed - using JWT tokens from localStorage
 
   return (
       <Router>

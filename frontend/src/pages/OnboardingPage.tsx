@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { logger } from '../utils/logger';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { Building2, MapPin, Briefcase, FileText, AlertCircle } from 'lucide-react';
 import { usersAPI } from '../services/api';
+import { authAPI } from '../services/authAPI';
 
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,16 +21,13 @@ export const OnboardingPage: React.FC = () => {
   const [detectingLocation, setDetectingLocation] = useState(false);
 
   useEffect(() => {
-    // Pre-fill business name with user's name from Supabase metadata
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.user_metadata) {
-        const firstName = user.user_metadata.first_name || user.user_metadata.firstName || '';
-        const lastName = user.user_metadata.last_name || user.user_metadata.lastName || '';
-        const fullName = `${firstName} ${lastName}`.trim();
-        if (fullName) {
-          setFormData(prev => ({ ...prev, businessName: fullName }));
-        }
+    // Pre-fill business name from current user profile
+    authAPI.getCurrentUser().then(({ user }) => {
+      if (user?.businessName) {
+        setFormData(prev => ({ ...prev, businessName: user.businessName }));
       }
+    }).catch(err => {
+      logger.error('Failed to get user profile', err);
     });
 
     // Auto-detect location on component mount

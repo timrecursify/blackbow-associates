@@ -9,40 +9,46 @@ datasource db {
 }
 
 model User {
-  id                  String             @id @default(cuid())
-  authUserId          String?            @unique @map("auth_user_id")
-  email               String             @unique
-  businessName        String             @map("business_name")
-  vendorType          String             @map("vendor_type")
-  location            String?
-  about               String?
-  onboardingCompleted Boolean            @default(false) @map("onboarding_completed")
-  balance             Decimal            @default(0.00) @db.Decimal(10, 2)
-  isAdmin             Boolean            @default(false) @map("is_admin")
-  adminVerifiedAt     DateTime?          @map("admin_verified_at")
-  isBlocked           Boolean            @default(false) @map("is_blocked")
-  blockedAt           DateTime?          @map("blocked_at")
-  blockedReason       String?            @map("blocked_reason")
-  billingFirstName    String?            @map("billing_first_name")
-  billingLastName     String?            @map("billing_last_name")
-  billingCompanyName  String?            @map("billing_company_name")
-  billingIsCompany    Boolean            @default(false) @map("billing_is_company")
-  billingAddressLine1 String?            @map("billing_address_line1")
-  billingAddressLine2 String?            @map("billing_address_line2")
-  billingCity         String?            @map("billing_city")
-  billingState        String?            @map("billing_state")
-  billingZip          String?            @map("billing_zip")
-  billingCountry      String?            @default("United States") @map("billing_country")
-  emailConfirmed      Boolean            @default(false) @map("email_confirmed")
-  confirmationToken   String?            @unique @map("confirmation_token")
-  confirmationSentAt  DateTime?          @map("confirmation_sent_at")
-  createdAt           DateTime           @default(now()) @map("created_at")
-  updatedAt           DateTime           @updatedAt @map("updated_at")
-  paymentMethods      PaymentMethod[]
-  purchases           Purchase[]
-  transactions        Transaction[]
-  favorites           UserLeadFavorite[]
-  leadFeedback        LeadFeedback[]
+  id                     String             @id @default(cuid())
+  authUserId             String?            @unique @map("auth_user_id")
+  email                  String             @unique
+  passwordHash           String?            @map("password_hash")
+  businessName           String             @map("business_name")
+  vendorType             String             @map("vendor_type")
+  location               String?
+  about                  String?
+  onboardingCompleted    Boolean            @default(false) @map("onboarding_completed")
+  balance                Decimal            @default(0.00) @db.Decimal(10, 2)
+  isAdmin                Boolean            @default(false) @map("is_admin")
+  adminVerifiedAt        DateTime?          @map("admin_verified_at")
+  isBlocked              Boolean            @default(false) @map("is_blocked")
+  blockedAt              DateTime?          @map("blocked_at")
+  blockedReason          String?            @map("blocked_reason")
+  billingFirstName       String?            @map("billing_first_name")
+  billingLastName        String?            @map("billing_last_name")
+  billingCompanyName     String?            @map("billing_company_name")
+  billingIsCompany       Boolean            @default(false) @map("billing_is_company")
+  billingAddressLine1    String?            @map("billing_address_line1")
+  billingAddressLine2    String?            @map("billing_address_line2")
+  billingCity            String?            @map("billing_city")
+  billingState           String?            @map("billing_state")
+  billingZip             String?            @map("billing_zip")
+  billingCountry         String?            @default("United States") @map("billing_country")
+  emailConfirmed         Boolean            @default(false) @map("email_confirmed")
+  confirmationToken      String?            @unique @map("confirmation_token")
+  confirmationSentAt     DateTime?          @map("confirmation_sent_at")
+  passwordResetToken     String?            @unique @map("password_reset_token")
+  passwordResetExpires   DateTime?          @map("password_reset_expires")
+  passwordResetSentAt    DateTime?          @map("password_reset_sent_at")
+  refreshToken           String?            @map("refresh_token")
+  refreshTokenExpiresAt  DateTime?          @map("refresh_token_expires_at")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+  paymentMethods         PaymentMethod[]
+  purchases              Purchase[]
+  transactions           Transaction[]
+  favorites              UserLeadFavorite[]
+  leadFeedback           LeadFeedback[]
 
   @@map("users")
 }
@@ -229,6 +235,28 @@ model CrmBetaSignup {
   @@map("crm_beta_signups")
 }
 
+model WebhookEvent {
+  id          String              @id @default(cuid())
+  source      String              // 'pipedrive' or 'stripe'
+  eventType   String              @map("event_type") // 'added.deal', 'updated.deal'
+  dealId      Int?                @map("deal_id")
+  payload     Json
+  status      WebhookEventStatus  @default(PENDING)
+  processedAt DateTime?           @map("processed_at")
+  error       String?
+  retryCount  Int                 @default(0) @map("retry_count")
+  nextRetryAt DateTime?           @map("next_retry_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  @@index([source, eventType])
+  @@index([status])
+  @@index([dealId])
+  @@index([nextRetryAt])
+  @@index([createdAt])
+  @@map("webhook_events")
+}
+
 enum LeadStatus {
   AVAILABLE
   SOLD
@@ -243,4 +271,13 @@ enum TransactionType {
   REFUND
   ADJUSTMENT
   FEEDBACK_REWARD
+}
+
+enum WebhookEventStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  RETRYING
+  DEAD_LETTER
 }

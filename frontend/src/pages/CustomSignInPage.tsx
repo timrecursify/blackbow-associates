@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { authAPI } from '../services/authAPI';
 
 export const CustomSignInPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,43 +18,30 @@ export const CustomSignInPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const response = await authAPI.login({ email, password });
 
-      if (signInError) {
-        throw signInError;
-      }
-
-      if (data.session) {
-        navigate('/marketplace');
+      if (response.user) {
+        // Check if onboarding is completed
+        if (response.user.onboardingCompleted) {
+          navigate('/marketplace');
+        } else {
+          navigate('/onboarding');
+        }
       }
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password');
+      const errorMessage = err.response?.data?.message || err.message || 'Invalid email or password';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOAuthSignIn = async (provider: 'google' | 'facebook') => {
-    setError('');
-    setLoading(true);
-
-    try {
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/marketplace`,
-        },
-      });
-
-      if (oauthError) {
-        throw oauthError;
-      }
-    } catch (err: any) {
-      setError(err.message || `Failed to sign in with ${provider}`);
-      setLoading(false);
+  const handleOAuthSignIn = (provider: 'google' | 'facebook') => {
+    if (provider === 'google') {
+      // Redirect to backend Google OAuth endpoint (goes directly to Google)
+      window.location.href = `${import.meta.env.VITE_API_URL || 'https://api.blackbowassociates.com'}/api/auth/google/login`;
+    } else {
+      setError('Facebook sign-in is coming soon. Please use Google or email/password for now.');
     }
   };
 
@@ -97,7 +84,7 @@ export const CustomSignInPage: React.FC = () => {
             <button
               onClick={() => handleOAuthSignIn('google')}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -110,13 +97,14 @@ export const CustomSignInPage: React.FC = () => {
 
             <button
               onClick={() => handleOAuthSignIn('facebook')}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              disabled={true}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 opacity-60 cursor-not-allowed text-sm relative"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
               <span className="font-medium text-gray-700 transition-colors duration-200">Continue with Facebook</span>
+              <span className="absolute top-1 right-2 text-[10px] font-semibold text-gray-500 bg-gray-200 px-2 py-0.5 rounded">Coming Soon</span>
             </button>
           </div>
 

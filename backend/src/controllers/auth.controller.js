@@ -2,12 +2,300 @@ import { prisma } from '../config/database.js';
 import { logger } from '../utils/logger.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import EmailService from '../services/emailService.js';
-import { supabaseAdmin } from '../middleware/auth.js';
+import {
+  hashPassword,
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+  validatePassword,
+  validateEmail
+} from '../services/auth.service.js';
 
 /**
  * Admin access is granted by setting isAdmin=true directly in the database.
  * No verification code needed - admins are designated users, not self-registered.
  */
+
+/**
+ * Authentication endpoints - Custom JWT
+ */
+
+// Register new user with email/password
+export const register = asyncHandler(async (req, res) => {
+  const { email, password, businessName, vendorType } = req.body;
+
+  // Validate required fields
+  if (!email || !password || !businessName) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email, password, and business name are required'
+    });
+  }
+
+  // Validate email format
+  if (!validateEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid email format'
+    });
+  }
+
+  // Validate password strength
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.valid) {
+    return res.status(400).json({
+      success: false,
+      message: passwordValidation.message
+    });
+  }
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (existingUser) {
+    return res.status(409).json({
+      success: false,
+      message: 'User with this email already exists'
+    });
+  }
+
+  // Hash password
+  const passwordHash = await hashPassword(password);
+
+  // Generate confirmation token
+  const confirmationToken = EmailService.generateConfirmationToken();
+
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      businessName,
+      vendorType: vendorType || 'Other',
+      balance: 0,
+      emailConfirmed: false,
+      onboardingCompleted: false,
+      confirmationToken,
+      confirmationSentAt: new Date()
+    }
+  });
+
+  // Send confirmation email
+  try {
+    await EmailService.sendConfirmationEmail(email, businessName, confirmationToken);
+
+    logger.info('User registered successfully', {
+      userId: user.id,
+      email: user.email
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful! Please check your email to confirm your account.',
+      user: {
+        id: user.id,
+        email: user.email,
+        businessName: user.businessName
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to send confirmation email after registration', {
+      userId: user.id,
+      email: user.email,
+      error: error.message
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful! However, we could not send the confirmation email. Please use the resend option.',
+      user: {
+        id: user.id,
+        email: user.email,
+        businessName: user.businessName
+      }
+    });
+  }
+});
+
+// Login with email/password
+export const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required'
+    });
+  }
+
+  // Find user by email
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (!user || !user.passwordHash) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  }
+
+  // Check if user is blocked
+  if (user.isBlocked) {
+    return res.status(403).json({
+      success: false,
+      message: `Account blocked${user.blockedReason ? `: ${user.blockedReason}` : '. Please contact support.'}`
+    });
+  }
+
+  // Compare password
+  const isPasswordValid = await comparePassword(password, user.passwordHash);
+
+  if (!isPasswordValid) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  }
+
+  // Generate tokens
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  // Calculate refresh token expiry (7 days from now)
+  const refreshTokenExpiresAt = new Date();
+  refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
+
+  // Store refresh token in database
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refreshToken,
+      refreshTokenExpiresAt
+    }
+  });
+
+  logger.info('User logged in successfully', {
+    userId: user.id,
+    email: user.email
+  });
+
+  res.json({
+    success: true,
+    message: 'Login successful',
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      businessName: user.businessName,
+      vendorType: user.vendorType,
+      balance: user.balance,
+      isAdmin: user.isAdmin,
+      emailConfirmed: user.emailConfirmed,
+      onboardingCompleted: user.onboardingCompleted
+    }
+  });
+});
+
+// Refresh access token using refresh token
+export const refreshTokenEndpoint = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      message: 'Refresh token is required'
+    });
+  }
+
+  // Verify refresh token
+  let decoded;
+  try {
+    decoded = verifyToken(refreshToken);
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired refresh token'
+    });
+  }
+
+  // Check token type
+  if (decoded.type !== 'refresh') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token type'
+    });
+  }
+
+  // Find user and verify refresh token matches
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.sub }
+  });
+
+  if (!user || user.refreshToken !== refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid refresh token'
+    });
+  }
+
+  // Check if refresh token has expired
+  if (user.refreshTokenExpiresAt && new Date() > user.refreshTokenExpiresAt) {
+    return res.status(401).json({
+      success: false,
+      message: 'Refresh token has expired. Please login again.'
+    });
+  }
+
+  // Check if user is blocked
+  if (user.isBlocked) {
+    return res.status(403).json({
+      success: false,
+      message: `Account blocked${user.blockedReason ? `: ${user.blockedReason}` : '. Please contact support.'}`
+    });
+  }
+
+  // Generate new access token
+  const newAccessToken = generateAccessToken(user);
+
+  logger.info('Access token refreshed', {
+    userId: user.id,
+    email: user.email
+  });
+
+  res.json({
+    success: true,
+    accessToken: newAccessToken
+  });
+});
+
+// Logout user
+export const logout = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  // Clear refresh token from database
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refreshToken: null,
+      refreshTokenExpiresAt: null
+    }
+  });
+
+  logger.info('User logged out', {
+    userId: user.id,
+    email: user.email
+  });
+
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+});
 
 // Get current user
 export const getCurrentUser = asyncHandler(async (req, res) => {
@@ -205,63 +493,17 @@ export const sendInitialConfirmation = asyncHandler(async (req, res) => {
     fromEmail: process.env.DEFAULT_FROM_EMAIL
   });
 
-  // Find or create user by email
-  // User might not exist in DB yet if they just signed up with Supabase
-  let user = await prisma.user.findUnique({
+  // Find user by email
+  const user = await prisma.user.findUnique({
     where: { email }
   });
 
   if (!user) {
-    // User doesn't exist in our DB yet - this is normal for new signups
-    // Fetch from Supabase Auth to get authUserId
-    try {
-      // List all users and find by email
-      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (authError) {
-        logger.error('Failed to fetch auth users', {
-          email,
-          error: authError.message
-        });
-        throw new Error(`Failed to fetch auth users: ${authError.message}`);
-      }
-      
-      const authUser = authUsers.users.find(u => u.email === email);
-      
-      if (!authUser) {
-        logger.warn('User not found in Supabase Auth', { email });
-        return res.status(404).json({
-          success: false,
-          message: 'User not found in authentication system'
-        });
-      }
-      
-      // Create user in our database
-      user = await prisma.user.create({
-        data: {
-          authUserId: authUser.id,
-          email: email,
-          businessName: businessName,
-          vendorType: 'Other',
-          balance: 0,
-          emailConfirmed: false,
-          onboardingCompleted: false
-        }
-      });
-      
-      logger.info('User created during email confirmation flow', {
-        userId: user.id,
-        authUserId: authUser.id,
-        email
-      });
-    } catch (error) {
-      logger.error('Failed to create user for email confirmation', {
-        email,
-        error: error.message,
-        stack: error.stack
-      });
-      throw error;
-    }
+    logger.warn('User not found for email confirmation', { email });
+    return res.status(404).json({
+      success: false,
+      message: 'User not found. Please register first.'
+    });
   }
 
   // Check if already confirmed
@@ -519,109 +761,22 @@ export const resetPassword = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update password in Supabase Auth
+  // Update password using bcrypt
   try {
     logger.info('Processing password reset', {
       ...requestContext,
       userId: user.id,
-      email: user.email,
-      hasAuthUserId: !!user.authUserId
+      email: user.email
     });
 
-    // Check if user has authUserId
-    if (!user.authUserId) {
-      logger.info('User missing authUserId, attempting to link', {
-        ...requestContext,
-        userId: user.id,
-        email: user.email
-      });
+    // Hash the new password
+    const passwordHash = await hashPassword(newPassword);
 
-      try {
-        // Try to find Supabase auth user by email
-        const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-
-        if (listError) {
-          logger.error('Failed to list Supabase auth users', {
-            ...requestContext,
-            userId: user.id,
-            email: user.email,
-            error: listError.message,
-            errorCode: listError.code
-          });
-          throw new Error(`Failed to list auth users: ${listError.message}`);
-        }
-
-        if (!authUsers || !authUsers.users) {
-          logger.error('Invalid response from Supabase listUsers', {
-            ...requestContext,
-            userId: user.id,
-            email: user.email
-          });
-          throw new Error('Invalid response from authentication service');
-        }
-
-        const authUser = authUsers.users.find(u => u.email === user.email);
-
-        if (!authUser) {
-          logger.error('User not found in Supabase Auth', {
-            ...requestContext,
-            userId: user.id,
-            email: user.email
-          });
-          return res.status(400).json({
-            success: false,
-            message: 'User account not properly configured. Please contact support.'
-          });
-        }
-
-        // Update database with found authUserId
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { authUserId: authUser.id }
-        });
-
-        user.authUserId = authUser.id;
-        logger.info('Successfully linked authUserId', {
-          ...requestContext,
-          userId: user.id,
-          email: user.email,
-          authUserId: authUser.id
-        });
-      } catch (linkError) {
-        logger.error('Failed to link authUserId', {
-          ...requestContext,
-          userId: user.id,
-          email: user.email,
-          error: linkError.message,
-          stack: linkError.stack,
-          isTimeout: linkError.message.includes('timeout')
-        });
-        throw linkError;
-      }
-    }
-
-    // Update password in Supabase
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.authUserId,
-      { password: newPassword }
-    );
-
-    if (updateError) {
-      logger.error('Supabase password update failed', {
-        ...requestContext,
-        userId: user.id,
-        email: user.email,
-        authUserId: user.authUserId,
-        error: updateError.message,
-        errorCode: updateError.code
-      });
-      throw new Error(`Failed to update password: ${updateError.message}`);
-    }
-
-    // Clear reset token from database
+    // Update password and clear reset token in database
     await prisma.user.update({
       where: { id: user.id },
       data: {
+        passwordHash,
         passwordResetToken: null,
         passwordResetExpires: null,
         passwordResetSentAt: null
@@ -645,27 +800,22 @@ export const resetPassword = asyncHandler(async (req, res) => {
       email: user?.email,
       error: error.message,
       stack: error.stack,
-      errorName: error.name,
-      isTimeout: error.message.includes('timeout')
+      errorName: error.name
     });
-
-    // Provide more specific error messages based on error type
-    let errorMessage = 'Failed to reset password. Please try again later.';
-    if (error.message.includes('network') || error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
-      errorMessage = 'Network error. Please check your connection and try again.';
-    } else if (error.message.includes('timeout')) {
-      errorMessage = 'Request timed out. Please try again.';
-    }
 
     res.status(500).json({
       success: false,
-      message: errorMessage
+      message: 'Failed to reset password. Please try again later.'
     });
   }
 });
 
 
 export default {
+  register,
+  login,
+  refreshTokenEndpoint,
+  logout,
   getCurrentUser,
   confirmEmail,
   resendConfirmation,

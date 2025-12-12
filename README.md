@@ -1,21 +1,22 @@
 # BlackBow Associates - Wedding Lead Marketplace
 
-**Production-grade wedding lead marketplace with Supabase authentication, Stripe payments, and Pipedrive CRM integration.**
+**Production-grade wedding lead marketplace with custom JWT authentication, Google OAuth, native PostgreSQL, Stripe payments, and Pipedrive CRM integration.**
 
 ## 🎯 Project Status
 
 **Backend:** ✅ Operational - All endpoints healthy
 **Frontend:** ✅ Complete - All pages implemented
-**Database:** ✅ Running healthy (PostgreSQL 15)
-**Authentication:** ✅ Fully functional - OAuth + email/password working
-**Infrastructure:** ✅ All services running healthy (9 PM2 + 11 Docker containers)
+**Database:** ✅ Native PostgreSQL 15 (port 5432)
+**Authentication:** ✅ Custom JWT + Direct Google OAuth (googleapis SDK)
+**Infrastructure:** ✅ PM2 deployment (2 services, 0 Docker containers)
 
-**Version:** 1.8.0 (LIVE PRODUCTION - Accepting Real Payments)
-**Last Updated:** 2025-11-24
+**Version:** 2.0.0 (LIVE PRODUCTION - Accepting Real Payments)
+**Last Updated:** 2025-12-12
 **Server:** VPS Production (angry-hamilton.hivelocitydns.com)
 **Payment Status:** 🔴 **STRIPE LIVE MODE ACTIVE**
 
 **Latest Updates:**
+- **2025-12-12: MIGRATION COMPLETE - Supabase → Native PostgreSQL + Custom Auth** - Eliminated all 11 Supabase Docker containers, migrated to native PostgreSQL (port 5432), implemented custom JWT authentication with direct Google OAuth integration
 - **2025-11-24: Frontend Server Fixed** - Added Express dependency (v4.21.2), switched from broken `npm run serve` to proper Express server, eliminated 16 restarts in 4 days
 - **LIVE Stripe Keys Deployed** - Platform now accepting real payments with real credit cards
 - **v1.8.0 Security Audit Complete** - Fixed 9 vulnerabilities (4 CRITICAL, 5 HIGH)
@@ -30,7 +31,9 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 
 ### Key Features
 
-- **Supabase Authentication** - Self-hosted auth with OAuth (Google, Facebook) + email/password
+- **Custom JWT Authentication** - Email/password login with secure JWT tokens
+- **Google OAuth Integration** - Direct Google OAuth 2.0 using googleapis SDK
+- **Native PostgreSQL Database** - High-performance database on port 5432
 - **Stripe Payments** - Deposit funds via credit card (PaymentIntents)
 - **Lead Marketplace** - Browse, filter, and purchase wedding leads
 - **Pipedrive Integration** - Automatic lead creation from CRM deals
@@ -48,7 +51,8 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 - Node.js 18+ with ES Modules
 - Express.js (REST API)
 - Prisma ORM (PostgreSQL)
-- Supabase SDK (Authentication - self-hosted)
+- JWT (jsonwebtoken - Custom authentication)
+- Google OAuth 2.0 (googleapis SDK)
 - Stripe SDK (Payments)
 - Winston (Structured logging)
 - PM2 (Process management)
@@ -69,7 +73,8 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 **Tech Stack:**
 - React 18 with TypeScript
 - Vite (Build tool)
-- Supabase JS Client (Authentication)
+- Custom JWT Auth (Token-based authentication)
+- Google OAuth 2.0 (Direct integration)
 - Stripe React (Payment UI)
 - Tailwind CSS (Styling)
 - React Router (Navigation)
@@ -87,18 +92,18 @@ BlackBow Associates is a B2B marketplace connecting wedding vendors with qualifi
 - Unsubscribe Page - Email unsubscribe (preserved from newsletter)
 
 **Authentication Flow:**
-- Step 1: Email/password or OAuth (Google/Facebook) registration via Supabase
+- Step 1: Email/password or Google OAuth registration
 - Step 2: Business details form (business name, location, vendor type, about)
 - Required fields: All fields mandatory with validation
-- Auto-creation: Users auto-created in PostgreSQL database on first login
+- Auto-creation: Users created in PostgreSQL database on registration
 - Protection: Marketplace/account access blocked until onboarding complete
 
-**✅ Recent Migration (2025-10-30):**
-- **Migrated from Clerk → Supabase** (local self-hosted instance)
-- **Reason:** OAuth redirect loop issues with Clerk, cost optimization
+**✅ Recent Migration (2025-12-12):**
+- **Migrated from Supabase → Native PostgreSQL + Custom Auth**
+- **Reason:** Simplify infrastructure, eliminate 11 Docker containers, improve performance
 - **Status:** Migration complete and operational
-- **Changes:** Custom auth pages, JWT verification updated, dual auth fields in schema
-- **Infrastructure:** Supabase running on Docker, accessible via auth.blackbowassociates.com
+- **Changes:** Custom JWT authentication, direct Google OAuth (googleapis SDK), native PostgreSQL on port 5432
+- **Infrastructure:** Lightweight PM2 deployment, no Docker containers required
 
 ---
 
@@ -119,7 +124,8 @@ cd backend
 # Prisma client already generated ✅
 
 # Add API keys to .env (see backend/.env.example)
-# Required: CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY
+# Required: JWT_SECRET, JWT_EXPIRES_IN
+# Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 # Required: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
 # Required: PIPEDRIVE_API_TOKEN, PIPEDRIVE_WEBHOOK_SECRET
 
@@ -136,7 +142,7 @@ curl http://localhost:3450/health
 cd frontend
 
 # Add API keys to .env.development
-# Required: VITE_CLERK_PUBLISHABLE_KEY
+# Required: VITE_GOOGLE_CLIENT_ID
 # Required: VITE_STRIPE_PUBLISHABLE_KEY
 # Required: VITE_API_BASE_URL=http://localhost:3450
 
@@ -152,7 +158,7 @@ npm run build
 ## 📊 Database Schema
 
 **6 Models:**
-- `User` - Clerk-synced users with balance tracking, **NEW:** location, about, onboardingCompleted
+- `User` - JWT-authenticated users with balance tracking, location, about, onboardingCompleted
 - `Lead` - Wedding leads (masked + full contact info)
 - `Transaction` - Deposits and purchases
 - `Purchase` - Lead ownership records
@@ -176,7 +182,8 @@ npm run build
 ## 🔐 Security
 
 - ✅ Localhost-only binding (127.0.0.1)
-- ✅ Clerk JWT authentication
+- ✅ Custom JWT authentication (jsonwebtoken)
+- ✅ Google OAuth 2.0 integration (googleapis SDK)
 - ✅ Stripe webhook HMAC verification
 - ✅ Pipedrive webhook secret verification
 - ✅ Rate limiting (3 tiers)
@@ -213,9 +220,9 @@ blackbow-associates/
 │   ├── src/
 │   │   ├── components/       # Navbar, LeadCard, DepositModal
 │   │   ├── pages/            # 9 pages (Landing, Onboarding, Marketplace, Account, etc.)
-│   │   ├── services/         # API client (axios with Clerk interceptor)
+│   │   ├── services/         # API client (axios with JWT interceptor)
 │   │   ├── App.tsx           # Router with ProtectedRoute wrapper for onboarding enforcement
-│   │   └── main.tsx          # ClerkProvider wrapper
+│   │   └── main.tsx          # Auth context provider
 │   ├── dist/                 # Production build
 │   ├── server.js             # Custom Express server (localhost binding)
 │   └── .env.production       # Environment variables
@@ -307,11 +314,12 @@ cd backend && bash scripts/deploy.sh
 
 ## 📝 API Keys Required
 
-### Clerk (https://clerk.com)
-1. Create account and application
-2. Get Publishable Key (starts with `pk_`)
-3. Get Secret Key (starts with `sk_`)
-4. Configure webhook: `https://api.blackbowassociates.com/api/webhooks/clerk`
+### Google OAuth (https://console.cloud.google.com)
+1. Create project in Google Cloud Console
+2. Enable Google+ API
+3. Create OAuth 2.0 credentials
+4. Get Client ID and Client Secret
+5. Configure authorized redirect URIs: `https://blackbowassociates.com/auth/callback`
 
 ### Stripe (https://stripe.com)
 1. Create account (use test mode initially)
@@ -350,11 +358,11 @@ Expected response:
 ### Test Endpoints (after adding API keys)
 ```bash
 # Browse leads (requires auth token)
-curl -H "Authorization: Bearer <clerk-token>" \
+curl -H "Authorization: Bearer <jwt-token>" \
   http://localhost:3450/api/leads
 
 # Admin users list (requires admin auth)
-curl -H "Authorization: Bearer <admin-clerk-token>" \
+curl -H "Authorization: Bearer <admin-jwt-token>" \
   http://localhost:3450/api/admin/users
 ```
 
@@ -437,12 +445,12 @@ cd backend && npx prisma migrate reset
 5. ✅ ~~Deploy backend with PM2~~
 6. ✅ ~~Implement onboarding flow~~
 7. ✅ ~~Deploy frontend with PM2~~
-8. 🔴 **FIX OAUTH REDIRECT LOOP** - Critical blocker preventing user registration
-9. ⚠️ **Add API Keys** - Configure Clerk, Stripe, Pipedrive in `.env`
-10. 🔲 **Test Auth Flow** - Sign up, sign in, profile updates
-11. 🔲 **Test Purchase Flow** - Deposit funds, purchase lead
-12. 🔲 **Configure Webhooks** - Set up Stripe and Pipedrive webhooks
-13. 🔲 **Production Testing** - End-to-end workflow verification
+8. ✅ ~~Migrate to Native PostgreSQL + Custom Auth~~ - **COMPLETE (2025-12-12)**
+9. ✅ **API Keys Configured** - Google OAuth, Stripe, Pipedrive in `.env`
+10. ✅ **Auth Flow Working** - Email/password + Google OAuth operational
+11. ✅ **Purchase Flow Working** - Deposits and lead purchases functional
+12. ✅ **Webhooks Configured** - Stripe and Pipedrive webhooks active
+13. ✅ **Production Testing** - End-to-end workflow verified
 
 ---
 
@@ -454,8 +462,9 @@ cd backend && npx prisma migrate reset
 
 ---
 
-**Built with ❤️ for BlackBow Associates**
-**Status:** Blocked - OAuth redirect loop requires investigation
-**Deployed:** Backend + Frontend operational on PM2
-**Critical Issue:** User registration broken - OAuth redirect loop
+**Built with care for BlackBow Associates**
+**Status:** Production - Fully operational
+**Deployed:** Backend + Frontend on PM2 (2 services, lightweight infrastructure)
+**Authentication:** Custom JWT + Google OAuth
+**Database:** Native PostgreSQL (port 5432)
 **Maintained by:** Claude Code (Senior Production Engineer)

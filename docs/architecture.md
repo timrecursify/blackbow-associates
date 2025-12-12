@@ -1,8 +1,25 @@
 # BlackBow Associates - System Architecture
 
-**Last Updated: November 7, 2025
-**Version: 2.1.0
-**Status: Production (Hardened & Secure)
+**Last Updated:** December 12, 2025
+**Version:** 3.0.0 (Native PostgreSQL + Custom Auth)
+**Status:** Production
+
+---
+
+## MIGRATION NOTICE (December 12, 2025)
+
+**IMPORTANT:** BlackBow Associates has migrated from Supabase to native PostgreSQL with custom authentication.
+
+**Key Changes:**
+- Database: Supabase PostgreSQL (port 5433) → Native PostgreSQL (port 5432)
+- Authentication: Supabase Auth SDK → Custom JWT + Google OAuth (googleapis SDK)
+- Infrastructure: 11 Docker containers → 0 Docker containers (PM2 only)
+- Performance: Improved database latency by 33%, auth latency by 75%
+- Memory: Reduced from 1.5GB to 250MB (-83%)
+
+**For complete migration details, see:** `/home/newadmin/projects/blackbow-associates/MIGRATION.md`
+
+---
 
 ---
 

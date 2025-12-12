@@ -2,11 +2,12 @@
 
 Wedding lead marketplace backend service for BlackBow Associates.
 
-**Version:** 1.6.0
-**Last Updated:** November 24, 2025
+**Version:** 2.0.0
+**Last Updated:** December 12, 2025
 **Status:** 🟢 Production
 
 **Recent Fixes:**
+- **2025-12-12: MIGRATION COMPLETE - Supabase → Native PostgreSQL + Custom Auth** - Eliminated all 11 Supabase Docker containers, migrated to native PostgreSQL (port 5432), implemented custom JWT authentication with direct Google OAuth integration
 - **2025-11-24: Database Backup Script Fixed** - Added PostgreSQL client installation check to backup script (`scripts/backup.sh`), prevents backup failures when `pg_dump` is missing
 
 **Note:** For full changelog, see [docs/status.md](../../docs/status.md)
@@ -36,7 +37,8 @@ Wedding lead marketplace backend service for BlackBow Associates.
 BlackBow Associates is a wedding lead marketplace connecting photographers with high-quality wedding leads. The backend provides:
 
 - **RESTful API** for lead marketplace operations
-- **Supabase Authentication** (self-hosted, OAuth + email/password)
+- **Custom JWT Authentication** - Email/password with secure JWT tokens
+- **Google OAuth Integration** - Direct Google OAuth 2.0 using googleapis SDK
 - **Stripe Payment Integration** for lead purchases and deposits
 - **Pipedrive Integration** with automated sync scheduler
 - **Lead Feedback System** with $2 rewards
@@ -49,9 +51,9 @@ BlackBow Associates is a wedding lead marketplace connecting photographers with 
 
 - **Runtime:** Node.js v22.18.0
 - **Framework:** Express.js
-- **Database:** Supabase PostgreSQL (self-hosted, port 5433)
+- **Database:** PostgreSQL 15 (native, port 5432)
 - **ORM:** Prisma
-- **Authentication:** Supabase Auth (JWT-based)
+- **Authentication:** JWT (jsonwebtoken) + Google OAuth 2.0 (googleapis SDK)
 - **Payments:** Stripe SDK
 - **CRM Integration:** Pipedrive API
 - **Scheduler:** node-cron
@@ -79,15 +81,15 @@ BlackBow Associates is a wedding lead marketplace connecting photographers with 
 │  - Lead       │  - User    │  - Validate  │  - /api/leads   │
 │  - User       │  - Payment │  - Error     │  - /api/users   │
 │  - Payment    │  - Stripe  │  - Logging   │  - /api/payment │
-│  - Pipedrive  │  - Supabase│              │  - /api/pipedrive│
+│  - Pipedrive  │  - OAuth   │              │  - /api/pipedrive│
 └───────┬──────────────┬──────────────┬──────────────┬─────────┘
         │              │              │              │
         ▼              ▼              ▼              ▼
 ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│   Supabase   │ │   Supabase   │ │   Stripe     │ │  Pipedrive   │
-│   Auth API   │ │  PostgreSQL  │ │     API      │ │     API      │
-│ localhost:   │ │ localhost:   │ │   (HTTPS)    │ │   (HTTPS)    │
-│   9999       │ │   5433       │ │              │ │              │
+│  PostgreSQL  │ │   Google     │ │   Stripe     │ │  Pipedrive   │
+│   Database   │ │   OAuth 2.0  │ │     API      │ │     API      │
+│ localhost:   │ │   (HTTPS)    │ │   (HTTPS)    │ │   (HTTPS)    │
+│   5432       │ │              │ │              │ │              │
 └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
@@ -101,12 +103,12 @@ For detailed architecture, see [docs/architecture.md](docs/architecture.md).
 ## 📦 Prerequisites
 
 - **Node.js:** v22.x or higher
-- **PostgreSQL:** via Supabase Docker stack (see `/home/newadmin/projects/blackbow-associates/supabase/`)
+- **PostgreSQL:** v15+ installed natively
 - **PM2:** Globally installed (`npm install -g pm2`)
 - **Git:** For deployment and version control
 
 **External Services:**
-- Supabase account (for auth configuration)
+- Google Cloud Platform (for OAuth 2.0 credentials)
 - Stripe account (for payment processing)
 - Pipedrive account (for lead sync)
 - Cloudflare account (for tunnel)
@@ -154,13 +156,16 @@ Create `.env` file in `backend/` directory:
 NODE_ENV=production
 PORT=3450
 
-# Supabase Configuration
-SUPABASE_URL=http://localhost:8304
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+# JWT Authentication
+JWT_SECRET=your_secure_random_string_min_32_chars
+JWT_EXPIRES_IN=7d
 
-# Database (Supabase PostgreSQL)
-DATABASE_URL="postgresql://blackbow_user:your_password@localhost:5433/blackbow?schema=public"
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Database (Native PostgreSQL)
+DATABASE_URL="postgresql://blackbow_user:your_password@localhost:5432/blackbow?schema=public"
 
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_live_...
@@ -190,17 +195,16 @@ INITIAL_BALANCE=100.00
 
 ## 🗄️ Database Setup
 
-### 1. Start Supabase Stack
+### 1. Ensure PostgreSQL is Running
 
 ```bash
-cd /home/newadmin/projects/blackbow-associates/supabase
-docker-compose up -d
+sudo systemctl status postgresql
+# Should show active (running)
 ```
 
-**Verify containers:**
+**Verify connection:**
 ```bash
-docker ps | grep supabase
-# Should show 13 containers running
+psql -U blackbow_user -d blackbow -c "SELECT version();"
 ```
 
 ### 2. Run Prisma Migrations
@@ -545,15 +549,13 @@ pm2 logs blackbow-api --err
 
 ### Database Connection Errors
 
-**Check Supabase containers:**
+**Check PostgreSQL service:**
 ```bash
-docker ps | grep supabase
-# Should show 13 containers
+sudo systemctl status postgresql
+# Should show active (running)
 
 # Restart if needed:
-cd /home/newadmin/projects/blackbow-associates/supabase
-docker-compose down
-docker-compose up -d
+sudo systemctl restart postgresql
 ```
 
 **Test connection:**
@@ -588,23 +590,22 @@ pm2 logs blackbow-api | grep -i pipedrive
 
 ### Authentication Errors
 
-**Verify Supabase Auth is running:**
+**Verify JWT configuration:**
 ```bash
-docker ps | grep supabase-auth
-curl http://localhost:9999/health
+# Check .env has JWT_SECRET and JWT_EXPIRES_IN
+grep JWT_ /home/newadmin/projects/blackbow-associates/backend/.env
 ```
 
-**Check JWT verification:**
+**Check Google OAuth credentials:**
 ```bash
-# Look for "supabaseAdmin" initialization in logs
-pm2 logs blackbow-api | grep -i supabase
+# Verify GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set
+grep GOOGLE_ /home/newadmin/projects/blackbow-associates/backend/.env
 ```
 
-**Restart Supabase if needed:**
+**Test authentication:**
 ```bash
-cd /home/newadmin/projects/blackbow-associates/supabase
-docker-compose restart supabase-auth
-docker-compose restart kong
+# Look for JWT initialization in logs
+pm2 logs blackbow-api | grep -i jwt
 ```
 
 ### Emergency Procedures
@@ -621,12 +622,11 @@ pm2 restart blackbow-api
 # Stop service
 pm2 stop blackbow-api
 
-# Restart Supabase
-cd /home/newadmin/projects/blackbow-associates/supabase
-docker-compose restart
+# Restart PostgreSQL
+sudo systemctl restart postgresql
 
-# Wait 10 seconds
-sleep 10
+# Wait 5 seconds
+sleep 5
 
 # Start service
 pm2 start blackbow-api
@@ -677,9 +677,10 @@ Three-tier rate limiting system:
 
 ### Authentication & Authorization
 
-- **JWT-based authentication** via Supabase Auth
+- **JWT-based authentication** via jsonwebtoken library
+- **Google OAuth 2.0** integration via googleapis SDK
 - **Role-based access control** (admin vs regular user)
-- **Token expiration** handled by Supabase
+- **Token expiration** configurable (default: 7 days)
 - **Webhook verification** for Stripe and Pipedrive
 
 ### Database Security
@@ -713,7 +714,8 @@ Three-tier rate limiting system:
 
 - All services bind to `127.0.0.1` (localhost) only
 - Cloudflare Tunnel for public access (HTTPS)
-- JWT-based authentication (Supabase)
+- JWT-based authentication (jsonwebtoken)
+- Google OAuth 2.0 (googleapis SDK)
 - Rate limiting on all endpoints
 - Input validation on all requests
 - SQL injection prevention (Prisma parameterized queries)
@@ -737,5 +739,6 @@ Proprietary - BlackBow Associates
 
 ---
 
-**Last Updated:** November 1, 2025
+**Last Updated:** December 12, 2025
+**Migration Status:** Completed - Supabase to Native PostgreSQL + Custom Auth
 **Generated with:** [Claude Code](https://claude.com/claude-code)

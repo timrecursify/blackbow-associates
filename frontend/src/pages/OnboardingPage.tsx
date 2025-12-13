@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { logger } from '../utils/logger';
 import { useNavigate } from 'react-router-dom';
 import { Building2, MapPin, Briefcase, FileText, AlertCircle } from 'lucide-react';
 import { usersAPI } from '../services/api';
 import { authAPI } from '../services/authAPI';
+import { searchCities } from '../data/us-cities';
 
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,13 @@ export const OnboardingPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
 
+  // City autocomplete state
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Pre-fill business name from current user profile
     authAPI.getCurrentUser().then(({ user }) => {
@@ -34,10 +42,26 @@ export const OnboardingPage: React.FC = () => {
     detectLocation();
   }, []);
 
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        locationInputRef.current &&
+        !locationInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const detectLocation = async () => {
     setDetectingLocation(true);
     try {
-      // Use IP-based geolocation (more reliable than browser geolocation)
       const response = await fetch('https://ipapi.co/json/');
       const data = await response.json();
 
@@ -47,24 +71,93 @@ export const OnboardingPage: React.FC = () => {
       }
     } catch (error) {
       logger.error('Failed to detect location:', error);
-      // Silently fail - user can still enter manually
     } finally {
       setDetectingLocation(false);
     }
   };
 
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, location: value }));
+
+    // Search cities
+    if (value.length >= 2) {
+      const results = searchCities(value, 8);
+      setCitySuggestions(results);
+      setShowSuggestions(results.length > 0);
+      setHighlightedIndex(-1);
+    } else {
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+    }
+
+    // Clear error
+    if (errors.location) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.location;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleLocationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || citySuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev =>
+        prev < citySuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      selectCity(citySuggestions[highlightedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectCity = (city: string) => {
+    setFormData(prev => ({ ...prev, location: city }));
+    setCitySuggestions([]);
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+    locationInputRef.current?.blur();
+  };
+
   const vendorTypes = [
     'Photographer',
     'Videographer',
-    'Caterer',
+    'Photo Booth',
     'DJ / Music',
+    'Live Band',
     'Venue',
-    'Florist',
+    'Caterer',
+    'Bartending Service',
     'Wedding Planner',
+    'Day-of Coordinator',
+    'Florist',
     'Baker / Cake Designer',
     'Hair & Makeup',
-    'Decorator',
-    'Transportation',
+    'Officiant',
+    'Decorator / Stylist',
+    'Lighting & AV',
+    'Rentals (Tables, Chairs, Linens)',
+    'Invitations & Stationery',
+    'Transportation / Limo',
+    'Photobooth',
+    'Jeweler',
+    'Bridal Boutique / Attire',
+    'Alterations',
+    'Travel / Honeymoon',
+    'Dance Lessons',
+    'Calligrapher',
+    'Favors & Gifts',
+    'Event Insurance',
+    'Security Services',
     'Other'
   ];
 
@@ -100,7 +193,6 @@ export const OnboardingPage: React.FC = () => {
       [name]: value
     }));
 
-    // Clear error for this field
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -134,7 +226,6 @@ export const OnboardingPage: React.FC = () => {
     setLoading(true);
 
     try {
-      // Update profile with business info and mark onboarding as completed
       await usersAPI.completeOnboarding({
         businessName: formData.businessName,
         location: formData.location,
@@ -142,12 +233,9 @@ export const OnboardingPage: React.FC = () => {
         about: formData.about
       });
 
-      // Cache onboarding completion immediately to prevent re-showing form
       localStorage.setItem('onboardingCompleted', 'true');
-
       setSuccess(true);
 
-      // Redirect to marketplace after short delay
       setTimeout(() => {
         navigate('/marketplace');
       }, 2000);
@@ -168,31 +256,18 @@ export const OnboardingPage: React.FC = () => {
               src="/logos/BlackBow_Associates_Logo_Text_Transprent_bg.png"
               alt="BlackBow Associates"
               className="w-48 h-auto md:w-64"
-              style={{
-                animation: 'fadeInBounce 0.8s ease-out'
-              }}
+              style={{ animation: 'fadeInBounce 0.8s ease-out' }}
             />
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 transition-colors duration-200 mt-4">Welcome to BlackBow Associates!</h2>
-          <p className="text-gray-600 transition-colors duration-200 mt-2">Redirecting you to the marketplace...</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mt-4">Welcome to BlackBow Associates!</h2>
+          <p className="text-gray-600 mt-2">Redirecting you to the marketplace...</p>
         </div>
-
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes fadeInBounce {
-            0% {
-              opacity: 0;
-              transform: scale(0.3) translateY(-30px);
-            }
-            50% {
-              transform: scale(1.05) translateY(0);
-            }
-            70% {
-              transform: scale(0.95);
-            }
-            100% {
-              opacity: 1;
-              transform: scale(1);
-            }
+            0% { opacity: 0; transform: scale(0.3) translateY(-30px); }
+            50% { transform: scale(1.05) translateY(0); }
+            70% { transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
           }
         `}} />
       </div>
@@ -204,32 +279,32 @@ export const OnboardingPage: React.FC = () => {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="font-handwritten text-3xl sm:text-4xl text-black transition-colors duration-200">
+          <h1 className="font-handwritten text-3xl sm:text-4xl text-black">
             Tell Us About Your Business
           </h1>
-          <p className="text-gray-600 transition-colors duration-200 mt-2 text-sm sm:text-base">
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
             Just a few details to get you started
           </p>
         </div>
 
         {/* Form */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-6 sm:p-8 transition-colors duration-200">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Form Error */}
             {errors.form && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 transition-colors duration-200">
-                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5 transition-colors duration-200" size={20} />
-                <p className="text-red-800 text-sm transition-colors duration-200">{errors.form}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+                <p className="text-red-800 text-sm">{errors.form}</p>
               </div>
             )}
 
             {/* Business Name */}
             <div>
-              <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 transition-colors duration-200 mb-2">
+              <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
                 Business Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200" size={20} />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   id="businessName"
                   name="businessName"
@@ -242,43 +317,71 @@ export const OnboardingPage: React.FC = () => {
                 />
               </div>
               {errors.businessName && (
-                <p className="mt-1 text-sm text-red-600 transition-colors duration-200">{errors.businessName}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.businessName}</p>
               )}
             </div>
 
-            {/* Location */}
+            {/* Location with Autocomplete */}
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 transition-colors duration-200 mb-2">
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 Location (City, State) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200" size={20} />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" size={20} />
                 <input
+                  ref={locationInputRef}
                   id="location"
                   name="location"
                   type="text"
                   value={formData.location}
-                  onChange={handleChange}
+                  onChange={handleLocationChange}
+                  onKeyDown={handleLocationKeyDown}
+                  onFocus={() => {
+                    if (citySuggestions.length > 0) setShowSuggestions(true);
+                  }}
                   className={`w-full pl-11 pr-4 py-3 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-lg bg-white focus:ring-2 focus:ring-black focus:border-black transition-colors`}
-                  placeholder={detectingLocation ? "Detecting your location..." : "e.g., Miami, FL"}
-                  disabled={loading || detectingLocation}
+                  placeholder={detectingLocation ? "Detecting your location..." : "Start typing a city..."}
+                  disabled={loading}
+                  autoComplete="off"
                 />
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && citySuggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    {citySuggestions.map((city, index) => (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => selectCity(city)}
+                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 ${
+                          index === highlightedIndex ? 'bg-gray-100' : ''
+                        } ${index !== citySuggestions.length - 1 ? 'border-b border-gray-100' : ''}`}
+                      >
+                        <MapPin className="text-gray-400 flex-shrink-0" size={16} />
+                        <span className="text-gray-900">{city}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               {errors.location && (
-                <p className="mt-1 text-sm text-red-600 transition-colors duration-200">{errors.location}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.location}</p>
               )}
               {detectingLocation && (
-                <p className="mt-1 text-xs text-gray-500 transition-colors duration-200">📍 Detecting your location automatically...</p>
+                <p className="mt-1 text-xs text-gray-500">📍 Detecting your location automatically...</p>
               )}
             </div>
 
             {/* Vendor Type */}
             <div>
-              <label htmlFor="vendorType" className="block text-sm font-medium text-gray-700 transition-colors duration-200 mb-2">
+              <label htmlFor="vendorType" className="block text-sm font-medium text-gray-700 mb-2">
                 What services do you provide? <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10 transition-colors duration-200" size={20} />
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" size={20} />
                 <select
                   id="vendorType"
                   name="vendorType"
@@ -294,17 +397,17 @@ export const OnboardingPage: React.FC = () => {
                 </select>
               </div>
               {errors.vendorType && (
-                <p className="mt-1 text-sm text-red-600 transition-colors duration-200">{errors.vendorType}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.vendorType}</p>
               )}
             </div>
 
             {/* About */}
             <div>
-              <label htmlFor="about" className="block text-sm font-medium text-gray-700 transition-colors duration-200 mb-2">
+              <label htmlFor="about" className="block text-sm font-medium text-gray-700 mb-2">
                 About Your Business <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <FileText className="absolute left-3 top-3 text-gray-400 transition-colors duration-200" size={20} />
+                <FileText className="absolute left-3 top-3 text-gray-400" size={20} />
                 <textarea
                   id="about"
                   name="about"
@@ -318,11 +421,11 @@ export const OnboardingPage: React.FC = () => {
               </div>
               <div className="flex justify-between items-center mt-1">
                 {errors.about ? (
-                  <p className="text-sm text-red-600 transition-colors duration-200">{errors.about}</p>
+                  <p className="text-sm text-red-600">{errors.about}</p>
                 ) : (
-                  <p className="text-xs text-gray-500 transition-colors duration-200">Minimum 10 characters</p>
+                  <p className="text-xs text-gray-500">Minimum 10 characters</p>
                 )}
-                <p className="text-xs text-gray-500 transition-colors duration-200">{formData.about.length}/1000</p>
+                <p className="text-xs text-gray-500">{formData.about.length}/1000</p>
               </div>
             </div>
 
@@ -345,7 +448,7 @@ export const OnboardingPage: React.FC = () => {
         </div>
 
         {/* Help Text */}
-        <p className="text-center text-sm text-gray-600 mt-6 transition-colors duration-200 px-4">
+        <p className="text-center text-sm text-gray-600 mt-6 px-4">
           This information helps us match you with the right leads for your business.
         </p>
       </div>

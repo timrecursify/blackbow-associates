@@ -50,6 +50,18 @@ model User {
   favorites              UserLeadFavorite[]
   leadFeedback           LeadFeedback[]
 
+  // Referral fields
+  referralCode           String?            @unique @map("referral_code")
+  referredByUserId       String?            @map("referred_by_user_id")
+  referralEnabled        Boolean            @default(true) @map("referral_enabled")
+
+  // Referral relations
+  referredBy             User?              @relation("Referrals", fields: [referredByUserId], references: [id])
+  referrals              User[]             @relation("Referrals")
+  referralCommissions    ReferralCommission[] @relation("CommissionEarner")
+  generatedCommissions   ReferralCommission[] @relation("CommissionSource")
+  referralPayouts        ReferralPayout[]
+
   @@map("users")
 }
 
@@ -125,14 +137,15 @@ model Transaction {
 }
 
 model Purchase {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  leadId      String   @map("lead_id")
-  amountPaid  Decimal  @map("amount_paid") @db.Decimal(10, 2)
-  purchasedAt DateTime @default(now()) @map("purchased_at")
-  notes       String?
-  lead        Lead     @relation(fields: [leadId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
+  id                 String              @id @default(cuid())
+  userId             String              @map("user_id")
+  leadId             String              @map("lead_id")
+  amountPaid         Decimal             @map("amount_paid") @db.Decimal(10, 2)
+  purchasedAt        DateTime            @default(now()) @map("purchased_at")
+  notes              String?
+  lead               Lead                @relation(fields: [leadId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  referralCommission ReferralCommission?
 
   @@unique([userId, leadId])
   @@index([userId])
@@ -235,6 +248,46 @@ model CrmBetaSignup {
   @@map("crm_beta_signups")
 }
 
+model ReferralCommission {
+  id              String           @id @default(cuid())
+  earnerId        String           @map("earner_id")
+  sourceUserId    String           @map("source_user_id")
+  purchaseId      String           @unique @map("purchase_id")
+  amount          Decimal          @db.Decimal(10, 2)
+  status          CommissionStatus @default(PENDING)
+  paidAt          DateTime?        @map("paid_at")
+  payoutId        String?          @map("payout_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  earner          User             @relation("CommissionEarner", fields: [earnerId], references: [id])
+  sourceUser      User             @relation("CommissionSource", fields: [sourceUserId], references: [id])
+  purchase        Purchase         @relation(fields: [purchaseId], references: [id])
+  payout          ReferralPayout?  @relation(fields: [payoutId], references: [id])
+
+  @@index([earnerId])
+  @@index([sourceUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("referral_commissions")
+}
+
+model ReferralPayout {
+  id          String        @id @default(cuid())
+  userId      String        @map("user_id")
+  amount      Decimal       @db.Decimal(10, 2)
+  status      PayoutStatus  @default(PENDING)
+  requestedAt DateTime      @default(now()) @map("requested_at")
+  paidAt      DateTime?     @map("paid_at")
+  notes       String?
+  user        User          @relation(fields: [userId], references: [id])
+  commissions ReferralCommission[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([requestedAt])
+  @@map("referral_payouts")
+}
+
 model WebhookEvent {
   id          String              @id @default(cuid())
   source      String              // 'pipedrive' or 'stripe'
@@ -271,6 +324,7 @@ enum TransactionType {
   REFUND
   ADJUSTMENT
   FEEDBACK_REWARD
+  REFERRAL_PAYOUT
 }
 
 enum WebhookEventStatus {
@@ -280,4 +334,16 @@ enum WebhookEventStatus {
   FAILED
   RETRYING
   DEAD_LETTER
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  REJECTED
 }

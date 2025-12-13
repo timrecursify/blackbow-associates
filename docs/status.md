@@ -1,9 +1,9 @@
 # BlackBow Associates - Project Status
 
-**Last Updated:** November 19, 2025
-**Version:** 2.4.0
+**Last Updated:** December 13, 2025
+**Version:** 3.2.0
 **Overall Status:** 🟢 **LIVE IN PRODUCTION** (Accepting Real Payments)
-**Session:** 16 - 100% DeSaaS Compliance Achieved
+**Session:** 18 - Signup Flow & Referral Attribution Fixes
 
 ---
 
@@ -18,6 +18,104 @@
 | Security | 🟢 **ENTERPRISE-GRADE** | 100% DeSaaS compliant, dual rate limiting, audit logging |
 | Compliance | 🟢 **100% DESAAS** | All audit, logging, and security standards met |
 | Cloudflare Tunnel | 🟢 **Configured** | Domains routed to services |
+
+---
+
+**2025-12-13 - v3.2.0 - Signup Flow & Referral Attribution Fixes** 🔧
+
+**Agent:** claude-opus
+**Machine:** VPS (claude-vps-prod)
+**Duration:** ~1 hour
+**Status:** ✅ COMPLETE - DEPLOYED TO PRODUCTION
+
+### Critical Fixes Implemented
+
+**1. Form Validation Enhancement**
+- Added real-time field validation with visual feedback
+- Inline error messages for: firstName, lastName, email, password
+- Red border styling on invalid fields
+- onBlur validation triggers
+
+**2. Password Strength Indicator**
+- Visual progress bar (Weak/Medium/Strong)
+- Color-coded feedback (red/yellow/green)
+- Checks: length, uppercase, lowercase, numbers, special chars
+- Updated minimum requirement from 6 to 8 characters
+
+**3. Email Confirmation Auto-Login (CRITICAL)**
+- **Problem:** After confirming email, users were redirected to sign-in instead of dashboard
+- **Root Cause:** `confirmEmail` endpoint didn't generate auth tokens
+- **Fix:** Backend now generates access/refresh tokens on email confirmation
+- **Fix:** Frontend stores tokens and redirects based on onboarding status
+
+**4. Referral Code Persistence (CRITICAL)**
+- **Problem:** Referral code lost when user navigates away from signup page
+- **Root Cause:** Code only read from URL at form submission time
+- **Fix:** Created `frontend/src/utils/referral.ts` utility
+- **Fix:** Captures `?ref=CODE` on first visit, stores in localStorage (30-day expiry)
+- **Fix:** Landing page Sign Up buttons now preserve referral code
+
+**5. Landing Page Referral Preservation**
+- Header "Sign Up" button preserves referral code
+- "Get Started Today" CTA preserves referral code
+- Referral code captured on any page visit, persisted across navigation
+
+### Files Created
+- `frontend/src/utils/referral.ts` - Referral code persistence utility
+
+### Files Modified
+- `backend/src/controllers/auth.controller.js` - Auto-login on email confirmation
+- `frontend/src/pages/CustomSignUpPage.tsx` - Form validation, password strength, referral persistence
+- `frontend/src/pages/ConfirmEmailSuccessPage.tsx` - Token storage, dynamic redirect
+- `frontend/src/App.tsx` - Referral capture on load, preserved links
+
+### Referral Attribution Flow (Fixed)
+1. User visits `blackbowassociates.com/sign-up?ref=CODE`
+2. Code captured and stored in localStorage (30-day TTL)
+3. User browses site, code persists
+4. User clicks any "Sign Up" button → code in URL
+5. User registers → referral attributed correctly
+6. Code cleared after successful registration
+
+---
+
+**2025-12-13 - v3.1.0 - Referral Program + Delayed Lead Access** 🚀
+
+**Agent:** claude-opus
+**Machine:** VPS (claude-vps-prod)
+**Duration:** ~3 hours
+**Status:** ✅ COMPLETE - DEPLOYED TO PRODUCTION
+
+### Features Implemented
+
+**1. Referral Program (10% Lifetime Commission)**
+- Users get unique 8-character referral codes
+- Signup with `?ref=CODE` links new user to referrer
+- 10% commission on ALL purchases by referred users (lifetime)
+- $50 minimum payout threshold
+- User dashboard: Referrals tab with link, stats, referred users, payouts
+- Admin panel: Referrals tab with overview, all referrers, payout management
+- Admin can disable referral links (payout data preserved)
+
+**2. Delayed Lead Access for Photographers/Videographers**
+- Silent 14-day delay filter in marketplace
+- Applies to: Photographer, Videographer vendor types
+- All other vendor types see leads immediately
+- No UI notification - transparent filter
+
+### Database Changes
+- User model: +referralCode, +referredByUserId, +referralEnabled
+- New tables: referral_commissions, referral_payouts
+- New enums: CommissionStatus, PayoutStatus
+
+### New API Endpoints
+- `/api/referrals/*` - User referral dashboard (6 endpoints)
+- `/api/admin/referrals/*` - Admin referral management (6 endpoints)
+
+### Frontend Changes
+- AccountPage: New Referrals tab
+- AdminDashboardPage: New Referrals tab
+- CustomSignUpPage: Captures ?ref= query param
 
 ---
 
@@ -1867,3 +1965,49 @@ For detailed component-specific history, see archived changelogs in respective d
 - Frontend: /frontend/CHANGELOG.md (moved to archive)
 
 **Last Changelog Update:** 2025-11-19
+
+---
+
+### 2025-12-13 08:45 UTC - Agent: cursor-ide
+**Task:** Pipedrive Webhook V2 Integration Fix + Supabase Migration Cleanup
+
+**Session Summary:**
+Completed comprehensive cleanup of Supabase migration artifacts and fixed critical Pipedrive webhook integration issue.
+
+**Changes Made:**
+
+#### 1. Supabase Migration Cleanup
+- Removed commented-out Supabase credentials from  (security fix)
+- Cleaned  in frontend and backend to remove orphaned  packages
+- Moved  to 
+- Identified legacy scripts in  (kept for reference)
+
+#### 2. Pipedrive Webhook V2 Format Support
+**Problem:** Pipedrive webhooks v2 send data in different format than API:
+- API format: `deal['fieldKey'] = 'value'`
+- Webhook v2: `deal.custom_fields['fieldKey'] = { type: 'varchar', value: 'value' }`
+
+**Solution:** Added `normalizePipedriveDeal()` function in `pipedrive.service.js` that:
+- Detects webhook v2 format (`custom_fields` object present)
+- Flattens nested field values to top-level keys
+- Maintains backward compatibility with API-fetched data
+
+**Files Modified:**
+- `backend/src/controllers/webhooks.controller.js` - Added v2 format detection
+- `backend/src/services/pipedrive.service.js` - Added normalizePipedriveDeal()
+- `backend/src/services/webhook-processor.service.js` - Added v2 data field support
+- `backend/.env` - Removed legacy Supabase credentials
+
+**Tests & Validation:**
+- ✅ Webhook receiving 200 status from Pipedrive
+- ✅ Full lead data now captured (weddingDate, description, servicesNeeded, notes)
+- ✅ Lead ID NY973763 created with complete information
+- ✅ Compared with historical lead XX420817 - data parity achieved
+
+**Production Impact:**
+- Service: BlackBow API
+- Downtime: None (hot reload via PM2)
+- Breaking Changes: No
+- Performance: No impact
+
+**Status:** ✅ SUCCESS - Webhook integration fully operational

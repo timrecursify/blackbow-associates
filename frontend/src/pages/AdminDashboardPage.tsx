@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { logger } from '../utils/logger';
 import { Navbar } from '../components/Navbar';
-import { BarChart3, Users, Package, MessageSquare, DollarSign, Upload, Sparkles } from 'lucide-react';
+import { BarChart3, Users, Package, MessageSquare, DollarSign, Upload, Sparkles, Gift } from 'lucide-react';
 import { adminAPI } from '../services/api';
 import { format } from 'date-fns';
 import OverviewTab from './admin/OverviewTab';
 import FeedbackTab from './admin/FeedbackTab';
+import ReferralsTab from './admin/ReferralsTab';
 import AdminGuard from '../components/AdminGuard';
 
 interface User {
@@ -42,7 +43,7 @@ interface CrmBetaSignup {
   createdAt: string;
 }
 
-type TabType = 'overview' | 'users' | 'leads' | 'feedback' | 'crm-beta';
+type TabType = 'overview' | 'users' | 'leads' | 'feedback' | 'crm-beta' | 'referrals';
 
 const AdminDashboardContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -293,7 +294,8 @@ const AdminDashboardContent: React.FC = () => {
     { id: 'users' as TabType, label: 'Users', icon: Users },
     { id: 'leads' as TabType, label: 'Leads', icon: Package },
     { id: 'feedback' as TabType, label: 'Feedback', icon: MessageSquare },
-    { id: 'crm-beta' as TabType, label: 'CRM Beta', icon: Sparkles }
+    { id: 'crm-beta' as TabType, label: 'CRM Beta', icon: Sparkles },
+    { id: 'referrals' as TabType, label: 'Referrals', icon: Gift }
   ];
 
   return (
@@ -335,6 +337,7 @@ const AdminDashboardContent: React.FC = () => {
         {/* Tab Content */}
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'feedback' && <FeedbackTab />}
+        {activeTab === 'referrals' && <ReferralsTab />}
 
         {/* CRM Beta Signups Tab */}
         {activeTab === 'crm-beta' && (

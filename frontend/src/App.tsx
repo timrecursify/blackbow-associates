@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { logger } from './utils/logger';
+import { captureReferralCode, getReferralCode } from './utils/referral';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Instagram, Facebook, Youtube, ExternalLink, UserX, Sparkles, DollarSign, Target, Shield, BookOpen } from 'lucide-react';
 import { useMediaQuery } from 'react-responsive';
@@ -30,6 +31,11 @@ const LandingPage: React.FC = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
+  // Capture referral code on page load
+  useEffect(() => {
+    captureReferralCode();
+  }, []);
+
   useEffect(() => {
     // Check if user is authenticated via JWT
     setIsSignedIn(isAuthenticated());
@@ -42,6 +48,8 @@ const LandingPage: React.FC = () => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  const refCode = getReferralCode();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col relative ">
@@ -96,7 +104,7 @@ const LandingPage: React.FC = () => {
                 Sign In
               </Link>
               <Link
-                to="/sign-up"
+                to={refCode ? `/sign-up?ref=${refCode}` : '/sign-up'}
                 className="px-4 sm:px-4 md:px-6 py-2.5 sm:py-2 md:py-2 text-sm sm:text-sm md:text-base font-semibold bg-black text-white hover:bg-gray-800 transition-colors shadow-md rounded-lg min-h-[44px] flex items-center"
               >
                 Sign Up
@@ -182,7 +190,7 @@ const LandingPage: React.FC = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center mb-6 sm:mb-8 lg:mb-4 px-4">
             <Link
-              to="/sign-up"
+              to={refCode ? `/sign-up?ref=${refCode}` : '/sign-up'}
               className="inline-flex items-center justify-center space-x-2 sm:space-x-3 bg-black text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <span>Get Started Today</span>

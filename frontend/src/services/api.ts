@@ -155,6 +155,19 @@ export const paymentsAPI = {
     apiClient.delete(`/payments/methods/${paymentMethodId}`),
 };
 
+// Referral API
+export const referralAPI = {
+  getStats: () => apiClient.get('/referrals/stats'),
+  getLink: () => apiClient.get('/referrals/link'),
+  getReferredUsers: (page = 1, limit = 20) =>
+    apiClient.get('/referrals/referred-users', { params: { page, limit } }),
+  getCommissions: (page = 1, limit = 50) =>
+    apiClient.get('/referrals/commissions', { params: { page, limit } }),
+  requestPayout: () => apiClient.post('/referrals/request-payout'),
+  getPayoutHistory: (page = 1, limit = 20) =>
+    apiClient.get('/referrals/payouts', { params: { page, limit } }),
+};
+
 // Admin API
 export const adminAPI = {
   // User management
@@ -192,7 +205,7 @@ export const adminAPI = {
   exportAnalytics: (params?: any) => apiClient.get('/admin/analytics/export', { params, responseType: 'blob' }),
 
   // CRM Beta Signups management
-  getCrmBetaSignups: (page: number = 1, limit: number = 20, status?: string) => 
+  getCrmBetaSignups: (page: number = 1, limit: number = 20, status?: string) =>
     apiClient.get('/admin/crm-beta-signups', { params: { page, limit, status } }),
   getCrmBetaSignupById: (signupId: string) =>
     apiClient.get(`/admin/crm-beta-signups/${signupId}`),
@@ -200,6 +213,19 @@ export const adminAPI = {
     apiClient.patch(`/admin/crm-beta-signups/${signupId}/status`, { status }),
   exportCrmBetaSignups: () =>
     apiClient.get('/admin/crm-beta-signups/export', { responseType: 'blob' }),
+
+  // Referrals
+  getReferralOverview: () => apiClient.get('/admin/referrals/overview'),
+  getAllReferrers: (page = 1, limit = 50, search?: string) =>
+    apiClient.get('/admin/referrals/referrers', { params: { page, limit, search } }),
+  getReferrerDetails: (userId: string) =>
+    apiClient.get(`/admin/referrals/referrers/${userId}`),
+  getPendingPayouts: (page = 1, limit = 50) =>
+    apiClient.get('/admin/referrals/payouts', { params: { page, limit } }),
+  markPayoutAsPaid: (payoutId: string, notes?: string) =>
+    apiClient.post(`/admin/referrals/payouts/${payoutId}/mark-paid`, { notes }),
+  toggleUserReferral: (userId: string) =>
+    apiClient.post(`/admin/referrals/users/${userId}/toggle-referral`),
 };
 
 export default {
@@ -207,5 +233,6 @@ export default {
   usersAPI,
   leadsAPI,
   paymentsAPI,
+  referralAPI,
   adminAPI,
 };

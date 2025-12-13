@@ -1,5 +1,5 @@
 import { prisma } from '../config/database.js';
-import { logger } from '../utils/logger.js';
+import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import * as stripeService from '../services/stripe.service.js';
 

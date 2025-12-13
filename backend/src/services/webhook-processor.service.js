@@ -281,7 +281,15 @@ const extractDealFromPayload = (payload, eventType) => {
     return null;
   }
 
-  // Pipedrive webhook structure: { current: {...}, previous: {...} }
+  // Pipedrive webhook structure:
+  // v1: { current: {...}, previous: {...} }
+  // v2: { data: {...}, previous: {...}, meta: {...} }
+  // v2 format: data field
+  if (payload.data) {
+    return payload.data;
+  }
+
+  // v1 format: current field
   if (payload.current) {
     return payload.current;
   }

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { logger } from '../utils/logger';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { authAPI } from '../services/authAPI';
+import { getReferralCode, clearReferralCode } from '../utils/referral';
 
 export const CustomSignUpPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -15,6 +17,8 @@ export const CustomSignUpPage: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,15 +27,21 @@ export const CustomSignUpPage: React.FC = () => {
     setLoading(true);
 
     try {
+      // Get referral code from URL query parameter or stored referral code
+      const referralCode = searchParams.get('ref') || getReferralCode();
+
       // Register using custom JWT authentication
       const response = await authAPI.register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        referralCode: referralCode || undefined,
       });
 
       if (response.user) {
+        // Clear referral code after successful registration
+        clearReferralCode();
         // Redirect to email confirmation page
         navigate('/email-confirmation', {
           state: { email: formData.email }
@@ -54,8 +64,64 @@ export const CustomSignUpPage: React.FC = () => {
     }));
   };
 
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'firstName':
+        if (!value.trim()) return 'First name is required';
+        if (value.trim().length < 2) return 'At least 2 characters';
+        return '';
+      case 'lastName':
+        if (!value.trim()) return 'Last name is required';
+        if (value.trim().length < 2) return 'At least 2 characters';
+        return '';
+      case 'email':
+        if (!value) return 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+        return '';
+      case 'password':
+        if (!value) return 'Password is required';
+        if (value.length < 8) return 'At least 8 characters required';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    setFieldErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
+  const getPasswordStrength = (password: string) => {
+    if (!password) return null;
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 2) return { level: 'Weak', color: 'bg-red-500', textColor: 'text-red-600', width: 'w-1/3' };
+    if (score <= 4) return { level: 'Medium', color: 'bg-yellow-500', textColor: 'text-yellow-600', width: 'w-2/3' };
+    return { level: 'Strong', color: 'bg-green-500', textColor: 'text-green-600', width: 'w-full' };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+
   const handleOAuthSignUp = async (provider: 'google' | 'facebook') => {
-    setError('OAuth sign-up is coming soon. Please use email/password for now.');
+    if (provider === 'google') {
+      // Get referral code to pass along
+      const referralCode = searchParams.get('ref');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.blackbowassociates.com';
+      const googleAuthUrl = referralCode
+        ? `${apiBaseUrl}/api/auth/google/login?ref=${referralCode}`
+        : `${apiBaseUrl}/api/auth/google/login`;
+      window.location.href = googleAuthUrl;
+      return;
+    }
+    setError('Facebook sign-up is coming soon. Please use email/password or Google for now.');
     setLoading(false);
   };
 
@@ -86,8 +152,8 @@ export const CustomSignUpPage: React.FC = () => {
           <div className="space-y-3 mb-6">
             <button
               onClick={() => handleOAuthSignUp('google')}
-              disabled={true}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 opacity-60 cursor-not-allowed text-sm sm:text-base relative"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -96,7 +162,6 @@ export const CustomSignUpPage: React.FC = () => {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               <span className="font-medium text-gray-700 transition-colors duration-200">Continue with Google</span>
-              <span className="absolute top-1 right-2 text-[10px] font-semibold text-gray-500 bg-gray-200 px-2 py-0.5 rounded">Coming Soon</span>
             </button>
 
             <button
@@ -137,12 +202,16 @@ export const CustomSignUpPage: React.FC = () => {
                   type="text"
                   value={formData.firstName}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className={`w-full pl-11 pr-4 py-3 border ${touched.firstName && fieldErrors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors`}
                   placeholder="John"
                   disabled={loading}
                 />
               </div>
+              {touched.firstName && fieldErrors.firstName && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.firstName}</p>
+              )}
             </div>
 
             {/* Last Name Field */}
@@ -158,12 +227,16 @@ export const CustomSignUpPage: React.FC = () => {
                   type="text"
                   value={formData.lastName}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className={`w-full pl-11 pr-4 py-3 border ${touched.lastName && fieldErrors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors`}
                   placeholder="Doe"
                   disabled={loading}
                 />
               </div>
+              {touched.lastName && fieldErrors.lastName && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.lastName}</p>
+              )}
             </div>
 
             {/* Email Field */}
@@ -179,12 +252,16 @@ export const CustomSignUpPage: React.FC = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  className={`w-full pl-11 pr-4 py-3 border ${touched.email && fieldErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors`}
                   placeholder="you@example.com"
                   disabled={loading}
                 />
               </div>
+              {touched.email && fieldErrors.email && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             {/* Password Field */}
@@ -200,14 +277,31 @@ export const CustomSignUpPage: React.FC = () => {
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  minLength={6}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors"
+                  minLength={8}
+                  className={`w-full pl-11 pr-4 py-3 border ${touched.password && fieldErrors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors`}
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-600 transition-colors duration-200">Minimum 6 characters</p>
+              {passwordStrength ? (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div className={`h-full ${passwordStrength.color} ${passwordStrength.width} transition-all duration-300`} />
+                    </div>
+                    <span className={`text-xs font-medium ${passwordStrength.textColor}`}>
+                      {passwordStrength.level}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
+              )}
+              {touched.password && fieldErrors.password && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             {/* Submit Button */}

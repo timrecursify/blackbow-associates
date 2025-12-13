@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { authAPI } from '../services/api';
+import { setTokens } from '../services/authAPI';
 
 
 export const ConfirmEmailSuccessPage: React.FC = () => {
@@ -28,12 +29,22 @@ export const ConfirmEmailSuccessPage: React.FC = () => {
           setStatus('success');
           setMessage(response.data.message || 'Email confirmed successfully!');
 
+          // Store tokens if returned (auto-login)
+          if (response.data.accessToken && response.data.refreshToken) {
+            setTokens(response.data.accessToken, response.data.refreshToken);
+          }
+
+          // Determine redirect destination based on onboarding status
+          const destination = response.data.user?.onboardingCompleted
+            ? '/marketplace'
+            : '/onboarding';
+
           // Start countdown
           const interval = setInterval(() => {
             setCountdown((prev) => {
               if (prev <= 1) {
                 clearInterval(interval);
-                navigate('/onboarding');
+                navigate(destination);
                 return 0;
               }
               return prev - 1;
@@ -57,6 +68,7 @@ export const ConfirmEmailSuccessPage: React.FC = () => {
   }, [token, navigate]);
 
   const handleGoToMarketplace = () => {
+    // Use same logic - check if we have user info from confirmation
     navigate('/onboarding');
   };
 
@@ -99,7 +111,7 @@ export const ConfirmEmailSuccessPage: React.FC = () => {
               
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <p className="text-sm text-gray-700">
-                  Redirecting to onboarding in <span className="font-bold text-black">{countdown}</span> seconds...
+                  Redirecting to your dashboard in <span className="font-bold text-black">{countdown}</span> seconds...
                 </p>
               </div>
 

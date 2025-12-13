@@ -32,6 +32,7 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
+  referralCode?: string;
 }
 
 // Login credentials interface
@@ -94,6 +95,7 @@ export const authAPI = {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
+      referralCode: data.referralCode,
     });
 
     // Store tokens

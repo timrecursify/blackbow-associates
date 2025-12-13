@@ -123,10 +123,48 @@ export const fetchPerson = async (personId) => {
 };
 
 /**
+ * Normalize Pipedrive deal data to handle both API and Webhook v2 formats
+ * API format: deal[fieldKey] = value
+ * Webhook v2: deal.custom_fields[fieldKey] = { type: "varchar", value: "actualValue" }
+ */
+const normalizePipedriveDeal = (deal) => {
+  if (!deal) return deal;
+  
+  // If custom_fields exists (webhook v2 format), flatten it
+  if (deal.custom_fields && typeof deal.custom_fields === "object") {
+    const normalized = { ...deal };
+    
+    for (const [key, fieldData] of Object.entries(deal.custom_fields)) {
+      if (fieldData === null || fieldData === undefined) {
+        normalized[key] = null;
+      } else if (typeof fieldData === "object" && "value" in fieldData) {
+        normalized[key] = fieldData.value;
+      } else if (typeof fieldData === "object" && "id" in fieldData && "type" in fieldData) {
+        normalized[key] = fieldData;
+      } else {
+        normalized[key] = fieldData;
+      }
+    }
+    
+    logger.debug("Normalized Pipedrive deal from webhook v2 format", {
+      dealId: deal.id,
+      customFieldsCount: Object.keys(deal.custom_fields).length
+    });
+    
+    return normalized;
+  }
+  
+  return deal;
+};
+
+/**
  * Transform Pipedrive deal to our Lead model
  */
 export const transformDealToLead = async (deal) => {
   try {
+    // Normalize deal to handle both API and Webhook v2 formats
+    deal = normalizePipedriveDeal(deal);
+
     // Fetch person data if person_id exists
     let person = null;
     if (deal.person_id && typeof deal.person_id === 'object') {

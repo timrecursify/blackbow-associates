@@ -206,94 +206,46 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
 });
 
 // Pipedrive webhook handler
-// Pipedrive webhook handler - Updated to use HTTP Basic Auth
-// Pipedrive webhook handler - Supports both v1 and v2 webhook formats
 export const pipedriveWebhook = asyncHandler(async (req, res) => {
-  // Extract data - support both v1 (event, current) and v2 (meta, data) formats
-  const { event, current, meta, data, previous } = req.body;
+  const { event, current } = req.body;
 
-  // DEBUG: Log full webhook payload
-  logger.info('Pipedrive webhook received', {
-    event,
-    meta,
-    hasCurrentData: !!current,
-    hasData: !!data,
-    bodyKeys: Object.keys(req.body)
-  });
-
-  // SECURITY: Verify webhook using HTTP Basic Auth (Pipedrive supports this)
-  const authHeader = req.headers.authorization;
+  // SECURITY: Verify webhook secret using constant-time comparison to prevent timing attacks
+  const webhookSecret = req.headers['x-pipedrive-webhook-secret'];
   const expectedSecret = process.env.PIPEDRIVE_WEBHOOK_SECRET;
 
-  if (!authHeader || !expectedSecret) {
-    logger.warn('Pipedrive webhook authentication missing', {
-      hasAuthHeader: !!authHeader,
+  if (!webhookSecret || !expectedSecret) {
+    logger.warn('Pipedrive webhook secret missing', {
+      hasReceivedSecret: !!webhookSecret,
       hasConfiguredSecret: !!expectedSecret
     });
-    throw new AppError('Invalid webhook authentication', 401, 'UNAUTHORIZED');
+    throw new AppError('Invalid webhook secret', 401, 'UNAUTHORIZED');
   }
 
-  // Parse HTTP Basic Auth: Authorization: Basic base64(username:password)
-  if (!authHeader.startsWith('Basic ')) {
-    logger.warn('Pipedrive webhook invalid auth format', { ip: req.ip });
-    throw new AppError('Invalid webhook authentication', 401, 'UNAUTHORIZED');
+  // Use constant-time comparison to prevent timing attacks
+  const receivedBuffer = Buffer.from(webhookSecret, 'utf8');
+  const expectedBuffer = Buffer.from(expectedSecret, 'utf8');
+
+  // Ensure buffers are same length to prevent timing leak
+  if (receivedBuffer.length !== expectedBuffer.length) {
+    throw new AppError('Invalid webhook secret', 401, 'UNAUTHORIZED');
   }
 
-  try {
-    const base64Credentials = authHeader.slice(6);
-    const credentials = Buffer.from(base64Credentials, 'base64').toString('utf8');
-    const [username, password] = credentials.split(':');
-
-    const receivedBuffer = Buffer.from(password || '', 'utf8');
-    const expectedBuffer = Buffer.from(expectedSecret, 'utf8');
-
-    if (receivedBuffer.length !== expectedBuffer.length) {
-      throw new AppError('Invalid webhook authentication', 401, 'UNAUTHORIZED');
-    }
-
-    if (!crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
-      logger.warn('Pipedrive webhook authentication failed - invalid password', { ip: req.ip });
-      throw new AppError('Invalid webhook authentication', 401, 'UNAUTHORIZED');
-    }
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.warn('Pipedrive webhook authentication parsing failed', { error: error.message, ip: req.ip });
-    throw new AppError('Invalid webhook authentication', 401, 'UNAUTHORIZED');
+  if (!crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
+    logger.warn('Pipedrive webhook authentication failed - invalid secret', {
+      ip: req.ip
+    });
+    throw new AppError('Invalid webhook secret', 401, 'UNAUTHORIZED');
   }
 
-  // Determine event type and deal data - support both v1 and v2 formats
-  let eventType = null;
-  let deal = null;
+  if (event === 'added.deal' || event === 'updated.deal') {
+    const deal = current;
 
-  // v2 format: meta.action and meta.entity
-  if (meta && meta.entity === 'deal') {
-    if (meta.action === 'create' || meta.action === 'added') {
-      eventType = 'added.deal';
-    } else if (meta.action === 'update' || meta.action === 'updated') {
-      eventType = 'updated.deal';
-    }
-    deal = data; // v2 uses 'data' field
-  }
-  // v1 format: event field
-  else if (event === 'added.deal' || event === 'updated.deal') {
-    eventType = event;
-    deal = current; // v1 uses 'current' field
-  }
-
-  logger.info('Pipedrive webhook parsed', {
-    eventType,
-    hasDeal: !!deal,
-    dealId: deal?.id,
-    dealKeys: deal ? Object.keys(deal).slice(0, 20) : []
-  });
-
-  if (eventType && deal && deal.id) {
     try {
       // Create webhook event record in database for async processing
       const webhookEvent = await prisma.webhookEvent.create({
         data: {
           source: 'pipedrive',
-          eventType: eventType,
+          eventType: event,
           dealId: deal.id,
           payload: req.body,
           status: 'PENDING'
@@ -303,7 +255,7 @@ export const pipedriveWebhook = asyncHandler(async (req, res) => {
       logger.info('Webhook event created', {
         eventId: webhookEvent.id,
         source: 'pipedrive',
-        eventType: eventType,
+        eventType: event,
         dealId: deal.id
       });
 
@@ -323,30 +275,25 @@ export const pipedriveWebhook = asyncHandler(async (req, res) => {
           });
         });
 
-      // Acknowledge to Pipedrive immediately
+      // Acknowledge to Pipedrive immediately (don't wait for processing)
       res.json({ received: true, eventId: webhookEvent.id });
     } catch (error) {
+      // Even if webhook event creation fails, acknowledge to Pipedrive
+      // to prevent retries that would fail again
       logger.error('Failed to create webhook event', {
         error: error.message,
         stack: error.stack,
-        dealId: deal?.id,
-        eventType
+        dealId: deal.id,
+        eventType: event
       });
+
+      // Still acknowledge to prevent infinite retries
       res.json({ received: true, error: 'Failed to queue event' });
     }
   } else {
     // For non-deal events, just acknowledge
-    logger.info('Pipedrive webhook ignored - not a deal event', {
-      eventType,
-      hasDeal: !!deal,
-      meta
-    });
     res.json({ received: true });
   }
 });
-
-
-
-
 
 export default { stripeWebhook, pipedriveWebhook };

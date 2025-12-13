@@ -10,7 +10,7 @@
 
 import { prisma } from '../../config/database.js';
 import { AppError, asyncHandler } from '../../middleware/errorHandler.js';
-import { VENDOR_TYPE_PURCHASE_LIMIT, calculateDynamicTags } from './leadsHelpers.js';
+import { VENDOR_TYPE_PURCHASE_LIMIT, calculateDynamicTags, hasDelayedAccess, getDelayedAccessCutoffDate } from './leadsHelpers.js';
 
 /**
  * Get all available leads (with filters)
@@ -59,6 +59,12 @@ export const getLeads = asyncHandler(async (req, res) => {
         userId: user.id
       }
     };
+  }
+
+  // Apply delayed access filter for Photographers and Videographers
+  if (user.vendorType && hasDelayedAccess(user.vendorType)) {
+    const cutoffDate = getDelayedAccessCutoffDate();
+    where.createdAt = { lte: cutoffDate };
   }
 
   // Get user's purchased lead IDs first (for filtering)

@@ -2,6 +2,14 @@ import express from 'express';
 import { getAllUsers, getAllLeads, importLeads, adjustBalance, blockUser, unblockUser, deleteUser, updateLeadStatus } from '../controllers/admin.controller.js';
 import { getAllBetaSignups, getBetaSignupById, updateSignupStatus, exportBetaSignups } from '../controllers/crmBeta.controller.js';
 import { getWebhookStats, getWebhookEvents, getFailedWebhooks, retryWebhook, retryAllFailed } from '../controllers/webhook-admin.controller.js';
+import {
+  getOverview,
+  getAllReferrers,
+  getReferrerDetails,
+  getPendingPayouts,
+  markPayoutPaid,
+  toggleReferral
+} from '../controllers/admin-referral.controller.js';
 import { requireAuth, attachUser, requireAdmin } from '../middleware/auth.js';
 import { validations } from '../middleware/validate.js';
 import { auditLog } from '../middleware/auditLogger.js';
@@ -39,5 +47,13 @@ router.get('/webhooks/events', auditLog, getWebhookEvents);
 router.get('/webhooks/failed', auditLog, getFailedWebhooks);
 router.post('/webhooks/retry/:id', auditLog, retryWebhook);
 router.post('/webhooks/retry-all-failed', auditLog, retryAllFailed);
+
+// Referral management - ALL ROUTES NOW HAVE AUDIT LOGGING
+router.get('/referrals/overview', auditLog, getOverview);
+router.get('/referrals/referrers', auditLog, getAllReferrers);
+router.get('/referrals/referrers/:id', auditLog, getReferrerDetails);
+router.get('/referrals/payouts', auditLog, getPendingPayouts);
+router.post('/referrals/payouts/:id/mark-paid', auditLog, markPayoutPaid);
+router.post('/referrals/users/:id/toggle-referral', auditLog, toggleReferral);
 
 export default router;

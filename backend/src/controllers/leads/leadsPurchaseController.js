@@ -31,7 +31,8 @@ export const purchaseLead = asyncHandler(async (req, res) => {
       billingAddressLine1: true,
       billingCity: true,
       billingState: true,
-      billingZip: true
+      billingZip: true,
+      referredByUserId: true
     }
   });
 
@@ -147,6 +148,20 @@ export const purchaseLead = asyncHandler(async (req, res) => {
         metadata: { leadId, purchaseId: purchase.id }
       }
     });
+
+    // Create referral commission if buyer was referred
+    if (userWithBilling.referredByUserId) {
+      const commissionAmount = parseFloat((leadPrice * 0.10).toFixed(2));
+      await tx.referralCommission.create({
+        data: {
+          earnerId: userWithBilling.referredByUserId,
+          sourceUserId: user.id,
+          purchaseId: purchase.id,
+          amount: commissionAmount,
+          status: 'PENDING'
+        }
+      });
+    }
 
     // Note: Lead remains AVAILABLE and active so other vendor types can still purchase
     // Frontend filtering handles hiding purchased leads from individual users

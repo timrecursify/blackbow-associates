@@ -61,3 +61,16 @@ export function calculateDynamicTags(lead, purchasedAt = null) {
 
   return dynamicTags;
 }
+
+// Delayed Lead Access Configuration
+export const DELAYED_ACCESS_VENDOR_TYPES = ['Photographer', 'Videographer'];
+export const DELAYED_ACCESS_DAYS = 14;
+
+export function hasDelayedAccess(vendorType) {
+  return DELAYED_ACCESS_VENDOR_TYPES.includes(vendorType);
+}
+
+export function getDelayedAccessCutoffDate() {
+  const now = new Date();
+  return new Date(now.getTime() - DELAYED_ACCESS_DAYS * 24 * 60 * 60 * 1000);
+}

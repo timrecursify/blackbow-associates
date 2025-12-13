@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Building2, User, MapPin, AlertCircle } from 'lucide-react';
-import { usersAPI } from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Building2, MapPin, AlertCircle } from 'lucide-react';
+import { usersAPI, authAPI } from '../services/api';
+import { searchCities } from '../data/us-cities';
 
 interface BillingAddressModalProps {
   isOpen: boolean;
@@ -29,6 +30,111 @@ export const BillingAddressModal: React.FC<BillingAddressModalProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // City autocomplete state
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Load user's location on mount
+  useEffect(() => {
+    if (isOpen) {
+      authAPI.getCurrentUser().then(({ user }) => {
+        if (user?.location) {
+          // Parse location (format: "City, State" or "City,State")
+          const parts = user.location.split(',').map((p: string) => p.trim());
+          if (parts.length >= 2) {
+            setFormData(prev => ({
+              ...prev,
+              billingCity: parts[0],
+              billingState: parts[1].toUpperCase()
+            }));
+          }
+        }
+      }).catch(() => {
+        // Silently fail - user can still enter manually
+      });
+    }
+  }, [isOpen]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        cityInputRef.current &&
+        !cityInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, billingCity: value }));
+
+    // Search cities
+    if (value.length >= 2) {
+      const results = searchCities(value, 6);
+      setCitySuggestions(results);
+      setShowSuggestions(results.length > 0);
+      setHighlightedIndex(-1);
+    } else {
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+    }
+
+    // Clear error
+    if (errors.billingCity) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.billingCity;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || citySuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev =>
+        prev < citySuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      selectCity(citySuggestions[highlightedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectCity = (cityState: string) => {
+    // cityState format: "City, ST"
+    const parts = cityState.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      setFormData(prev => ({
+        ...prev,
+        billingCity: parts[0],
+        billingState: parts[1].toUpperCase()
+      }));
+    }
+    setCitySuggestions([]);
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+    cityInputRef.current?.blur();
+  };
 
   const validateField = (name: string, value: string): string | null => {
     switch (name) {
@@ -92,7 +198,7 @@ export const BillingAddressModal: React.FC<BillingAddressModalProps> = ({
     }
 
     billingFields.forEach(key => {
-      const error = validateField(key, formData[key as keyof typeof formData]);
+      const error = validateField(key, formData[key as keyof typeof formData] as string);
       if (error) {
         newErrors[key] = error;
       }
@@ -148,7 +254,7 @@ export const BillingAddressModal: React.FC<BillingAddressModalProps> = ({
             </p>
             {leadInfo && (
               <p className="text-xs sm:text-sm text-gray-500 mt-2 bg-blue-50 px-3 py-2 rounded-lg inline-block">
-                💳 Lead price: <span className="font-semibold">${leadInfo.price.toFixed(2)}</span>
+                Lead price: <span className="font-semibold">${leadInfo.price.toFixed(2)}</span>
               </p>
             )}
           </div>
@@ -294,20 +400,47 @@ export const BillingAddressModal: React.FC<BillingAddressModalProps> = ({
 
           {/* City, State, ZIP - Mobile Optimized */}
           <div className="grid grid-cols-12 gap-3 sm:gap-4">
-            <div className="col-span-12 sm:col-span-6">
+            <div className="col-span-12 sm:col-span-6 relative">
               <label htmlFor="billingCity" className="block text-sm font-medium text-gray-700 mb-2">
                 City <span className="text-red-500">*</span>
               </label>
               <input
+                ref={cityInputRef}
                 id="billingCity"
                 name="billingCity"
                 type="text"
                 value={formData.billingCity}
-                onChange={handleChange}
+                onChange={handleCityChange}
+                onKeyDown={handleCityKeyDown}
+                onFocus={() => {
+                  if (citySuggestions.length > 0) setShowSuggestions(true);
+                }}
                 className={`w-full px-4 py-3 border ${errors.billingCity ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors text-base min-h-[48px]`}
                 placeholder="New York"
                 disabled={loading}
+                autoComplete="off"
               />
+              {/* City Suggestions Dropdown */}
+              {showSuggestions && citySuggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                >
+                  {citySuggestions.map((city, index) => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => selectCity(city)}
+                      className={`w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 text-sm ${
+                        index === highlightedIndex ? 'bg-gray-100' : ''
+                      } ${index !== citySuggestions.length - 1 ? 'border-b border-gray-100' : ''}`}
+                    >
+                      <MapPin className="text-gray-400 flex-shrink-0" size={14} />
+                      <span className="text-gray-900">{city}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {errors.billingCity && (
                 <p className="mt-1 text-sm text-red-600">{errors.billingCity}</p>
               )}

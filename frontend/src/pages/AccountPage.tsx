@@ -7,7 +7,8 @@ import { BillingAddressModal } from '../components/BillingAddressModal';
 import Notification from '../components/Notification';
 import { LeadFeedbackModal, FeedbackData } from '../components/LeadFeedbackModal';
 import { FeedbackSuccessModal } from '../components/FeedbackSuccessModal';
-import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ReferralsTab } from './account/ReferralsTab';
+import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText, MessageSquare, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { usersAPI, leadsAPI } from '../services/api';
 import { format } from 'date-fns';
 
@@ -69,7 +70,7 @@ export const AccountPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leads'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leads' | 'referrals'>('overview');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingBilling, setIsEditingBilling] = useState(false);
   const [editForm, setEditForm] = useState({ businessName: '', vendorType: '' });
@@ -99,7 +100,7 @@ export const AccountPage: React.FC = () => {
 
     // Handle tab parameter from URL (e.g., /account?tab=leads)
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'leads' || tabParam === 'transactions' || tabParam === 'overview') {
+    if (tabParam === 'leads' || tabParam === 'transactions' || tabParam === 'overview' || tabParam === 'referrals') {
       setActiveTab(tabParam);
     }
   }, [searchParams, leadsPage]);
@@ -326,20 +327,48 @@ export const AccountPage: React.FC = () => {
 
         {/* Tabs */}
         <div className="mb-4 sm:mb-6 border-b border-gray-200 transition-colors duration-200">
-          <div className="flex gap-4 sm:gap-8 min-w-max">
-            {['overview', 'transactions', 'leads'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`pb-3 sm:pb-4 text-xs sm:text-sm font-medium capitalize transition-colors whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'border-b-2 border-black'
-                    : 'text-gray-600'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+          <div className="flex gap-4 sm:gap-8 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`pb-3 sm:pb-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'overview'
+                  ? 'border-b-2 border-black'
+                  : 'text-gray-600'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('transactions')}
+              className={`pb-3 sm:pb-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'transactions'
+                  ? 'border-b-2 border-black'
+                  : 'text-gray-600'
+              }`}
+            >
+              Transactions
+            </button>
+            <button
+              onClick={() => setActiveTab('leads')}
+              className={`pb-3 sm:pb-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'leads'
+                  ? 'border-b-2 border-black'
+                  : 'text-gray-600'
+              }`}
+            >
+              Leads
+            </button>
+            <button
+              onClick={() => setActiveTab('referrals')}
+              className={`pb-3 sm:pb-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
+                activeTab === 'referrals'
+                  ? 'border-b-2 border-black'
+                  : 'text-gray-600'
+              }`}
+            >
+              <Gift size={16} />
+              Referrals
+            </button>
           </div>
         </div>
 
@@ -1116,6 +1145,9 @@ export const AccountPage: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Referrals Tab */}
+        {activeTab === 'referrals' && <ReferralsTab />}
       </div>
 
             {/* Billing Address Modal */}

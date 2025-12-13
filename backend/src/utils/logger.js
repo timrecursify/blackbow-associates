@@ -138,8 +138,16 @@ export const logAdminAction = (action, data = {}) => {
   });
 };
 
-// Telegram notification helper
+// Telegram notification helper - sends directly to Telegram API
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
 export const notifyTelegram = async (message, level = 'info') => {
+  // Skip if Telegram not configured
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    return;
+  }
+
   try {
     const emoji = {
       info: 'ℹ️',
@@ -148,13 +156,24 @@ export const notifyTelegram = async (message, level = 'info') => {
       success: '✅'
     }[level] || 'ℹ️';
 
-    await axios.post('http://localhost:3400/notify', {
-      message: `${emoji} **BlackBow API**\n${message}`,
-      level,
-      service: 'blackbow-api'
-    }, { timeout: 5000 });
+    const formattedMessage = `${emoji} *BlackBow Associates*\n\n${message}`;
+
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        chat_id: TELEGRAM_CHAT_ID,
+        text: formattedMessage,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
+      },
+      { timeout: 10000 }
+    );
   } catch (error) {
-    logger.warn('Failed to send Telegram notification', { error: error.message });
+    // Log locally but don't throw - notifications should never break the app
+    logger.warn('Failed to send Telegram notification', {
+      error: error.message,
+      code: error.response?.data?.error_code
+    });
   }
 };
 

@@ -1,5 +1,5 @@
 import { prisma } from '../config/database.js';
-import { logger } from '../utils/logger.js';
+import { logger, notifyTelegram } from '../utils/logger.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import EmailService from '../services/emailService.js';
 import {
@@ -11,6 +11,7 @@ import {
   validatePassword,
   validateEmail
 } from '../services/auth.service.js';
+import { generateReferralCode, validateReferralCode } from '../services/referral.service.js';
 
 /**
  * Admin access is granted by setting isAdmin=true directly in the database.
@@ -23,15 +24,18 @@ import {
 
 // Register new user with email/password
 export const register = asyncHandler(async (req, res) => {
-  const { email, password, businessName, vendorType } = req.body;
+  const { email, password, businessName, firstName, lastName, vendorType, referralCode } = req.body;
 
   // Validate required fields
-  if (!email || !password || !businessName) {
+  if (!email || !password) {
     return res.status(400).json({
       success: false,
-      message: 'Email, password, and business name are required'
+      message: 'Email and password are required'
     });
   }
+
+  // Construct businessName from firstName/lastName if not provided
+  const finalBusinessName = businessName || (firstName && lastName ? `${firstName} ${lastName}` : (firstName || lastName || email.split('@')[0]));
 
   // Validate email format
   if (!validateEmail(email)) {
@@ -62,6 +66,15 @@ export const register = asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate referral code if provided
+  let referredByUserId = null;
+  if (referralCode) {
+    const referrer = await validateReferralCode(referralCode);
+    if (referrer) {
+      referredByUserId = referrer.id;
+    }
+  }
+
   // Hash password
   const passwordHash = await hashPassword(password);
 
@@ -73,24 +86,40 @@ export const register = asyncHandler(async (req, res) => {
     data: {
       email,
       passwordHash,
-      businessName,
+      businessName: finalBusinessName,
       vendorType: vendorType || 'Other',
       balance: 0,
       emailConfirmed: false,
       onboardingCompleted: false,
       confirmationToken,
-      confirmationSentAt: new Date()
+      confirmationSentAt: new Date(),
+      referralCode: generateReferralCode(),
+      referredByUserId
     }
   });
 
   // Send confirmation email
   try {
-    await EmailService.sendConfirmationEmail(email, businessName, confirmationToken);
+    await EmailService.sendConfirmationEmail(email, finalBusinessName, confirmationToken);
 
     logger.info('User registered successfully', {
       userId: user.id,
       email: user.email
     });
+
+    // Send Telegram notification for new registration
+    let registrationMsg = `👤 *New User Registration*\n\nEmail: ${user.email}\nBusiness: ${finalBusinessName}`;
+    if (referredByUserId) {
+      // Get referrer info for notification
+      const referrer = await prisma.user.findUnique({
+        where: { id: referredByUserId },
+        select: { email: true, businessName: true }
+      });
+      if (referrer) {
+        registrationMsg += `\n\n🎁 *Referred by:* ${referrer.businessName || referrer.email}`;
+      }
+    }
+    await notifyTelegram(registrationMsg, 'success');
 
     res.status(201).json({
       success: true,
@@ -107,6 +136,9 @@ export const register = asyncHandler(async (req, res) => {
       email: user.email,
       error: error.message
     });
+
+    // Still send Telegram notification even if email fails
+    await notifyTelegram(`👤 *New User Registration*\n\nEmail: ${user.email}\nBusiness: ${finalBusinessName}\n⚠️ Email confirmation failed to send`, 'warn');
 
     res.status(201).json({
       success: true,
@@ -308,10 +340,12 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
       email: user.email,
       businessName: user.businessName,
       vendorType: user.vendorType,
+      location: user.location,
       balance: user.balance,
       isAdmin: user.isAdmin,
       isBlocked: user.isBlocked,
       blockedReason: user.blockedReason,
+      onboardingCompleted: user.onboardingCompleted,
       createdAt: user.createdAt
     }
   });
@@ -368,11 +402,29 @@ export const confirmEmail = asyncHandler(async (req, res) => {
     }
   }
 
+  // Update email confirmation status
   await prisma.user.update({
     where: { id: user.id },
     data: {
       emailConfirmed: true,
       confirmationToken: null
+    }
+  });
+
+  // Generate tokens for auto-login
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  // Calculate refresh token expiry (7 days from now)
+  const refreshTokenExpiresAt = new Date();
+  refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
+
+  // Store refresh token in database
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refreshToken,
+      refreshTokenExpiresAt
     }
   });
 
@@ -383,7 +435,15 @@ export const confirmEmail = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Email confirmed successfully! Redirecting to onboarding...'
+    message: 'Email confirmed successfully!',
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      businessName: user.businessName,
+      onboardingCompleted: user.onboardingCompleted
+    }
   });
 });
 

@@ -20,6 +20,7 @@ import webhookRoutes from './routes/webhooks.routes.js';
 import pipedriveRoutes from './routes/pipedrive.routes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import crmBetaRoutes from './routes/crmBeta.routes.js';
+import referralRoutes from './routes/referral.routes.js';
 
 // Import cron jobs
 import { initRetryScheduler } from './jobs/webhook-retry.job.js';
@@ -205,6 +206,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/pipedrive', pipedriveRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/crm-beta', crmBetaRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

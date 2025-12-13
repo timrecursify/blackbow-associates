@@ -1,7 +1,7 @@
 # BlackBow Associates - System Architecture
 
-**Last Updated:** December 12, 2025
-**Version:** 3.0.0 (Native PostgreSQL + Custom Auth)
+**Last Updated:** December 13, 2025
+**Version:** 3.2.0 (Signup Flow & Referral Attribution Fixes)
 **Status:** Production
 
 ---
@@ -112,6 +112,8 @@ Response → Error Handler → Logger
 - `/api/payments` - Stripe deposits, payment methods
 - `/api/admin` - User management (view, block, unblock, delete), balance adjustments, CSV import
 - `/api/admin/analytics` - Dashboard analytics (overview, revenue, users, leads, feedback)
+- `/api/admin/referrals` - Referral management (overview, referrers, payouts, mark-paid, toggle-referral)
+- `/api/referrals` - User referral dashboard (stats, link, referred-users, commissions, payouts)
 - `/api/webhooks` - Stripe, Pipedrive event handlers
 
 **Security Layers:**
@@ -221,7 +223,10 @@ User (Supabase-synced)
 ├── blockedAt: DateTime (nullable)
 ├── blockedReason: String (nullable)
 ├── onboardingCompleted: Boolean (default: false)
-└── Relationships: transactions[], purchases[], paymentMethods[], favorites[], leadFeedback[]
+├── referralCode: String (unique, nullable, 8-char alphanumeric)
+├── referredByUserId: String (FK to User, nullable)
+├── referralEnabled: Boolean (default: true)
+└── Relationships: transactions[], purchases[], paymentMethods[], favorites[], leadFeedback[], referrals[], referralCommissions[], referralPayouts[]
 
 Lead
 ├── id: String (8 chars: XX123456)
@@ -276,6 +281,27 @@ LeadFeedback
 ├── timeToBook: Enum (same-day, 1-3-days, 1-week, etc.)
 ├── amountCharged: Decimal (nullable)
 └── Relationships: user, lead
+
+ReferralCommission
+├── id: String (CUID)
+├── earnerId: String (FK to User - referrer)
+├── sourceUserId: String (FK to User - referred user)
+├── purchaseId: String (FK to Purchase, unique)
+├── amount: Decimal (10% of purchase)
+├── status: Enum (PENDING, PAID)
+├── payoutId: String (FK to ReferralPayout, nullable)
+├── paidAt: DateTime (nullable)
+└── Relationships: earner, sourceUser, purchase, payout
+
+ReferralPayout
+├── id: String (CUID)
+├── userId: String (FK to User - referrer)
+├── amount: Decimal (total payout amount)
+├── status: Enum (PENDING, PROCESSING, PAID, REJECTED)
+├── requestedAt: DateTime
+├── paidAt: DateTime (nullable)
+├── notes: String (nullable)
+└── Relationships: user, commissions[]
 ```
 
 **Indexes:**
@@ -548,7 +574,10 @@ User (Supabase-synced)
 ├── blockedAt: DateTime (nullable)
 ├── blockedReason: String (nullable)
 ├── onboardingCompleted: Boolean (default: false)
-└── Relationships: transactions[], purchases[], paymentMethods[], favorites[], leadFeedback[]
+├── referralCode: String (unique, nullable, 8-char alphanumeric)
+├── referredByUserId: String (FK to User, nullable)
+├── referralEnabled: Boolean (default: true)
+└── Relationships: transactions[], purchases[], paymentMethods[], favorites[], leadFeedback[], referrals[], referralCommissions[], referralPayouts[]
 
 Lead
 ├── id: String (8 chars: XX123456)
@@ -1049,6 +1078,71 @@ npm run dev  # Vite dev server with HMR
 - Security: No exposed ports, automatic SSL
 - DDoS protection: Cloudflare's global network
 - Zero configuration: No certificate management
+
+---
+
+## Feature: Referral Program (v3.1.0 - December 13, 2025)
+
+### Overview
+A comprehensive referral system enabling users to earn 10% commission on all purchases made by users they refer. Commission tracking is lifetime-based - referrers earn on every purchase their referrals make, indefinitely.
+
+### Key Components
+
+**User Features:**
+- Auto-generated unique 8-character referral codes
+- Referral dashboard tab in Account page showing:
+  - Referral link with copy button
+  - Total referred users and their purchases
+  - Commission history (pending/paid)
+  - Payout request button ($50 minimum)
+  - Payout history
+
+**Admin Features:**
+- Referrals tab in Admin Dashboard showing:
+  - Overview stats (total referrers, commissions, payouts)
+  - All referrers list with earnings
+  - Pending payout requests
+  - Mark-as-paid functionality
+  - Toggle referral enabled/disabled per user
+
+**Technical Implementation:**
+- Registration captures `?ref=CODE` query param
+- Purchase creates ReferralCommission (10% of lead price)
+- Commission status: PENDING until payout processed
+- Payout status: PENDING → PROCESSING → PAID/REJECTED
+- Admin marks payout as paid (manual bank transfer)
+
+### Configuration
+```javascript
+const COMMISSION_RATE = 0.10;    // 10%
+const MINIMUM_PAYOUT = 50.00;   // $50 minimum
+const REFERRAL_CODE_LENGTH = 8; // 8-char alphanumeric
+```
+
+---
+
+## Feature: Delayed Lead Access (v3.1.0 - December 13, 2025)
+
+### Overview
+Photographers and Videographers only see leads that are 14+ days old. All other vendor types see leads immediately. This is a silent filter with no UI notification.
+
+### Technical Implementation
+Located in `backend/src/controllers/leads/leadsHelpers.js`:
+
+```javascript
+const DELAYED_ACCESS_VENDOR_TYPES = ['Photographer', 'Videographer'];
+const DELAYED_ACCESS_DAYS = 14;
+
+function hasDelayedAccess(vendorType) {
+  return DELAYED_ACCESS_VENDOR_TYPES.includes(vendorType);
+}
+
+function getDelayedAccessCutoffDate() {
+  return new Date(Date.now() - DELAYED_ACCESS_DAYS * 24 * 60 * 60 * 1000);
+}
+```
+
+Applied in `leadsMarketplaceController.js` marketplace query filter.
 
 ---
 

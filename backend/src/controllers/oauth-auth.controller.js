@@ -140,6 +140,7 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
 
     // Set HTTP-only cookies for session
     const cookieOptions = {
+      domain: '.blackbowassociates.com', // Allow cookie to be shared across subdomains
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

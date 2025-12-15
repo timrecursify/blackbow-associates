@@ -434,14 +434,31 @@ const LandingPage: React.FC = () => {
 };
 
 // Onboarding Route Wrapper - requires auth but allows loading
+// Fixed to support both localStorage tokens AND OAuth cookies
 const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      setIsSignedIn(isAuthenticated());
-      setCheckingAuth(false);
+    const checkAuth = async () => {
+      // First quick check for localStorage token
+      if (isAuthenticated()) {
+        setIsSignedIn(true);
+        setCheckingAuth(false);
+        return;
+      }
+
+      // If no localStorage token, try API call (works with OAuth cookies)
+      try {
+        await usersAPI.getProfile();
+        // API succeeded - user is authenticated via cookies
+        setIsSignedIn(true);
+      } catch (error) {
+        // API failed - user is not authenticated
+        setIsSignedIn(false);
+      } finally {
+        setCheckingAuth(false);
+      }
     };
 
     checkAuth();

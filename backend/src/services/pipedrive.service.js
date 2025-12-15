@@ -309,7 +309,7 @@ const extractStateFromTitle = (title) => {
 const extractCityFromComments = (comments) => {
   if (!comments) return null;
   
-  const match = comments.match(/Venue Location:\s*([^,\n]+)/i);
+  const match = comments.match(/Venue Location:\s*([^\n]+)/i);
   return match ? match[1].trim() : null;
 };
 

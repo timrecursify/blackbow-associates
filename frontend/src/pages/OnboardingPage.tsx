@@ -32,7 +32,13 @@ export const OnboardingPage: React.FC = () => {
     // Pre-fill business name from current user profile
     authAPI.getCurrentUser().then(({ user }) => {
       if (user?.businessName) {
-        setFormData(prev => ({ ...prev, businessName: user.businessName }));
+        // Only set if not already filled (e.g., OAuth users may already have it from Google profile)
+        setFormData(prev => {
+          if (!prev.businessName || prev.businessName.trim() === '' || prev.businessName === 'pending') {
+            return { ...prev, businessName: user.businessName };
+          }
+          return prev;
+        });
       }
     }).catch(err => {
       logger.error('Failed to get user profile', err);
@@ -67,7 +73,13 @@ export const OnboardingPage: React.FC = () => {
 
       if (data.city && data.region_code) {
         const locationString = `${data.city}, ${data.region_code}`;
-        setFormData(prev => ({ ...prev, location: locationString }));
+        // Only set if user hasn't already typed something
+        setFormData(prev => {
+          if (!prev.location || prev.location.trim() === '') {
+            return { ...prev, location: locationString };
+          }
+          return prev;
+        });
       }
     } catch (error) {
       logger.error('Failed to detect location:', error);

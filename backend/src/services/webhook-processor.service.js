@@ -80,6 +80,32 @@ export const processWebhookEvent = async (eventId) => {
     // Transform deal to lead
     const leadData = await transformDealToLead(deal);
 
+    // Filter: Skip leads without valid location data
+    const hasValidLocation = leadData.location && 
+                             leadData.location !== 'Location TBD' && 
+                             leadData.location.trim() !== '';
+    
+    if (!hasValidLocation) {
+      const reason = 'Lead has no valid location data - skipping until Pipedrive is updated';
+      logger.info('Skipping incomplete lead', {
+        eventId,
+        dealId: deal.id,
+        personName: leadData.personName,
+        location: leadData.location
+      });
+
+      await prisma.webhookEvent.update({
+        where: { id: eventId },
+        data: {
+          status: 'PENDING_DATA',
+          processedAt: new Date(),
+          error: reason
+        }
+      });
+
+      return { status: 'PENDING_DATA', leadId: null, skipped: true, reason };
+    }
+
     // Upsert lead in database (within transaction)
     const lead = await prisma.$transaction(async (tx) => {
       // Upsert the lead

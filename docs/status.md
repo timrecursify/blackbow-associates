@@ -2032,3 +2032,71 @@ Completed comprehensive cleanup of Supabase migration artifacts and fixed critic
 - ✅ Site loads correctly
 - ✅ Google OAuth redirect to Google works
 - ✅ PM2 service restarted and online
+
+### 2025-12-15 - 16:50 - Agent: cursor-ide
+**Fix: Onboarding form reload issue and Pipedrive lead sync improvements**
+
+**Problem 1: Onboarding form reload**
+Users reported the onboarding form reloading once after starting to fill it, causing data loss.
+
+**Root Cause:** Race condition between detectLocation() and getCurrentUser() both updating form state on mount, overwriting user input.
+
+**Fix:** Modified OnboardingPage.tsx to only set form fields if they're currently empty:
+- detectLocation() only sets location if field is empty
+- getCurrentUser() only sets businessName if field is empty or 'pending'
+
+**Files Changed:**
+- frontend/src/pages/OnboardingPage.tsx - Added conditional checks before setting form state
+
+**Problem 2: Pipedrive location parsing bug**
+Leads were being parsed with incomplete location data (e.g., "NY" instead of "NY, NJ, PA Metro", "Other Destinations" instead of "Winter Garden, FL").
+
+**Root Cause:** Regex pattern [^,\n]+ in extractCityFromComments() stopped at first comma, truncating multi-city locations.
+
+**Fix:** Changed regex to [^\n]+ to capture full venue location line from comments field.
+
+**Files Changed:**
+- backend/src/services/pipedrive.service.js - Fixed extractCityFromComments() regex (line ~150)
+
+**Problem 3: Missing leads from past week**
+19 out of 26 leads created in Pipedrive during past week were missing from database.
+
+**Root Cause:** Pipedrive webhook was only set up on Dec 13 1pm. All deals created before that date (Dec 8-13 morning) never triggered webhooks.
+
+**Fix:** 
+- Created sync script to fetch missing deals from Pipedrive API
+- Synced all 19 missing leads with corrected location parsing
+- Fixed Fatima D lead (21694) which had data but was showing TBD
+
+**Files Changed:**
+- Database: Synced 19 leads via direct API fetch and insert
+
+**Problem 4: Incomplete leads syncing**
+Leads without location data were being synced as "Location TBD", cluttering the database.
+
+**Root Cause:** No validation filter before syncing leads from webhooks.
+
+**Fix:** Added location validation filter in webhook-processor.service.js:
+- Checks if location exists and is not "Location TBD" before syncing
+- Marks incomplete leads as PENDING_DATA status instead of creating lead
+- Logs reason for skipping with deal ID and person name
+- Added change.deal webhook (ID: 1330339) to re-sync leads when Pipedrive data is updated
+
+**Files Changed:**
+- backend/src/services/webhook-processor.service.js - Added location validation filter before upsert
+- Pipedrive: Added new webhook for change.deal events
+
+**Verification:**
+- ✅ Onboarding form no longer reloads when user types
+- ✅ Location parsing now captures full venue strings (e.g., "NY, NJ, PA Metro", "Winter Garden, FL")
+- ✅ All 26 leads from past week now in database
+- ✅ Incomplete leads (Megha Patel, Nithya) marked as PENDING_DATA instead of syncing
+- ✅ Webhook for deal updates configured to catch when incomplete leads get filled
+
+**Production Impact:**
+- Service: BlackBow API & Frontend
+- Downtime: None (hot reload via PM2)
+- Breaking Changes: No
+- Performance: No impact
+
+**Status:** ✅ SUCCESS - All issues resolved, lead sync improved

@@ -96,7 +96,8 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
           businessName: userInfo.name || userInfo.email.split('@')[0],
           emailConfirmed: userInfo.emailVerified,
           onboardingCompleted: false,
-          isAdmin: false
+          isAdmin: false,
+          vendorType: "pending" // Will be set during onboarding
         }
       });
 

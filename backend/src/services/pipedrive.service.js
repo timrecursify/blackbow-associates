@@ -306,29 +306,80 @@ const extractStateFromTitle = (title) => {
 /**
  * Extract city from comments
  */
-const extractCityFromComments = (comments) => {
-  if (!comments) return null;
-  
-  const match = comments.match(/Venue Location:\s*([^\n]+)/i);
-  return match ? match[1].trim() : null;
-};
+
 
 /**
  * Build location string
  */
 const buildLocationString = (city, state, comments) => {
-  if (city && state) return `${city}, ${state}`;
+  // First priority: Extract full venue location from comments (handles metro areas)
+  const venueMatch = comments?.match(/Venue Location:\s*([^\n]+)/i);
+  if (venueMatch) {
+    const venueLocation = venueMatch[1].trim();
+    // If we have a full venue location, use it directly (don't append state)
+    return venueLocation;
+  }
+  
+  // Second priority: If city contains commas (metro area), don't append state
+  if (city && city.includes(',')) {
+    return city;
+  }
+  
+  // Third priority: Build from city + state
+  if (city && state) {
+    // Check if city already contains the state abbreviation to avoid duplication
+    const stateRegex = new RegExp(`\\b${state}\\b`, 'i');
+    if (stateRegex.test(city)) {
+      return city; // City already contains state, don't append
+    }
+    return `${city}, ${state}`;
+  }
+  
   if (state) return state;
   if (city) return city;
-  
-  // Try to extract from comments
-  const venueMatch = comments?.match(/Venue Location:\s*([^\n]+)/i);
-  if (venueMatch) return venueMatch[1].trim();
   
   return null;
 };
 
 
+const extractCityFromComments = (comments) => {
+  if (!comments) return null;
+  
+  const match = comments.match(/Venue Location:\s*([^\n]+)/i);
+  if (!match) return null;
+  
+  const venueLocation = match[1].trim();
+  
+  // Parse city from location string
+  const parts = venueLocation.split(",").map(p => p.trim());
+  
+  // If last part is a 2-letter state code, second-to-last is likely the city
+  if (parts.length >= 2 && parts[parts.length - 1].length === 2) {
+    const city = parts[parts.length - 2];
+    // Skip generic terms like "Other Destinations", "Metro", etc.
+    const skipTerms = ["other destinations", "metro", "destinations", "area", "region"];
+    if (!skipTerms.some(term => city.toLowerCase().includes(term))) {
+      return city;
+    }
+  }
+  
+  // If only 2 parts and second is state, first is city
+  if (parts.length === 2 && parts[1].length === 2) {
+    return parts[0];
+  }
+  
+  // For metro areas, return null
+  if (venueLocation.toLowerCase().includes("metro") || parts.length > 3) {
+    return null;
+  }
+  
+  // Fallback
+  if (parts.length > 0 && parts[0].length > 2 && !parts[0].toLowerCase().includes("other")) {
+    return parts[0];
+  }
+  
+  return null;
+};
 export default {
   fetchDeals,
   fetchPerson,

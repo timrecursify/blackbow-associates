@@ -1,146 +1,163 @@
 /**
  * Email Service using Resend API
- * Handles email confirmation and other transactional emails
+ * Handles all transactional emails for Black Bow Associates
  */
 
 import { Resend } from "resend";
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { logger } from '../utils/logger.js';
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { logger } from "../utils/logger.js";
 
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const FROM_EMAIL = `${process.env.DEFAULT_FROM_NAME || "Black Bow Associates"} <${process.env.DEFAULT_FROM_EMAIL || "noreply@blackbowassociates.com"}>`;
+const ADMIN_EMAIL = "slava@blackbowassociates.com";
+
 class EmailService {
-  /**
-   * Generate a secure confirmation token
-   * @returns {string} - Random 32-byte hex string
-   */
-  static generateConfirmationToken() {
-    return crypto.randomBytes(32).toString('hex');
+  static generateToken() {
+    return crypto.randomBytes(32).toString("hex");
   }
 
-  /**
-   * Send email confirmation
-   * @param {string} email - Recipient email
-   * @param {string} businessName - Business name for personalization
-   * @param {string} token - Confirmation token
-   * @returns {Promise<object>} - Resend API response
-   */
+  static readTemplate(templateName) {
+    const templatePath = path.join(__dirname, "../../templates", templateName);
+    return fs.readFileSync(templatePath, "utf8");
+  }
+
+  static replaceVariables(template, variables) {
+    let result = template;
+    for (const [key, value] of Object.entries(variables)) {
+      const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+      result = result.replace(regex, value || "");
+    }
+    result = result.replace(/{{#if\s+\w+}}[\s\S]*?{{\/if}}/g, "");
+    return result;
+  }
+
+  static async sendEmail(to, subject, html) {
+    try {
+      const result = await resend.emails.send({
+        from: FROM_EMAIL,
+        to,
+        subject,
+        html
+      });
+
+      if (result.error) {
+        throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
+      }
+
+      logger.info("Email sent", { to, subject, emailId: result.data?.id || result.id });
+      return { success: true, emailId: result.data?.id || result.id };
+    } catch (error) {
+      logger.error("Failed to send email", { to, subject, error: error.message });
+      throw error;
+    }
+  }
+
   static async sendConfirmationEmail(email, businessName, token) {
-    try {
-      // Read email template
-      const templatePath = path.join(__dirname, '../../templates/email-confirmation.html');
-      let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
-
-      // Build confirmation URL
-      const confirmationUrl = `https://blackbowassociates.com/confirm-email?token=${token}`;
-
-      // Replace placeholders
-      htmlTemplate = htmlTemplate
-        .replace(/{{businessName}}/g, businessName)
-        .replace(/{{confirmationUrl}}/g, confirmationUrl);
-
-      // Send email via Resend
-      const result = await resend.emails.send({
-        from: `${process.env.DEFAULT_FROM_NAME} <${process.env.DEFAULT_FROM_EMAIL}>`,
-        to: email,
-        subject: 'Confirm Your Email - Black Bow Associates',
-        html: htmlTemplate
-      });
-
-      // Check for errors
-      if (result.error) {
-        throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
-      }
-
-      logger.info('Confirmation email sent', {
-        email,
-        emailId: result.data?.id || result.id
-      });
-
-      return {
-        success: true,
-        emailId: result.data?.id || result.id
-      };
-
-    } catch (error) {
-      logger.error('Failed to send confirmation email', {
-        email,
-        error: error.message
-      });
-
-      throw error;
-    }
+    const template = this.readTemplate("email-confirmation.html");
+    const confirmationUrl = `https://blackbowassociates.com/confirm-email?token=${token}`;
+    const html = this.replaceVariables(template, { businessName, confirmationUrl });
+    return this.sendEmail(email, "Confirm Your Email - Black Bow Associates", html);
   }
 
-  /**
-   * Send password reset email
-   * @param {string} email - Recipient email
-   * @param {string} businessName - Business name for personalization
-   * @param {string} token - Password reset token
-   * @returns {Promise<object>} - Resend API response
-   */
   static async sendPasswordResetEmail(email, businessName, token) {
-    try {
-      // Read email template
-      const templatePath = path.join(__dirname, '../../templates/password-reset.html');
-      let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
+    const template = this.readTemplate("password-reset.html");
+    const resetUrl = `https://blackbowassociates.com/reset-password?token=${token}`;
+    const html = this.replaceVariables(template, { businessName, resetUrl });
+    return this.sendEmail(email, "Reset Your Password - Black Bow Associates", html);
+  }
 
-      // Build reset URL
-      const resetUrl = `https://blackbowassociates.com/reset-password?token=${token}`;
+  static async sendDepositConfirmation(email, businessName, amount, newBalance, transactionId) {
+    const template = this.readTemplate("deposit-confirmation.html");
+    const html = this.replaceVariables(template, {
+      businessName,
+      amount: parseFloat(amount).toFixed(2),
+      newBalance: parseFloat(newBalance).toFixed(2),
+      transactionId,
+      date: new Date().toLocaleDateString("en-US", { 
+        weekday: "long", year: "numeric", month: "long", day: "numeric", 
+        hour: "2-digit", minute: "2-digit" 
+      })
+    });
+    return this.sendEmail(email, "Deposit Confirmed - Black Bow Associates", html);
+  }
 
-      // Replace placeholders
-      htmlTemplate = htmlTemplate
-        .replace(/{{businessName}}/g, businessName)
-        .replace(/{{resetUrl}}/g, resetUrl);
+  static async sendPurchaseReceipt(email, businessName, leadData, amount, remainingBalance) {
+    const template = this.readTemplate("purchase-receipt.html");
+    const html = this.replaceVariables(template, {
+      businessName,
+      leadId: leadData.id,
+      location: leadData.location || "Not specified",
+      weddingDate: leadData.weddingDate ? new Date(leadData.weddingDate).toLocaleDateString("en-US", { 
+        year: "numeric", month: "long", day: "numeric" 
+      }) : "TBD",
+      contactName: leadData.personName || "Not specified",
+      contactEmail: leadData.email || "Not specified",
+      contactPhone: leadData.phone || "Not specified",
+      amount: parseFloat(amount).toFixed(2),
+      remainingBalance: parseFloat(remainingBalance).toFixed(2),
+      date: new Date().toLocaleDateString("en-US", { 
+        weekday: "long", year: "numeric", month: "long", day: "numeric" 
+      })
+    });
+    return this.sendEmail(email, "Lead Purchase Receipt - Black Bow Associates", html);
+  }
 
-      // Send email via Resend
-      const result = await resend.emails.send({
-        from: `${process.env.DEFAULT_FROM_NAME} <${process.env.DEFAULT_FROM_EMAIL}>`,
-        to: email,
-        subject: 'Reset Your Password - Black Bow Associates',
-        html: htmlTemplate
-      });
+  static async sendPayoutConfirmation(email, businessName, amount, payoutMethod, payoutId) {
+    const template = this.readTemplate("payout-confirmation.html");
+    const html = this.replaceVariables(template, {
+      businessName,
+      amount: parseFloat(amount).toFixed(2),
+      payoutMethod: payoutMethod || "Bank Transfer",
+      payoutId,
+      date: new Date().toLocaleDateString("en-US", { 
+        weekday: "long", year: "numeric", month: "long", day: "numeric" 
+      })
+    });
+    return this.sendEmail(email, "Payout Request Received - Black Bow Associates", html);
+  }
 
-      // Check for errors
-      if (result.error) {
-        throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
-      }
-
-      logger.info('Password reset email sent', {
-        email,
-        emailId: result.data?.id || result.id
-      });
-
-      return {
-        success: true,
-        emailId: result.data?.id || result.id
-      };
-
-    } catch (error) {
-      logger.error('Failed to send password reset email', {
-        email,
-        error: error.message
-      });
-
-      throw error;
+  static async sendPayoutRequestToAdmin(userEmail, businessName, userId, amount, payoutDetails, commissionsCount, payoutId) {
+    let template = this.readTemplate("payout-request-admin.html");
+    
+    if (payoutDetails.method === "ZELLE") {
+      template = template.replace(/{{#if isZelle}}([\s\S]*?){{\/if}}/g, "$1");
+      template = template.replace(/{{#if isACH}}[\s\S]*?{{\/if}}/g, "");
+    } else {
+      template = template.replace(/{{#if isACH}}([\s\S]*?){{\/if}}/g, "$1");
+      template = template.replace(/{{#if isZelle}}[\s\S]*?{{\/if}}/g, "");
     }
+    
+    const html = this.replaceVariables(template, {
+      businessName,
+      userEmail,
+      userId,
+      amount: parseFloat(amount).toFixed(2),
+      payoutMethod: payoutDetails.method || "Not specified",
+      payoutEmail: payoutDetails.email || "",
+      bankName: payoutDetails.bankName || "",
+      routingNumber: payoutDetails.routingNumber || "",
+      accountNumber: payoutDetails.accountNumber ? "****" + payoutDetails.accountNumber.slice(-4) : "",
+      commissionsCount: commissionsCount.toString(),
+      payoutId,
+      date: new Date().toLocaleDateString("en-US", { 
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      })
+    });
+    return this.sendEmail(ADMIN_EMAIL, `New Payout Request - $${parseFloat(amount).toFixed(2)} - ${businessName}`, html);
   }
 
-  /**
-   * Generate a secure password reset token
-   * @returns {string} - Random 32-byte hex string
-   */
-  static generatePasswordResetToken() {
-    return crypto.randomBytes(32).toString('hex');
-  }
+  static generateConfirmationToken() { return this.generateToken(); }
+  static generatePasswordResetToken() { return this.generateToken(); }
 }
 
 export default EmailService;

@@ -5,9 +5,9 @@ import { DepositModal } from '../components/DepositModal';
 import { BillingAddressModal } from '../components/BillingAddressModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Notification from '../components/Notification';
-import { Search, SlidersHorizontal, List, Grid, Table as TableIcon, ChevronDown, ChevronRight, X, Star, ShoppingCart } from 'lucide-react';
+import { Search, SlidersHorizontal, List, Grid, Table as TableIcon, ChevronDown, ChevronRight, X, Star, ShoppingCart, Clock, Flame, Zap } from 'lucide-react';
 import { leadsAPI, usersAPI } from '../services/api';
-import { format } from 'date-fns';
+import { format, differenceInDays, differenceInMonths } from 'date-fns';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface Lead {
@@ -406,20 +406,25 @@ export const MarketplacePage: React.FC = () => {
     }
   };
 
-  // Service tag colors (pastel)
-  const getServiceColor = (service: string) => {
-    const colors: Record<string, string> = {
-      'Photography': 'bg-blue-50 text-blue-700 border-blue-200',
-      'Videography': 'bg-purple-50 text-purple-700 border-purple-200',
-      'Drone': 'bg-cyan-50 text-cyan-700 border-cyan-200',
-      'Multi-Day': 'bg-orange-50 text-orange-700 border-orange-200',
-      'RAW': 'bg-pink-50 text-pink-700 border-pink-200',
-    };
-    for (const [key, color] of Object.entries(colors)) {
-      if (service.includes(key)) return color;
+  // Timeline urgency helper
+  const getTimelineUrgency = (weddingDate: string | null) => {
+    if (!weddingDate) {
+      return { label: 'Date TBD', classes: 'bg-gray-100 text-gray-600 border-gray-300', icon: Clock };
     }
-    return 'bg-gray-50 text-gray-700 border-gray-200';
+    const now = new Date();
+    const wedding = new Date(weddingDate);
+    const daysUntil = differenceInDays(wedding, now);
+    const monthsUntil = differenceInMonths(wedding, now);
+    
+    if (daysUntil < 0) return { label: 'Past', classes: 'bg-gray-100 text-gray-500 border-gray-300', icon: Clock };
+    if (daysUntil <= 30) return { label: 'This Month!', subLabel: 'Book Now', classes: 'bg-red-100 text-red-700 border-red-400 animate-pulse', icon: Flame };
+    if (monthsUntil <= 2) return { label: '1-2 Months', subLabel: 'Urgent', classes: 'bg-orange-100 text-orange-700 border-orange-400', icon: Zap };
+    if (monthsUntil <= 4) return { label: '3-4 Months', subLabel: 'Planning', classes: 'bg-amber-100 text-amber-700 border-amber-400', icon: Clock };
+    if (monthsUntil <= 6) return { label: '5-6 Months', subLabel: 'Good Timing', classes: 'bg-green-100 text-green-700 border-green-400', icon: Clock };
+    if (monthsUntil <= 12) return { label: '6-12 Months', subLabel: 'Early Bird', classes: 'bg-blue-100 text-blue-700 border-blue-400', icon: Clock };
+    return { label: '1+ Year', subLabel: 'Long Term', classes: 'bg-indigo-100 text-indigo-700 border-indigo-400', icon: Clock };
   };
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -612,26 +617,6 @@ export const MarketplacePage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Services</p>
-                <div className="flex flex-wrap gap-2">
-                  {getUniqueServices().map(service => (
-                    <button
-                      key={service}
-                      onClick={() => setSelectedServices(prev =>
-                        prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]
-                      )}
-                      className={`px-3 py-2 text-sm font-medium border rounded transition-all whitespace-nowrap min-h-[40px] ${
-                        selectedServices.includes(service)
-                          ? 'bg-black'
-                          : 'bg-white'
-                      }`}
-                    >
-                      {service}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -689,7 +674,7 @@ export const MarketplacePage: React.FC = () => {
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Wedding Date</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden sm:table-cell transition-colors duration-200">Submitted</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Location</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Services</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Timeline</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider transition-colors duration-200">Price</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider w-20 sm:w-24 transition-colors duration-200">Action</th>
                 </tr>
@@ -738,16 +723,16 @@ export const MarketplacePage: React.FC = () => {
                         {lead.state && <div className="text-xs text-gray-500 transition-colors duration-200">{lead.state}</div>}
                       </td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {lead.servicesNeeded.slice(0, 2).map((service, i) => (
-                            <span key={i} className={`px-1.5 sm:px-2 py-0.5 text-xs font-medium border rounded ${getServiceColor(service)}`}>
-                              {service}
+                        {(() => {
+                          const urgency = getTimelineUrgency(lead.weddingDate);
+                          const IconComponent = urgency.icon;
+                          return (
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
+                              <IconComponent size={12} />
+                              {urgency.label}
                             </span>
-                          ))}
-                          {lead.servicesNeeded.length > 2 && (
-                            <span className="px-1.5 sm:px-2 py-0.5 text-xs text-gray-500 transition-colors duration-200">+{lead.servicesNeeded.length - 2}</span>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-black transition-colors duration-200">${lead.price.toFixed(2)}</td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3 text-right">
@@ -827,11 +812,17 @@ export const MarketplacePage: React.FC = () => {
                     </div>
                     <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
                     <div className="flex flex-wrap gap-1">
-                      {lead.servicesNeeded.map((service, i) => (
-                        <span key={i} className={`px-1.5 sm:px-2 py-0.5 text-xs font-medium border rounded ${getServiceColor(service)}`}>
-                          {service}
-                        </span>
-                      ))}
+                      {(() => {
+                        const urgency = getTimelineUrgency(lead.weddingDate);
+                        const IconComponent = urgency.icon;
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
+                            <IconComponent size={12} />
+                            {urgency.label}
+                            {urgency.subLabel && <span className="opacity-75">• {urgency.subLabel}</span>}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
@@ -894,11 +885,17 @@ export const MarketplacePage: React.FC = () => {
                 </div>
                 <div className="text-xs sm:text-sm text-black mb-2">{lead.city || lead.location}</div>
                 <div className="mb-3 flex flex-wrap gap-1">
-                  {lead.servicesNeeded.map((service, i) => (
-                    <span key={i} className={`px-1.5 sm:px-2 py-0.5 text-xs font-medium border rounded ${getServiceColor(service)}`}>
-                      {service}
-                    </span>
-                  ))}
+                  {(() => {
+                    const urgency = getTimelineUrgency(lead.weddingDate);
+                    const IconComponent = urgency.icon;
+                    return (
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
+                        <IconComponent size={14} />
+                        {urgency.label}
+                        {urgency.subLabel && <span className="opacity-75 text-xs">• {urgency.subLabel}</span>}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   <span className="text-sm font-semibold text-black">${lead.price.toFixed(2)}</span>

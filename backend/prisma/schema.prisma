@@ -62,6 +62,14 @@ model User {
   generatedCommissions   ReferralCommission[] @relation("CommissionSource")
   referralPayouts        ReferralPayout[]
 
+  // Payout details
+  payoutMethod           String?            @map("payout_method")
+  payoutEmail            String?            @map("payout_email")
+  payoutBankName         String?            @map("payout_bank_name")
+  payoutRoutingNumber    String?            @map("payout_routing_number")
+  payoutAccountNumber    String?            @map("payout_account_number")
+  payoutDetailsSet       Boolean            @default(false) @map("payout_details_set")
+
   @@map("users")
 }
 

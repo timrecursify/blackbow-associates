@@ -3,6 +3,7 @@ import { Gift, Copy, DollarSign, Users, ChevronDown, ChevronUp, ChevronLeft, Che
 import { referralAPI } from '../../services/api';
 import { format } from 'date-fns';
 import Notification from '../../components/Notification';
+import { PayoutDetailsModal } from '../../components/PayoutDetailsModal';
 import { logger } from '../../utils/logger';
 
 interface ReferralStats {
@@ -52,6 +53,8 @@ export const ReferralsTab: React.FC = () => {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [requestingPayout, setRequestingPayout] = useState(false);
+  const [showPayoutDetailsModal, setShowPayoutDetailsModal] = useState(false);
+  const [payoutDetailsSet, setPayoutDetailsSet] = useState(false);
   const [usersPage, setUsersPage] = useState(1);
   const [usersPagination, setUsersPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
   const [payoutsPage, setPayoutsPage] = useState(1);
@@ -59,7 +62,20 @@ export const ReferralsTab: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    fetchPayoutDetails();
   }, [usersPage, payoutsPage]);
+
+  const fetchPayoutDetails = async () => {
+    try {
+      const response = await fetch('/api/referrals/payout-details', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setPayoutDetailsSet(data.payoutDetails?.isSet || false);
+      }
+    } catch (error) {
+      logger.error('Failed to fetch payout details:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {

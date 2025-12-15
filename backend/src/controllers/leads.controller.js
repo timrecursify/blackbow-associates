@@ -1,6 +1,7 @@
 import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import EmailService from '../services/emailService.js';
 
 // Configuration
 const VENDOR_TYPE_PURCHASE_LIMIT = parseInt(process.env.VENDOR_TYPE_PURCHASE_LIMIT || '5', 10);
@@ -353,6 +354,19 @@ export const purchaseLead = asyncHandler(async (req, res) => {
     `?? Lead purchased by ${user.businessName} (${user.email}) - $${leadPrice}`,
     'success'
   );
+
+  // Send purchase receipt email
+  try {
+    await EmailService.sendPurchaseReceipt(
+      user.email,
+      user.businessName,
+      result.lead,
+      leadPrice,
+      result.newBalance
+    );
+  } catch (emailError) {
+    logger.warn('Failed to send purchase receipt email', { error: emailError.message });
+  }
 
   res.json({
     success: true,

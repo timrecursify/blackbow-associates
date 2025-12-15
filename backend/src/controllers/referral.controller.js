@@ -2,6 +2,7 @@ import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { generateReferralCode, getReferrerStats } from '../services/referral.service.js';
+import EmailService from '../services/emailService.js';
 
 const COMMISSION_RATE = 0.10; // 10%
 const MINIMUM_PAYOUT = 50.00;
@@ -12,13 +13,8 @@ const MINIMUM_PAYOUT = 50.00;
  */
 export const getStats = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-
   const stats = await getReferrerStats(userId);
-
-  res.json({
-    success: true,
-    stats
-  });
+  res.json({ success: true, stats });
 });
 
 /**
@@ -38,18 +34,14 @@ export const getLink = asyncHandler(async (req, res) => {
     let code;
     let isUnique = false;
 
-    // Generate unique code
     while (!isUnique) {
       code = generateReferralCode();
       const existing = await prisma.user.findUnique({
         where: { referralCode: code }
       });
-      if (!existing) {
-        isUnique = true;
-      }
+      if (!existing) isUnique = true;
     }
 
-    // Update user with new code
     user = await prisma.user.update({
       where: { id: userId },
       data: { referralCode: code },
@@ -90,10 +82,7 @@ export const getReferredUsers = asyncHandler(async (req, res) => {
           amountPaid: true,
           purchasedAt: true,
           referralCommission: {
-            select: {
-              amount: true,
-              status: true
-            }
+            select: { amount: true, status: true }
           }
         }
       }
@@ -122,10 +111,7 @@ export const getReferredUsers = asyncHandler(async (req, res) => {
     }))
   }));
 
-  res.json({
-    success: true,
-    referredUsers: formattedUsers
-  });
+  res.json({ success: true, referredUsers: formattedUsers });
 });
 
 /**
@@ -144,27 +130,9 @@ export const getCommissions = asyncHandler(async (req, res) => {
   const commissions = await prisma.referralCommission.findMany({
     where,
     include: {
-      sourceUser: {
-        select: {
-          email: true,
-          businessName: true
-        }
-      },
-      purchase: {
-        select: {
-          amountPaid: true,
-          purchasedAt: true
-        }
-      },
-      payout: {
-        select: {
-          id: true,
-          amount: true,
-          status: true,
-          requestedAt: true,
-          paidAt: true
-        }
-      }
+      sourceUser: { select: { email: true, businessName: true } },
+      purchase: { select: { amountPaid: true, purchasedAt: true } },
+      payout: { select: { id: true, amount: true, status: true, requestedAt: true, paidAt: true } }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -175,14 +143,8 @@ export const getCommissions = asyncHandler(async (req, res) => {
     status: c.status,
     createdAt: c.createdAt,
     paidAt: c.paidAt,
-    sourceUser: {
-      email: c.sourceUser.email,
-      businessName: c.sourceUser.businessName
-    },
-    purchase: {
-      amount: parseFloat(c.purchase.amountPaid),
-      date: c.purchase.purchasedAt
-    },
+    sourceUser: { email: c.sourceUser.email, businessName: c.sourceUser.businessName },
+    purchase: { amount: parseFloat(c.purchase.amountPaid), date: c.purchase.purchasedAt },
     payout: c.payout ? {
       id: c.payout.id,
       amount: parseFloat(c.payout.amount),
@@ -192,9 +154,89 @@ export const getCommissions = asyncHandler(async (req, res) => {
     } : null
   }));
 
+  res.json({ success: true, commissions: formattedCommissions });
+});
+
+/**
+ * Get payout details for current user
+ * GET /api/referrals/payout-details
+ */
+export const getPayoutDetails = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      payoutMethod: true,
+      payoutEmail: true,
+      payoutBankName: true,
+      payoutRoutingNumber: true,
+      payoutAccountNumber: true,
+      payoutDetailsSet: true
+    }
+  });
+
   res.json({
     success: true,
-    commissions: formattedCommissions
+    payoutDetails: {
+      method: user.payoutMethod,
+      email: user.payoutEmail,
+      bankName: user.payoutBankName,
+      // Only show last 4 digits for security
+      routingNumber: user.payoutRoutingNumber ? '****' + user.payoutRoutingNumber.slice(-4) : null,
+      accountNumber: user.payoutAccountNumber ? '****' + user.payoutAccountNumber.slice(-4) : null,
+      isSet: user.payoutDetailsSet
+    }
+  });
+});
+
+/**
+ * Save payout details
+ * POST /api/referrals/payout-details
+ */
+export const savePayoutDetails = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { method, email, bankName, routingNumber, accountNumber } = req.body;
+
+  if (!method || !['ACH', 'ZELLE'].includes(method)) {
+    throw new AppError('Invalid payout method. Must be ACH or ZELLE', 400, 'INVALID_METHOD');
+  }
+
+  if (method === 'ZELLE' && !email) {
+    throw new AppError('Email is required for Zelle payouts', 400, 'MISSING_EMAIL');
+  }
+
+  if (method === 'ACH' && (!bankName || !routingNumber || !accountNumber)) {
+    throw new AppError('Bank name, routing number, and account number are required for ACH payouts', 400, 'MISSING_BANK_DETAILS');
+  }
+
+  const updateData = {
+    payoutMethod: method,
+    payoutDetailsSet: true
+  };
+
+  if (method === 'ZELLE') {
+    updateData.payoutEmail = email;
+    updateData.payoutBankName = null;
+    updateData.payoutRoutingNumber = null;
+    updateData.payoutAccountNumber = null;
+  } else {
+    updateData.payoutEmail = null;
+    updateData.payoutBankName = bankName;
+    updateData.payoutRoutingNumber = routingNumber;
+    updateData.payoutAccountNumber = accountNumber;
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: updateData
+  });
+
+  logger.info('Payout details saved', { userId, method });
+
+  res.json({
+    success: true,
+    message: 'Payout details saved successfully'
   });
 });
 
@@ -205,25 +247,38 @@ export const getCommissions = asyncHandler(async (req, res) => {
 export const requestPayout = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
+  // Get user with payout details
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      businessName: true,
+      payoutMethod: true,
+      payoutEmail: true,
+      payoutBankName: true,
+      payoutRoutingNumber: true,
+      payoutAccountNumber: true,
+      payoutDetailsSet: true
+    }
+  });
+
+  // Check if payout details are set
+  if (!user.payoutDetailsSet) {
+    throw new AppError('Please set up your payout details before requesting a payout', 400, 'PAYOUT_DETAILS_REQUIRED');
+  }
+
   // Get pending commissions
   const pendingCommissions = await prisma.referralCommission.findMany({
-    where: {
-      earnerId: userId,
-      status: 'PENDING'
-    }
+    where: { earnerId: userId, status: 'PENDING' }
   });
 
   if (pendingCommissions.length === 0) {
     throw new AppError('No pending commissions available', 400, 'NO_PENDING_COMMISSIONS');
   }
 
-  // Calculate total
-  const totalAmount = pendingCommissions.reduce(
-    (sum, c) => sum + parseFloat(c.amount),
-    0
-  );
+  const totalAmount = pendingCommissions.reduce((sum, c) => sum + parseFloat(c.amount), 0);
 
-  // Check minimum payout
   if (totalAmount < MINIMUM_PAYOUT) {
     throw new AppError(
       `Minimum payout amount is $${MINIMUM_PAYOUT}. Current pending: $${totalAmount.toFixed(2)}`,
@@ -235,21 +290,13 @@ export const requestPayout = asyncHandler(async (req, res) => {
 
   // Create payout request
   const payout = await prisma.referralPayout.create({
-    data: {
-      userId,
-      amount: totalAmount,
-      status: 'PENDING'
-    }
+    data: { userId, amount: totalAmount, status: 'PENDING' }
   });
 
   // Link commissions to payout
   await prisma.referralCommission.updateMany({
-    where: {
-      id: { in: pendingCommissions.map(c => c.id) }
-    },
-    data: {
-      payoutId: payout.id
-    }
+    where: { id: { in: pendingCommissions.map(c => c.id) } },
+    data: { payoutId: payout.id }
   });
 
   logger.info('Payout requested', {
@@ -259,11 +306,48 @@ export const requestPayout = asyncHandler(async (req, res) => {
     commissionsCount: pendingCommissions.length
   });
 
-  // Send Telegram notification for payout request
+  // Prepare payout details for emails
+  const payoutDetails = {
+    method: user.payoutMethod,
+    email: user.payoutEmail,
+    bankName: user.payoutBankName,
+    routingNumber: user.payoutRoutingNumber,
+    accountNumber: user.payoutAccountNumber
+  };
+
+  // Send Telegram notification
   await notifyTelegram(
-    `💸 *Referral Payout Request*\n\nUser: ${req.user.email}\nAmount: $${totalAmount.toFixed(2)}\nCommissions: ${pendingCommissions.length}`,
+    `💸 *Referral Payout Request*\n\nUser: ${user.email}\nBusiness: ${user.businessName}\nAmount: $${totalAmount.toFixed(2)}\nMethod: ${user.payoutMethod}\nCommissions: ${pendingCommissions.length}`,
     'info'
   );
+
+  // Send payout confirmation email to user
+  try {
+    await EmailService.sendPayoutConfirmation(
+      user.email,
+      user.businessName,
+      totalAmount,
+      user.payoutMethod,
+      payout.id
+    );
+  } catch (emailError) {
+    logger.warn('Failed to send payout confirmation email to user', { error: emailError.message });
+  }
+
+  // Send payout request email to admin (Slava)
+  try {
+    await EmailService.sendPayoutRequestToAdmin(
+      user.email,
+      user.businessName,
+      userId,
+      totalAmount,
+      payoutDetails,
+      pendingCommissions.length,
+      payout.id
+    );
+  } catch (emailError) {
+    logger.warn('Failed to send payout request email to admin', { error: emailError.message });
+  }
 
   res.json({
     success: true,
@@ -286,14 +370,7 @@ export const getPayouts = asyncHandler(async (req, res) => {
 
   const payouts = await prisma.referralPayout.findMany({
     where: { userId },
-    include: {
-      commissions: {
-        select: {
-          id: true,
-          amount: true
-        }
-      }
-    },
+    include: { commissions: { select: { id: true, amount: true } } },
     orderBy: { requestedAt: 'desc' }
   });
 
@@ -307,10 +384,7 @@ export const getPayouts = asyncHandler(async (req, res) => {
     commissionsCount: p.commissions.length
   }));
 
-  res.json({
-    success: true,
-    payouts: formattedPayouts
-  });
+  res.json({ success: true, payouts: formattedPayouts });
 });
 
 export default {
@@ -318,6 +392,8 @@ export default {
   getLink,
   getReferredUsers,
   getCommissions,
+  getPayoutDetails,
+  savePayoutDetails,
   requestPayout,
   getPayouts
 };

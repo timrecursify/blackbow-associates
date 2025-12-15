@@ -4,6 +4,8 @@ import {
   getLink,
   getReferredUsers,
   getCommissions,
+  getPayoutDetails,
+  savePayoutDetails,
   requestPayout,
   getPayouts
 } from '../controllers/referral.controller.js';
@@ -25,6 +27,10 @@ router.get('/referred-users', getReferredUsers);
 
 // Get commission history
 router.get('/commissions', getCommissions);
+
+// Payout details
+router.get('/payout-details', getPayoutDetails);
+router.post('/payout-details', savePayoutDetails);
 
 // Request payout
 router.post('/request-payout', requestPayout);

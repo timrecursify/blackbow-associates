@@ -2011,3 +2011,24 @@ Completed comprehensive cleanup of Supabase migration artifacts and fixed critic
 - Performance: No impact
 
 **Status:** ✅ SUCCESS - Webhook integration fully operational
+
+### 2025-12-15 - 10:45 - Agent: cursor-ide
+**Fix: Google OAuth signup redirect loop on mobile**
+
+**Problem:** Users signing up via Google OAuth on mobile were being redirected back to the sign-up page after completing Google authentication instead of proceeding to onboarding.
+
+**Root Cause:** The  component only checked  for authentication tokens, but Google OAuth uses HTTP-only cookies. This caused OAuth users to fail the auth check and get redirected to sign-in.
+
+**Fix:** Updated  in  to:
+1. First check localStorage for JWT tokens (email/password login)
+2. If no localStorage token, call the API with  to check for OAuth cookie-based authentication
+3. This mirrors the existing behavior of  which already worked correctly
+
+**Files Changed:**
+-  - OnboardingRoute component (lines 436-467)
+
+**Verification:**
+- ✅ Frontend builds successfully
+- ✅ Site loads correctly
+- ✅ Google OAuth redirect to Google works
+- ✅ PM2 service restarted and online

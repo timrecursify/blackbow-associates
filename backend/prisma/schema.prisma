@@ -111,6 +111,7 @@ model Lead {
   lastClientResponse DateTime?          @map("last_client_response")
   maskedInfo         Json?              @map("masked_info")
   fullInfo           Json?              @map("full_info")
+  incompleteNotifiedAt DateTime?        @map("incomplete_notified_at")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   purchases          Purchase[]

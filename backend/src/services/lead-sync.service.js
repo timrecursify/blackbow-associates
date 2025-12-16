@@ -25,6 +25,7 @@ export const syncIncompleteLeads = async () => {
           gte: oneDayAgo, // Only check leads from last 24 hours
           lte: tenMinutesAgo // Created more than 10 minutes ago
         },
+        incompleteNotifiedAt: null, // Only leads that haven't been notified yet
         OR: [
           { location: null },
           { location: 'Location TBD' },
@@ -81,6 +82,7 @@ export const syncIncompleteLeads = async () => {
         if (isStillIncomplete) {
           stillIncomplete++;
           stillIncompleteList.push({
+            leadId: lead.id,
             dealId: lead.pipedriveDealId,
             personName: freshLeadData.personName || lead.personName,
             location: freshLeadData.location || 'null',
@@ -150,6 +152,14 @@ export const syncIncompleteLeads = async () => {
       const message = `⚠️ *Incomplete Leads After Sync*\n\n${stillIncomplete} leads still missing data after re-sync:\n\n${incompleteDetails}${stillIncomplete > 10 ? '\n... and ' + (stillIncomplete - 10) + ' more' : ''}`;
 
       await notifyTelegram(message, 'warn');
+
+      // Mark these leads as notified so we don't spam about them again
+      const leadIdsToMark = stillIncompleteList.map(l => l.leadId);
+      await prisma.lead.updateMany({
+        where: { id: { in: leadIdsToMark } },
+        data: { incompleteNotifiedAt: new Date() }
+      });
+      logger.info(`Marked ${leadIdsToMark.length} leads as notified for incomplete data`);
     }
 
     // Send success notification if leads were updated

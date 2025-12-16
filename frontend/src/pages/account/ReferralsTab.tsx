@@ -237,7 +237,7 @@ export const ReferralsTab: React.FC = () => {
               Minimum payout amount: $50.00
               {stats && stats.pendingAmount < 50 && (
                 <span className="block text-yellow-600 font-medium mt-1">
-                  You need ${(50 - stats.pendingAmount).toFixed(2)} more to request a payout
+                  You need ${(50 - (stats?.pendingAmount || 0)).toFixed(2)} more to request a payout
                 </span>
               )}
             </p>
@@ -281,7 +281,7 @@ export const ReferralsTab: React.FC = () => {
                     </div>
                     <div className="text-right ml-3">
                       <p className="text-sm font-semibold text-green-600">
-                        ${user.commissionEarned.toFixed(2)}
+                        ${(user.commissionEarned || 0).toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500">{user.purchases.length} purchases</p>
                     </div>
@@ -364,7 +364,7 @@ export const ReferralsTab: React.FC = () => {
                           {user.purchases.length}
                         </td>
                         <td className="px-6 py-4 text-sm font-semibold text-right text-green-600">
-                          ${user.commissionEarned.toFixed(2)}
+                          ${(user.commissionEarned || 0).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 text-right">
                           {user.purchases.length > 0 && (
@@ -403,7 +403,7 @@ export const ReferralsTab: React.FC = () => {
                                       </span>
                                     </div>
                                     <p className="text-xs text-gray-600">
-                                      Amount: ${purchase.amount.toFixed(2)}
+                                      Amount: ${(purchase.amount || 0).toFixed(2)}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
                                       {format(new Date(purchase.date), 'MMM dd, yyyy HH:mm')}
@@ -472,7 +472,7 @@ export const ReferralsTab: React.FC = () => {
               <div key={payout.id} className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">${payout.amount.toFixed(2)}</p>
+                    <p className="text-sm font-semibold text-gray-900">${(payout.amount || 0).toFixed(2)}</p>
                     <p className="text-xs text-gray-500">
                       Requested: {format(new Date(payout.requestedAt), 'MMM dd, yyyy')}
                     </p>
@@ -522,7 +522,7 @@ export const ReferralsTab: React.FC = () => {
                       {format(new Date(payout.requestedAt), 'MMM dd, yyyy HH:mm')}
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-right text-gray-900">
-                      ${payout.amount.toFixed(2)}
+                      ${(payout.amount || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-block px-3 py-1 text-xs font-medium rounded border ${getStatusBadgeColor(payout.status)}`}>

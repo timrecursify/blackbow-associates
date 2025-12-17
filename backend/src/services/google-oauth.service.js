@@ -34,10 +34,14 @@ class GoogleOAuthService {
 
   /**
    * Generate Google authorization URL
+   * @param {string|null} referralCode - Optional referral code to preserve through OAuth flow
    * @returns {string} Authorization URL
    */
-  generateAuthUrl() {
+  generateAuthUrl(referralCode = null) {
     this.initialize();
+
+    // Encode referral code in state parameter (JSON encoded for extensibility)
+    const stateData = referralCode ? JSON.stringify({ ref: referralCode }) : null;
 
     const authUrl = this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -46,12 +50,37 @@ class GoogleOAuthService {
         'https://www.googleapis.com/auth/userinfo.email',
         'openid'
       ],
-      prompt: 'consent' // Force consent screen to get refresh token
+      prompt: 'consent',
+      state: stateData
     });
 
-    logger.info('Generated Google authorization URL');
+    logger.info('Generated Google authorization URL', {
+      hasReferralCode: !!referralCode,
+      referralCode: referralCode || null
+    });
 
     return authUrl;
+  }
+
+  /**
+   * Parse the state parameter from OAuth callback
+   * @param {string|null} state - State parameter from callback
+   * @returns {Object} Parsed state object with referral code if present
+   */
+  parseState(state) {
+    if (!state) {
+      return { ref: null };
+    }
+
+    try {
+      return JSON.parse(state);
+    } catch (error) {
+      logger.warn('Failed to parse OAuth state parameter', {
+        state,
+        error: error.message
+      });
+      return { ref: null };
+    }
   }
 
   /**
@@ -63,7 +92,6 @@ class GoogleOAuthService {
     this.initialize();
 
     try {
-      // Exchange code for tokens
       const { tokens } = await this.oauth2Client.getToken(code);
       this.oauth2Client.setCredentials(tokens);
 
@@ -74,7 +102,6 @@ class GoogleOAuthService {
         expiresIn: tokens.expiry_date
       });
 
-      // Get user info from Google
       const oauth2 = google.oauth2({
         auth: this.oauth2Client,
         version: 'v2'
@@ -109,11 +136,6 @@ class GoogleOAuthService {
     }
   }
 
-  /**
-   * Refresh access token using refresh token
-   * @param {string} refreshToken - Refresh token
-   * @returns {Promise<Object>} New tokens
-   */
   async refreshToken(refreshToken) {
     this.initialize();
 
@@ -138,11 +160,6 @@ class GoogleOAuthService {
     }
   }
 
-  /**
-   * Revoke tokens (logout)
-   * @param {string} accessToken - Access token to revoke
-   * @returns {Promise<void>}
-   */
   async revokeToken(accessToken) {
     this.initialize();
 
@@ -158,7 +175,6 @@ class GoogleOAuthService {
   }
 }
 
-// Create singleton instance
 const googleOAuthService = new GoogleOAuthService();
 
 export default googleOAuthService;

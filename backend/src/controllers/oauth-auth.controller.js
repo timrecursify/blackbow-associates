@@ -3,22 +3,26 @@ import { prisma } from '../config/database.js';
 import { logger, logAuthEvent } from '../utils/logger.js';
 import googleOAuthService from '../services/google-oauth.service.js';
 import { generateAccessToken, generateRefreshToken } from '../services/auth.service.js';
+import { generateReferralCode, validateReferralCode } from '../services/referral.service.js';
 
 /**
  * Initiate Google OAuth login
- * Redirects user directly to Google consent screen
+ * Preserves referral code through OAuth state parameter
  */
 export const initiateGoogleLogin = asyncHandler(async (req, res) => {
   try {
-    // Generate Google authorization URL
-    const authUrl = googleOAuthService.generateAuthUrl();
+    // Capture referral code from query parameter
+    const referralCode = req.query.ref || null;
+
+    // Generate Google authorization URL with referral code in state
+    const authUrl = googleOAuthService.generateAuthUrl(referralCode);
 
     logger.info('Redirecting to Google OAuth', {
       ip: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
+      referralCode: referralCode || null
     });
 
-    // Redirect user to Google
     res.redirect(authUrl);
   } catch (error) {
     logger.error('Failed to initiate Google OAuth', {
@@ -32,35 +36,41 @@ export const initiateGoogleLogin = asyncHandler(async (req, res) => {
 /**
  * Handle Google OAuth callback
  * Exchange code for tokens, create/link user, set session
+ * Processes referral code from state parameter
  */
 export const handleGoogleCallback = asyncHandler(async (req, res) => {
-  const { code, error, error_description } = req.query;
+  const { code, state, error, error_description } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'https://blackbowassociates.com';
 
-  // Handle OAuth errors from Google
   if (error) {
     logger.error('Google OAuth error', {
       error,
       description: error_description
     });
-
-    const frontendUrl = process.env.FRONTEND_URL || 'https://blackbowassociates.com';
-    return res.redirect(`${frontendUrl}/sign-in?error=${encodeURIComponent(error_description || error)}`);
+    return res.redirect(frontendUrl + '/sign-in?error=' + encodeURIComponent(error_description || error));
   }
 
   if (!code) {
     throw new AppError('No authorization code provided', 400, 'MISSING_CODE');
   }
 
+  // Parse referral code from state parameter
+  const stateData = googleOAuthService.parseState(state);
+  const referralCode = stateData.ref || null;
+
+  if (referralCode) {
+    logger.info('Referral code received in OAuth callback', { referralCode });
+  }
+
   try {
-    // Exchange code for tokens and user info
     const { tokens, userInfo } = await googleOAuthService.exchangeCode(code);
 
     logger.info('Google OAuth callback received', {
       email: userInfo.email,
-      verified: userInfo.emailVerified
+      verified: userInfo.emailVerified,
+      hasReferralCode: !!referralCode
     });
 
-    // Find user by Google ID or email
     let user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -70,8 +80,9 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
       }
     });
 
+    let isNewUser = false;
+
     if (user) {
-      // Update existing user with Google ID if not already linked
       if (!user.authUserId || user.authUserId !== userInfo.googleUserId) {
         user = await prisma.user.update({
           where: { id: user.id },
@@ -88,7 +99,23 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
         });
       }
     } else {
-      // Create new user
+      // Validate referral code and get referrer
+      let referredByUserId = null;
+      if (referralCode) {
+        const referrer = await validateReferralCode(referralCode);
+        if (referrer) {
+          referredByUserId = referrer.id;
+          logger.info('Valid referral code - linking new user to referrer', {
+            referralCode,
+            referrerId: referrer.id,
+            referrerEmail: referrer.email
+          });
+        } else {
+          logger.warn('Invalid or disabled referral code provided', { referralCode });
+        }
+      }
+
+      // Create new user with referral linkage
       user = await prisma.user.create({
         data: {
           authUserId: userInfo.googleUserId,
@@ -97,51 +124,55 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
           emailConfirmed: userInfo.emailVerified,
           onboardingCompleted: false,
           isAdmin: false,
-          vendorType: "pending" // Will be set during onboarding
+          vendorType: 'pending',
+          referralCode: generateReferralCode(),
+          referredByUserId: referredByUserId
         }
       });
+
+      isNewUser = true;
 
       logger.info('Created new user from Google OAuth', {
         userId: user.id,
         email: user.email,
-        googleUserId: userInfo.googleUserId
+        googleUserId: userInfo.googleUserId,
+        referredBy: referredByUserId || 'none',
+        referralCodeUsed: referralCode || 'none'
       });
 
-      // Log registration event
       logAuthEvent('register', {
         userId: user.id,
         email: user.email,
         method: 'google_oauth',
+        referralCode: referralCode || null,
+        referredBy: referredByUserId || null,
         ip: req.ip,
         userAgent: req.get('user-agent'),
         requestId: req.id
       });
     }
 
-    // Generate JWT access and refresh tokens
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Store refresh token in database
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken }
     });
 
-    // Log successful login
     logAuthEvent('login_success', {
       userId: user.id,
       email: user.email,
       method: 'google_oauth',
       isAdmin: user.isAdmin,
+      isNewUser,
       ip: req.ip,
       userAgent: req.get('user-agent'),
       requestId: req.id
     });
 
-    // Set HTTP-only cookies for session
     const cookieOptions = {
-      domain: '.blackbowassociates.com', // Allow cookie to be shared across subdomains
+      domain: '.blackbowassociates.com',
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -150,18 +181,15 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
 
     res.cookie('accessToken', accessToken, {
       ...cookieOptions,
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000
     });
 
     res.cookie('refreshToken', refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Redirect to appropriate dashboard
-    const frontendUrl = process.env.FRONTEND_URL || 'https://blackbowassociates.com';
     let redirectPath;
-
     if (!user.onboardingCompleted) {
       redirectPath = '/onboarding';
     } else if (user.isAdmin) {
@@ -170,37 +198,33 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
       redirectPath = '/marketplace';
     }
 
-    const redirectUrl = `${frontendUrl}${redirectPath}`;
-
     logger.info('Google OAuth login successful, redirecting', {
       userId: user.id,
       email: user.email,
-      redirectPath
+      redirectPath,
+      isNewUser,
+      wasReferred: !!referralCode
     });
 
-    res.redirect(redirectUrl);
+    res.redirect(frontendUrl + redirectPath);
   } catch (error) {
     logger.error('Google OAuth callback failed', {
       error: error.message,
       stack: error.stack
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://blackbowassociates.com';
-    res.redirect(`${frontendUrl}/sign-in?error=${encodeURIComponent('Authentication failed. Please try again.')}`);
+    res.redirect(frontendUrl + '/sign-in?error=' + encodeURIComponent('Authentication failed. Please try again.'));
   }
 });
 
 /**
  * Handle OAuth logout
- * Clear session cookies and redirect to homepage
  */
 export const handleOAuthLogout = asyncHandler(async (req, res) => {
   try {
-    // Clear session cookies
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('accessToken', { path: '/', domain: '.blackbowassociates.com' });
+    res.clearCookie('refreshToken', { path: '/', domain: '.blackbowassociates.com' });
 
-    // Clear refresh token in database
     if (req.user?.id) {
       await prisma.user.update({
         where: { id: req.user.id },

@@ -1,6 +1,6 @@
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { prisma } from '../config/database.js';
-import { logger, logAuthEvent } from '../utils/logger.js';
+import { logger, logAuthEvent, notifyTelegram } from '../utils/logger.js';
 import googleOAuthService from '../services/google-oauth.service.js';
 import { generateAccessToken, generateRefreshToken } from '../services/auth.service.js';
 import { generateReferralCode, validateReferralCode } from '../services/referral.service.js';
@@ -150,6 +150,23 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
         userAgent: req.get('user-agent'),
         requestId: req.id
       });
+
+      // Send Telegram notification for new registration
+      let registrationMsg = '👤 *New User Registration (Google OAuth)*\n\n';
+      registrationMsg += `Email: ${user.email}\n`;
+      registrationMsg += `Business: ${user.businessName}`;
+
+      if (referredByUserId) {
+        const referrer = await prisma.user.findUnique({
+          where: { id: referredByUserId },
+          select: { email: true, businessName: true }
+        });
+        if (referrer) {
+          registrationMsg += `\n\n🎁 *Referred by:* ${referrer.businessName || referrer.email}`;
+        }
+      }
+
+      await notifyTelegram(registrationMsg, 'success');
     }
 
     const accessToken = generateAccessToken(user);

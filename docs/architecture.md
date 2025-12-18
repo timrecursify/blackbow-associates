@@ -120,8 +120,10 @@ Response → Error Handler → Logger
 - `/api/payments` - Stripe deposits, payment methods
 - `/api/admin` - User management (view, block, unblock, delete), balance adjustments, CSV import
 - `/api/admin/analytics` - Dashboard analytics (overview, revenue, users, leads, feedback)
+- `/api/admin/transactions` - Admin transaction ledger (paged, filterable)
 - `/api/admin/referrals` - Referral management (overview, referrers, payouts, mark-paid, toggle-referral)
 - `/api/referrals` - User referral dashboard (stats, link, referred-users, commissions, payouts)
+- `/api/notifications` - In-app notifications (list, unread count, mark read, dismiss)
 - `/api/webhooks` - Stripe, Pipedrive event handlers
 
 **Security Layers:**
@@ -142,9 +144,9 @@ Response → Error Handler → Logger
 
 | Tier | Endpoints | Limit | Window | Key Strategy |
 |------|-----------|-------|--------|--------------|
-| General API | All routes | 1000 req (auth) / 100 req (anon) | 15 min | User ID (if authenticated) / IP (fallback) |
+| General API | All routes | 100 req | 15 min | IP-based |
 | Auth | /api/auth/* | 10 req | 15 min | IP-based (strict) |
-| Payment | /api/payments/* | 60 req (auth) / 20 req (anon) | 1 hour | User ID (if authenticated) / IP (fallback) |
+| Payment | /api/payments/* | 20 req | 1 hour | User ID + IP |
 | Feedback | /api/leads/:id/feedback | 5 req | 1 hour | User ID only |
 | Analytics | /api/admin/analytics/* | 100 req | 1 hour | User ID + IP |
 
@@ -188,14 +190,13 @@ Response → Error Handler → Logger
 ```
 
 **State Management:**
-- React Context (Custom JWT auth state)
+- React Context (Supabase auth state)
 - Component-local state (useState, useEffect)
 - No global state manager (Redux/Zustand not needed)
 
 **API Client:**
 - Axios with interceptors
-- Custom JWT token injection (Bearer header or OAuth cookie)
-- Automatic token refresh on 401 responses
+- Supabase JWT token injection (Bearer auth)
 - Base URL: `https://api.blackbowassociates.com`
 - Structured logger (replaces console.log)
 
@@ -216,10 +217,10 @@ Express Static Server → Served to users
 **Core Models:**
 
 ```
-User (Custom JWT + Google OAuth)
+User (Supabase-synced)
 ├── id: String (CUID)
+├── authUserId: String (Supabase auth ID, nullable)
 ├── email: String (unique)
-├── passwordHash: String (bcrypt, nullable for OAuth users)
 ├── businessName: String
 ├── vendorType: String
 ├── balance: Decimal (default: 0)
@@ -311,6 +312,18 @@ ReferralPayout
 ├── paidAt: DateTime (nullable)
 ├── notes: String (nullable)
 └── Relationships: user, commissions[]
+
+Notification
+├── id: String (CUID)
+├── userId: String (FK to User, CASCADE delete)
+├── type: Enum (DEPOSIT_CONFIRMED, LEAD_PURCHASED, PAYOUT_REQUESTED, PAYOUT_PAID, FEEDBACK_REWARD, REFERRAL_COMMISSION_EARNED)
+├── title: String
+├── body: String
+├── linkUrl: String (nullable)
+├── metadata: JSON (nullable)
+├── readAt: DateTime (nullable)
+├── dismissedAt: DateTime (nullable)
+└── createdAt: DateTime
 ```
 
 **Indexes:**
@@ -325,13 +338,12 @@ ReferralPayout
 
 ### 4. External Integrations
 
-**Custom Authentication (JWT + Google OAuth):**
-- **Email/Password Flow:** User registers → Password hashed (bcrypt, 12 rounds) → JWT tokens generated (access: 24h, refresh: 7d) → Tokens stored in DB (refresh) + returned to client
-- **Google OAuth Flow:** User clicks "Sign in with Google" → Redirects to Google → Callback receives code → Exchanges for user info → Creates/links user → Sets HttpOnly cookies (`.blackbowassociates.com` domain) → Redirects to frontend
-- **Token Storage:** Access token in Authorization header (Bearer) or `accessToken` cookie (OAuth), refresh token in `refreshToken` cookie or DB
-- **JWT Validation:** Custom JWT secret (`JWT_SECRET` env var), verified on every protected endpoint via `requireAuth` middleware
-- **Email Confirmation:** Required before marketplace access (email/password users), OAuth users auto-confirmed (Google pre-verifies)
-- **Referral Code Preservation:** OAuth state parameter preserves referral codes through redirect flow
+**Supabase Authentication:**
+- Flow: User signs up → Supabase creates account → Backend syncs to DB
+- JWT validation on every protected API call
+- Email confirmation required before marketplace access
+- OAuth users (Google/Facebook) auto-confirmed (pre-verified by provider)
+- User metadata stored in PostgreSQL (balance, purchases)
 
 **Stripe Payments:**
 - Flow: User deposits → PaymentIntent → Webhook confirms → Balance updated atomically
@@ -378,48 +390,3 @@ ReferralPayout
    - ✅ Added: User notes sanitization (5000 char limit, trimmed)
    - ✅ Added: Admin reasons sanitization (500 char limit, trimmed)
    - ✅ Enhanced: Feedback validation (enum validation, amount bounds $0-$1,000,000)
-
----
-
-## Backup & Recovery
-
-### Automated Backups
-
-**Schedule:** Daily at 2:00 AM UTC (systemd timer)
-
-**Process:**
-1. PostgreSQL dump using `pg_dump`
-2. Compression with `gzip`
-3. SHA256 checksum generation
-4. JSON manifest creation
-5. Optional Restic upload for remote backup
-6. Automatic cleanup of old backups (7-day retention)
-
-**Storage:**
-- Local: `backend/backups/dumps/`
-- Remote: Raspberry Pi SSD (via Restic)
-- Retention: 7 days local, 30 days remote
-
-**Verification:**
-- SHA256 checksums verified before restore
-- Telegram notifications on success/failure
-- Logs: `/var/log/desaas/blackbow-backup.log`
-
-**Manual Backup:**
-```bash
-cd backend
-bash scripts/backup.sh
-```
-
-**Restore Procedure:**
-```bash
-cd backend
-bash scripts/restore.sh
-# Select backup from list
-# Verify checksum
-# Confirm restore
-```
-
-**Disaster Recovery:**
-- RTO: <1 hour
-- RPO: <24 hours (daily backup)

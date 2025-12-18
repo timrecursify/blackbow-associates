@@ -1,9 +1,9 @@
 # BlackBow Associates - Project Status
 
 **Last Updated:** December 18, 2025
-**Version:** 3.2.2
+**Version:** 3.2.3
 **Overall Status:** 🟢 **LIVE IN PRODUCTION** (Accepting Real Payments)
-**Session:** 18 - Signup Flow & Referral Attribution Fixes
+**Session:** 19 - In-App Notifications + Admin Transactions Ledger
 
 ---
 
@@ -18,6 +18,39 @@
 | Security | 🟢 **ENTERPRISE-GRADE** | 100% DeSaaS compliant, dual rate limiting, audit logging |
 | Compliance | 🟢 **100% DESAAS** | All audit, logging, and security standards met |
 | Cloudflare Tunnel | 🟢 **Configured** | Domains routed to services |
+
+---
+
+**2025-12-18 - v3.2.3 - In-App Notifications + Admin Transactions** 🔔💳
+
+**Agent:** cursor-ide  
+**Status:** ✅ DEPLOYED TO PRODUCTION
+
+### Backend
+- Added persistent in-app notifications:
+  - New model: `Notification` (dismissible, 30-day retention)
+  - New API: `/api/notifications/*` (list, unread count, mark read, dismiss)
+  - Cleanup cron: daily job deletes expired/dismissed notifications older than 30 days
+- Implemented event hooks (production-safe, non-blocking side-effects):
+  - Deposit confirmed (Stripe webhook + verify fallback)
+  - Lead purchased
+  - Feedback reward (+$2)
+  - Referral payout requested + payout completed
+  - Referrer notification when referred client purchases a lead (**in-app only**, no email)
+- Emails:
+  - Payout request emails now go to `ADMIN_NOTIFICATION_EMAILS` if set, otherwise to all verified active admins in DB
+  - User payout request email copy updated to **3–5 business days**
+  - New payout completed email template added
+- Admin ledger:
+  - New endpoint: `GET /api/admin/transactions` (paged, searchable)
+  - Referral payout completion recorded as `TransactionType.REFERRAL_PAYOUT` (audit trail)
+
+### Frontend
+- Added **notifications bell** (navbar popover) with unread badge, list, mark-read, dismiss (mobile optimized).
+- Admin dashboard:
+  - Added **Transactions** tab
+  - Added payout-request alert banner when unread payout notifications exist
+- Referrals tab: adds a **New** indicator for unread payout-request notifications.
 
 ---
 
@@ -964,8 +997,8 @@ model CrmBetaSignup {
 - Build Size: 1.46MB bundle (warning: consider code splitting)
 
 **Database:**
-- Type: PostgreSQL 15 (Supabase)
-- Port: 5433 (via Docker on localhost)
+- Type: Native PostgreSQL 15 (localhost)
+- Port: 5432
 - Status: 🟢 Running
 - Connection: Healthy, no errors
 
@@ -975,7 +1008,7 @@ model CrmBetaSignup {
 - `https://blackbowassociates.com` → Frontend (Port 3001)
 - `https://www.blackbowassociates.com` → Frontend (Port 3001)
 - `https://api.blackbowassociates.com` → Backend (Port 3450)
-- `https://auth.blackbowassociates.com` → Supabase Auth
+ 
 
 **DNS Status:** 🟢 Fully propagated and resolving correctly
 
@@ -1170,11 +1203,9 @@ model CrmBetaSignup {
 
 ### Configured and Working ✅
 
-1. **Supabase (Authentication)**
+1. **Authentication**
    - Status: ✅ Configured and functional
-   - Backend: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-   - Frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-   - Auth domain: `https://auth.blackbowassociates.com`
+   - Method: Custom JWT + Google OAuth (cookie + JWT)
 
 2. **Stripe (Payments - TEST MODE)**
    - Status: 🟡 Configured but using TEST keys
@@ -1788,10 +1819,10 @@ Implemented comprehensive email verification system requiring users to confirm t
 
 **Enhanced User Creation During Confirmation:**
 - Modified sendInitialConfirmation to create users if they do not exist yet
-- Resolves chicken-and-egg problem: user created in Supabase Auth before our DB
+- Resolves chicken-and-egg problem: user created in OAuth/DB sync flows before our DB user record exists
 - Flow now:
   1. Check if user exists in DB
-  2. If not, fetch from Supabase Auth by email
+  2. If not, fetch identity from the auth provider / session and create the DB user record
   3. Create user in DB with correct authUserId
   4. Generate confirmation token
   5. Send professional email

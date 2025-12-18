@@ -43,7 +43,7 @@
 - Centralized logs: ✅ local `/var/log/desaas` (BlackBow logs rotating)
 - Log archival off-box: ⚠️ `log-archival-service` is currently stopped (should be restarted)
 - Server backups: ✅ `backups-daily.timer` and `backups-prune.timer` active
-- BlackBow DB dumps: ✅ running nightly, but **were not going off-box** until Restic env is loaded (this change enables it; verify on next run)
+- BlackBow DB dumps: ✅ Restic off-box upload verified (tag: blackbow-db)
 
 ---
 

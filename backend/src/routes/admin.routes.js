@@ -2,6 +2,7 @@ import express from 'express';
 import { getAllUsers, getAllLeads, importLeads, adjustBalance, blockUser, unblockUser, deleteUser, updateLeadStatus } from '../controllers/admin.controller.js';
 import { getAllBetaSignups, getBetaSignupById, updateSignupStatus, exportBetaSignups } from '../controllers/crmBeta.controller.js';
 import { getWebhookStats, getWebhookEvents, getFailedWebhooks, retryWebhook, retryAllFailed } from '../controllers/webhook-admin.controller.js';
+import { getAllTransactions } from '../controllers/admin-transactions.controller.js';
 import {
   getOverview,
   getAllReferrers,
@@ -34,6 +35,9 @@ router.delete('/users/:id', auditLog, deleteUser);
 router.get('/leads', auditLog, getAllLeads);
 router.post('/leads/import', auditLog, validations.importLeads, importLeads);
 router.put('/leads/:id/status', auditLog, updateLeadStatus);
+
+// Transactions - ALL ROUTES NOW HAVE AUDIT LOGGING
+router.get('/transactions', auditLog, getAllTransactions);
 
 // CRM Beta Signups management - ALL ROUTES NOW HAVE AUDIT LOGGING
 router.get('/crm-beta-signups', auditLog, getAllBetaSignups);

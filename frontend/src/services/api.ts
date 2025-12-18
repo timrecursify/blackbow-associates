@@ -226,6 +226,20 @@ export const adminAPI = {
     apiClient.post(`/admin/referrals/payouts/${payoutId}/mark-paid`, { notes }),
   toggleUserReferral: (userId: string, enabled: boolean) =>
     apiClient.post(`/admin/referrals/users/${userId}/toggle-referral`, { enabled }),
+
+  // Transactions
+  getTransactions: (page = 1, limit = 50, params?: { type?: string; searchEmail?: string; start?: string; end?: string }) =>
+    apiClient.get('/admin/transactions', { params: { page, limit, ...params } }),
+};
+
+// Notifications API (shared for users + admins)
+export const notificationsAPI = {
+  list: (page = 1, limit = 20, unreadOnly = false) =>
+    apiClient.get('/notifications', { params: { page, limit, unreadOnly } }),
+  unreadCount: () => apiClient.get('/notifications/unread-count'),
+  markRead: (id: string) => apiClient.post(`/notifications/${id}/read`),
+  markAllRead: () => apiClient.post('/notifications/read-all'),
+  dismiss: (id: string) => apiClient.post(`/notifications/${id}/dismiss`),
 };
 
 export default {
@@ -235,4 +249,5 @@ export default {
   paymentsAPI,
   referralAPI,
   adminAPI,
+  notificationsAPI,
 };

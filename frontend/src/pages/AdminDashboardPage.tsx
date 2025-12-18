@@ -7,7 +7,9 @@ import { format } from 'date-fns';
 import OverviewTab from './admin/OverviewTab';
 import FeedbackTab from './admin/FeedbackTab';
 import ReferralsTab from './admin/ReferralsTab';
+import TransactionsTab from './admin/TransactionsTab';
 import AdminGuard from '../components/AdminGuard';
+import { notificationsAPI } from '../services/api';
 
 interface User {
   id: string;
@@ -43,7 +45,7 @@ interface CrmBetaSignup {
   createdAt: string;
 }
 
-type TabType = 'overview' | 'users' | 'leads' | 'feedback' | 'crm-beta' | 'referrals';
+type TabType = 'overview' | 'users' | 'leads' | 'feedback' | 'transactions' | 'crm-beta' | 'referrals';
 
 const AdminDashboardContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -55,6 +57,7 @@ const AdminDashboardContent: React.FC = () => {
   const [signupModalOpen, setSignupModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
+  const [unreadPayoutRequests, setUnreadPayoutRequests] = useState<number>(0);
 
   // Balance adjustment
   const [adjustUserId, setAdjustUserId] = useState('');
@@ -74,6 +77,24 @@ const AdminDashboardContent: React.FC = () => {
       fetchData();
     }
   }, [activeTab]);
+
+  // Admin payout request banner (poll unread notifications and check for PAYOUT_REQUESTED)
+  useEffect(() => {
+    const fetchPayoutUnread = async () => {
+      try {
+        const res = await notificationsAPI.list(1, 50, true);
+        const notifications = res.data?.notifications || [];
+        const count = notifications.filter((n: any) => n.type === 'PAYOUT_REQUESTED').length;
+        setUnreadPayoutRequests(count);
+      } catch (e) {
+        // non-blocking
+      }
+    };
+
+    fetchPayoutUnread();
+    const id = window.setInterval(fetchPayoutUnread, 30000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -294,6 +315,7 @@ const AdminDashboardContent: React.FC = () => {
     { id: 'users' as TabType, label: 'Users', icon: Users },
     { id: 'leads' as TabType, label: 'Leads', icon: Package },
     { id: 'feedback' as TabType, label: 'Feedback', icon: MessageSquare },
+    { id: 'transactions' as TabType, label: 'Transactions', icon: DollarSign },
     { id: 'crm-beta' as TabType, label: 'CRM Beta', icon: Sparkles },
     { id: 'referrals' as TabType, label: 'Referrals', icon: Gift }
   ];
@@ -312,6 +334,26 @@ const AdminDashboardContent: React.FC = () => {
             Comprehensive analytics and system management
           </p>
         </div>
+
+        {/* Payout request banner */}
+        {unreadPayoutRequests > 0 && activeTab !== 'referrals' && (
+          <div className="mb-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-yellow-900">
+                {unreadPayoutRequests} payout request{unreadPayoutRequests === 1 ? '' : 's'} waiting for review
+              </p>
+              <p className="text-xs text-yellow-800">
+                Open Referrals to review and mark payouts as paid.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('referrals')}
+              className="px-4 py-2 rounded-lg bg-yellow-900 text-white text-sm font-semibold hover:bg-yellow-800 transition-colors"
+            >
+              Review payouts
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex space-x-2 md:space-x-4 mb-4 md:mb-6 border-b border-gray-200 overflow-x-auto">
@@ -337,6 +379,7 @@ const AdminDashboardContent: React.FC = () => {
         {/* Tab Content */}
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'feedback' && <FeedbackTab />}
+        {activeTab === 'transactions' && <TransactionsTab />}
         {activeTab === 'referrals' && <ReferralsTab />}
 
         {/* CRM Beta Signups Tab */}

@@ -200,6 +200,21 @@ class EmailService {
     return this.sendEmail(adminEmails, `New Payout Request - $${parseFloat(amount).toFixed(2)} - ${businessName}`, html);
   }
 
+  static async sendPayoutPaidEmail(email, businessName, amount, payoutMethod, payoutId) {
+    const template = this.readTemplate("payout-paid.html");
+    const html = this.replaceVariables(template, {
+      businessName,
+      amount: parseFloat(amount).toFixed(2),
+      payoutMethod: payoutMethod || "Bank Transfer",
+      payoutId,
+      date: new Date().toLocaleDateString("en-US", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      })
+    });
+    return this.sendEmail(email, "Payout Completed - Black Bow Associates", html);
+  }
+
   static generateConfirmationToken() { return this.generateToken(); }
   static generatePasswordResetToken() { return this.generateToken(); }
 }

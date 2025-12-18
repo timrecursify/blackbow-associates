@@ -26,6 +26,7 @@ import notificationRoutes from './routes/notifications.routes.js';
 
 // Import cron jobs
 import { initRetryScheduler } from './jobs/webhook-retry.job.js';
+import { initNotificationsCleanupScheduler } from './jobs/notifications-cleanup.job.js';
 
 // Initialize Express app
 const app = express();
@@ -260,6 +261,10 @@ const server = app.listen(PORT, HOST, async () => {
     // Initialize webhook retry scheduler
     initRetryScheduler();
     logger.info('Webhook retry scheduler initialized');
+
+    // Initialize notifications cleanup scheduler
+    initNotificationsCleanupScheduler();
+    logger.info('Notifications cleanup scheduler initialized');
   } catch (error) {
     logger.error('Failed to connect to database on startup', { error: error.message });
     // Database connection failed - log error but don't spam notifications

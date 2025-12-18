@@ -4,6 +4,7 @@ import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import * as stripeService from '../services/stripe.service.js';
 import { processWebhookEvent } from '../services/webhook-processor.service.js';
+import { NotificationService } from '../services/notification.service.js';
 
 // Stripe webhook handler
 export const stripeWebhook = asyncHandler(async (req, res) => {
@@ -142,6 +143,15 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
           `💰 Deposit successful: ${result.user.email} added $${result.amount}`,
           'success'
         );
+
+        await NotificationService.create({
+          userId: result.user.id,
+          type: 'DEPOSIT_CONFIRMED',
+          title: 'Deposit confirmed',
+          body: `Your deposit of $${Number(result.amount).toFixed(2)} was confirmed. New balance: $${Number(result.newBalance).toFixed(2)}.`,
+          linkUrl: '/account?tab=transactions',
+          metadata: { stripePaymentId: paymentIntent.id, amount: Number(result.amount) }
+        });
       } catch (error) {
         logger.error('Failed to process payment webhook', {
           error: error.message,

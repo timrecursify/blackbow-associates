@@ -1,6 +1,8 @@
 import { prisma } from '../config/database.js';
 import { logger } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
+import EmailService from '../services/emailService.js';
+import { NotificationService } from '../services/notification.service.js';
 
 /**
  * Get referral system overview
@@ -371,7 +373,16 @@ export const markPayoutPaid = asyncHandler(async (req, res) => {
   const payout = await prisma.referralPayout.findUnique({
     where: { id },
     include: {
-      commissions: true
+      commissions: true,
+      user: {
+        select: {
+          id: true,
+          email: true,
+          businessName: true,
+          payoutMethod: true,
+          balance: true
+        }
+      }
     }
   });
 
@@ -403,6 +414,20 @@ export const markPayoutPaid = asyncHandler(async (req, res) => {
         paidAt: new Date()
       }
     });
+
+    // Record payout completion as a transaction (audit trail)
+    // NOTE: This does not change the user's platform balance; it's an off-platform payout.
+    const currentBalance = parseFloat(payout.user.balance || 0);
+    await tx.transaction.create({
+      data: {
+        userId: payout.user.id,
+        amount: -parseFloat(payout.amount),
+        type: 'REFERRAL_PAYOUT',
+        balanceAfter: currentBalance,
+        description: 'Referral payout completed',
+        metadata: { payoutId: payout.id, notes: notes || null }
+      }
+    });
   });
 
   logger.info('Payout marked as paid', {
@@ -411,6 +436,28 @@ export const markPayoutPaid = asyncHandler(async (req, res) => {
     amount: parseFloat(payout.amount),
     commissionsCount: payout.commissions.length
   });
+
+  // Notify user (in-app + email). These must never block the admin action.
+  await NotificationService.create({
+    userId: payout.user.id,
+    type: 'PAYOUT_PAID',
+    title: 'Payout completed',
+    body: `Your payout of $${parseFloat(payout.amount).toFixed(2)} has been completed.`,
+    linkUrl: '/account?tab=referrals',
+    metadata: { payoutId: payout.id, amount: parseFloat(payout.amount) }
+  });
+
+  try {
+    await EmailService.sendPayoutPaidEmail(
+      payout.user.email,
+      payout.user.businessName,
+      parseFloat(payout.amount),
+      payout.user.payoutMethod,
+      payout.id
+    );
+  } catch (emailError) {
+    logger.warn('Failed to send payout paid email', { payoutId: payout.id, error: emailError.message });
+  }
 
   res.json({
     success: true,

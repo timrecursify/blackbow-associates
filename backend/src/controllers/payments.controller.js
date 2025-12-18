@@ -3,6 +3,7 @@ import EmailService from '../services/emailService.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import * as stripeService from '../services/stripe.service.js';
+import { NotificationService } from '../services/notification.service.js';
 
 // Create deposit payment intent
 export const createDeposit = asyncHandler(async (req, res) => {
@@ -255,6 +256,15 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       `💰 Deposit verified & credited: ${user.email} added $${result.amount} (via verifyPayment endpoint)`,
       'success'
     );
+
+    await NotificationService.create({
+      userId: user.id,
+      type: 'DEPOSIT_CONFIRMED',
+      title: 'Deposit confirmed',
+      body: `Your deposit of $${Number(result.amount).toFixed(2)} was confirmed. New balance: $${Number(result.newBalance).toFixed(2)}.`,
+      linkUrl: '/account?tab=transactions',
+      metadata: { stripePaymentId: paymentIntentId, amount: Number(result.amount) }
+    });
 
     res.json({
       success: true,

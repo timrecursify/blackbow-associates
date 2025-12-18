@@ -12,6 +12,8 @@ import { prisma } from '../../config/database.js';
 import { logger, notifyTelegram } from '../../utils/logger.js';
 import { AppError, asyncHandler } from '../../middleware/errorHandler.js';
 import { VENDOR_TYPE_PURCHASE_LIMIT, getPurchaseCountByVendorType } from './leadsHelpers.js';
+import EmailService from '../../services/emailService.js';
+import { NotificationService } from '../../services/notification.service.js';
 
 /**
  * Purchase lead (CRITICAL: Row-level locking for race condition prevention)
@@ -150,8 +152,12 @@ export const purchaseLead = asyncHandler(async (req, res) => {
     });
 
     // Create referral commission if buyer was referred
+    let referralCommissionAmount = null;
+    let referrerUserId = null;
     if (userWithBilling.referredByUserId) {
       const commissionAmount = parseFloat((leadPrice * 0.10).toFixed(2));
+      referralCommissionAmount = commissionAmount;
+      referrerUserId = userWithBilling.referredByUserId;
       await tx.referralCommission.create({
         data: {
           earnerId: userWithBilling.referredByUserId,
@@ -167,7 +173,7 @@ export const purchaseLead = asyncHandler(async (req, res) => {
     // Frontend filtering handles hiding purchased leads from individual users
     // Vendor type filtering in getLeads handles hiding leads that reached vendor type limit
 
-    return { lead, purchase, newBalance };
+    return { lead, purchase, newBalance, referrerUserId, referralCommissionAmount };
   });
 
   logger.info('Lead purchased', {
@@ -181,6 +187,45 @@ export const purchaseLead = asyncHandler(async (req, res) => {
     `💰 Lead purchased by ${user.businessName} (${user.email}) - $${leadPrice}`,
     'success'
   );
+
+  // In-app notification for buyer
+  await NotificationService.create({
+    userId: user.id,
+    type: 'LEAD_PURCHASED',
+    title: 'Lead purchased',
+    body: `You purchased a lead for $${leadPrice.toFixed(2)}. Your new balance is $${Number(result.newBalance).toFixed(2)}.`,
+    linkUrl: '/account?tab=leads',
+    metadata: { leadId, purchaseId: result.purchase.id, amount: leadPrice }
+  });
+
+  // In-app notification for referrer (NO EMAIL)
+  if (result.referrerUserId && result.referralCommissionAmount) {
+    await NotificationService.create({
+      userId: result.referrerUserId,
+      type: 'REFERRAL_COMMISSION_EARNED',
+      title: 'Referral commission earned',
+      body: `A referred client purchased a lead. You earned $${Number(result.referralCommissionAmount).toFixed(2)} commission (pending).`,
+      linkUrl: '/account?tab=referrals',
+      metadata: {
+        sourceUserId: user.id,
+        purchaseId: result.purchase.id,
+        amount: Number(result.referralCommissionAmount)
+      }
+    });
+  }
+
+  // Purchase receipt email (do not break purchase flow)
+  try {
+    await EmailService.sendPurchaseReceipt(
+      user.email,
+      user.businessName,
+      result.lead,
+      leadPrice,
+      result.newBalance
+    );
+  } catch (emailError) {
+    logger.warn('Failed to send purchase receipt email', { error: emailError.message });
+  }
 
   res.json({
     success: true,
@@ -309,6 +354,15 @@ export const submitFeedback = asyncHandler(async (req, res) => {
     `📝 Lead feedback submitted by ${user.businessName} - Booked: ${booked ? 'Yes' : 'No'}, Lead: ${leadId.substring(0, 8)}`,
     'info'
   );
+
+  await NotificationService.create({
+    userId: user.id,
+    type: 'FEEDBACK_REWARD',
+    title: 'Feedback reward added',
+    body: `Thanks for submitting feedback. We added $${Number(result.rewardAmount).toFixed(2)} to your balance.`,
+    linkUrl: '/account?tab=transactions',
+    metadata: { leadId, feedbackId: result.feedback.id, amount: Number(result.rewardAmount) }
+  });
 
   res.json({
     success: true,

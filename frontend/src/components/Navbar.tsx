@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { DollarSign, ShoppingCart, User, Shield, LogOut, ChevronDown } from 'lucide-react';
 import { usersAPI } from '../services/api';
 import { isAuthenticated, authAPI } from '../services/authAPI';
+import { NotificationsBell } from './NotificationsBell';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -171,6 +172,9 @@ export const Navbar: React.FC = () => {
                     <span className="hidden sm:inline ml-1">Marketplace</span>
                   </Link>
                 )}
+
+                {/* Notifications (user + admin) */}
+                <NotificationsBell enabled={isSignedIn} />
 
                 {/* CRM Link */}
                 <Link

@@ -177,7 +177,7 @@ export default function ReferralsTab() {
             <DollarSign className="w-5 h-5 text-orange-600" />
           </div>
           <p className="text-3xl font-bold text-gray-900">
-            {loading ? '...' : `$${overview?.totalCommissionsOwed.toFixed(2) || '0.00'}`}
+            {loading ? '...' : `$${(overview?.totalCommissionsOwed ?? 0).toFixed(2)}`}
           </p>
         </div>
 
@@ -197,7 +197,7 @@ export default function ReferralsTab() {
             <DollarSign className="w-5 h-5 text-green-600" />
           </div>
           <p className="text-3xl font-bold text-gray-900">
-            {loading ? '...' : `$${overview?.totalPaidOut.toFixed(2) || '0.00'}`}
+            {loading ? '...' : `$${(overview?.totalPaidOut ?? 0).toFixed(2)}`}
           </p>
         </div>
       </div>
@@ -234,7 +234,7 @@ export default function ReferralsTab() {
                   <tr key={payout.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm font-medium">{payout.referrer.businessName}</td>
                     <td className="py-3 px-4 text-sm">{payout.referrer.email}</td>
-                    <td className="py-3 px-4 text-sm font-semibold">${payout.amount.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-sm font-semibold">${(payout.amount ?? 0).toFixed(2)}</td>
                     <td className="py-3 px-4 text-sm text-gray-600">
                       {format(new Date(payout.requestedAt), 'MMM dd, yyyy')}
                     </td>
@@ -315,9 +315,9 @@ export default function ReferralsTab() {
                     <td className="py-3 px-4 text-sm font-medium">{referrer.businessName}</td>
                     <td className="py-3 px-4 text-sm">{referrer.email}</td>
                     <td className="py-3 px-4 text-sm">{referrer.referralCount}</td>
-                    <td className="py-3 px-4 text-sm font-semibold">${referrer.totalEarned.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-orange-600">${referrer.pendingAmount.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-green-600">${referrer.paidAmount.toFixed(2)}</td>
+                    <td className="py-3 px-4 text-sm font-semibold">${(referrer.totalEarned ?? 0).toFixed(2)}</td>
+                    <td className="py-3 px-4 text-sm text-orange-600">${(referrer.pendingAmount ?? 0).toFixed(2)}</td>
+                    <td className="py-3 px-4 text-sm text-green-600">${(referrer.paidAmount ?? 0).toFixed(2)}</td>
                     <td className="py-3 px-4 text-sm" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleToggleReferral(referrer.id)}
@@ -444,8 +444,8 @@ export default function ReferralsTab() {
                       <tr key={user.id} className="border-t border-gray-100">
                         <td className="py-2 px-4 text-sm">{user.email}</td>
                         <td className="py-2 px-4 text-sm">{user.businessName}</td>
-                        <td className="py-2 px-4 text-sm">${user.totalPurchases.toFixed(2)}</td>
-                        <td className="py-2 px-4 text-sm font-semibold text-green-600">${user.totalCommission.toFixed(2)}</td>
+                        <td className="py-2 px-4 text-sm">${(user.totalPurchases ?? 0).toFixed(2)}</td>
+                        <td className="py-2 px-4 text-sm font-semibold text-green-600">${(user.totalCommission ?? 0).toFixed(2)}</td>
                         <td className="py-2 px-4 text-sm text-gray-600">{format(new Date(user.createdAt), 'MMM dd, yyyy')}</td>
                       </tr>
                     ))}
@@ -476,7 +476,7 @@ export default function ReferralsTab() {
                     ) : (
                       selectedReferrer.payouts.map((payout) => (
                         <tr key={payout.id} className="border-t border-gray-100">
-                          <td className="py-2 px-4 text-sm font-semibold">${payout.amount.toFixed(2)}</td>
+                          <td className="py-2 px-4 text-sm font-semibold">${(payout.amount ?? 0).toFixed(2)}</td>
                           <td className="py-2 px-4 text-sm">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               payout.status === 'paid' ? 'bg-green-100 text-green-800' :
@@ -527,7 +527,7 @@ export default function ReferralsTab() {
                 <strong>Email:</strong> {selectedPayout.referrer.email}
               </p>
               <p className="text-sm text-gray-700 mb-4">
-                <strong>Amount:</strong> ${selectedPayout.amount.toFixed(2)}
+                <strong>Amount:</strong> ${(selectedPayout.amount ?? 0).toFixed(2)}
               </p>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Notes (optional)

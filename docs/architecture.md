@@ -1,7 +1,7 @@
 # BlackBow Associates - System Architecture
 
-**Last Updated:** December 13, 2025
-**Version:** 3.2.0 (Signup Flow & Referral Attribution Fixes)
+**Last Updated:** December 18, 2025
+**Version:** 3.2.2 (Marketplace Filters + Webhook Safety + Ops Hardening)
 **Status:** Production
 
 ---
@@ -45,14 +45,14 @@ BlackBow Associates is a B2B wedding lead marketplace built with a modern micros
 - React Router 7.x (Navigation)
 
 **Authentication & Payments:**
-- Supabase Auth (Self-hosted, JWT-based authentication)
+- Custom JWT (email/password) + Google OAuth (OAuth cookie + JWT)
 - Stripe (Payment processing - LIVE mode)
 - Pipedrive (CRM integration)
 - Resend API (Email delivery)
 
 **Infrastructure:**
 - PM2 (Process management)
-- Supabase (Self-hosted via Docker - Auth, PostgreSQL)
+- Native PostgreSQL 15 (localhost, port 5432)
 - Cloudflare Tunnel (Secure ingress)
 - Express static server (Frontend hosting)
 
@@ -77,13 +77,13 @@ BlackBow Associates is a B2B wedding lead marketplace built with a modern micros
                 │                      │     │
                 │              ┌───────▼─────▼────┐
                 │              │   PostgreSQL     │
-                │              │   (Port 5433)    │
+                │              │   (Port 5432)    │
                 │              │  blackbow DB     │
                 │              └───────┬──────────┘
                 │                      │
                 │              ┌───────▼──────────┐
                 └──────────────► External APIs    │
-                               │ - Supabase Auth  │
+                               │ - Google OAuth   │
                                │ - Stripe Pay     │
                                │ - Pipedrive CRM  │
                                │ - Resend Email   │
@@ -99,9 +99,17 @@ BlackBow Associates is a B2B wedding lead marketplace built with a modern micros
 **Location:** `backend/src/`
 
 **Middleware Stack:**
+
+### 2025-12-18 - Rate Limiting Stability (Production)
+
+We observed production 429s (`RATE_LIMIT_EXCEEDED`) impacting Marketplace leads and Referrals pages. Root cause was that the global `/api` rate limiter executed before user identity was available, forcing most traffic into shared IP buckets (NAT/VPN/office networks), which is too aggressive for normal dashboard usage.
+
+**Fix:** Add a lightweight identity middleware that extracts `userId` from the JWT (Authorization header or OAuth cookie) and sets `req.rateLimitUserId` before the global limiter. Authenticated traffic is now rate limited per-user, unauthenticated traffic per-IP.
+
+
 ```
 Request → CORS → Helmet → Rate Limiting → Body Parser →
-Auth (Supabase JWT) → Validation → Route Handler →
+Auth (Custom JWT / OAuth cookie) → Validation → Route Handler →
 Response → Error Handler → Logger
 ```
 
@@ -120,7 +128,7 @@ Response → Error Handler → Logger
 1. **Helmet.js security headers** - CSP, HSTS, frame guards, XSS protection
 2. **CORS whitelist** - Frontend domain only (production: blackbowassociates.com)
 3. **Multi-tier rate limiting** - 5 tiers: general, auth, payment, feedback, analytics
-4. **Supabase JWT validation** - Token verification on every protected endpoint
+4. **JWT validation** - Token verification on every protected endpoint
 5. **Email confirmation enforcement** - Unconfirmed users blocked from marketplace
 6. **Admin role-based access control** - isAdmin flag + adminVerifiedAt timestamp
 7. **User account blocking system** - isBlocked flag with reason tracking
@@ -367,7 +375,7 @@ ReferralPayout
    - ✅ Fixed: Pagination parameters validated and bounded (max 100 per page, max page 1000)
    - ✅ Added: User notes sanitization (5000 char limit, trimmed)
    - ✅ Added: Admin reasons sanitization (500 char limit, trimmed)
-   - ✅ Enhanced: Feedback validation (enum validation, amount bounds ---ssh -i ~/.ssh/id_ed25519 newadmin@74.50.113.202 "cd ~/projects/blackbow-associates && cat > /tmp/update_architecture.md << 'ARCHDOC'
+   - ✅ Enhanced: Feedback validation (enum validation, amount bounds $0-$1,000,000)
 # BlackBow Associates - System Architecture
 
 **Last Updated: November 7, 2025
@@ -1200,7 +1208,7 @@ Applied in `leadsMarketplaceController.js` marketplace query filter.
 - **Added:** Admin reasons sanitization (500 char limit, trimmed)
 - **Enhanced:** Feedback validation
   - Enum validation for timeToBook
-  - Amount bounds: ---ssh -i ~/.ssh/id_ed25519 newadmin@74.50.113.202 "cd ~/projects/blackbow-associates/docs && cat >> architecture.md << 'ENDOFSEC'
+  - Amount bounds: $0-$1,000,000
 
 ---
 

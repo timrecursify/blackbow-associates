@@ -29,6 +29,16 @@ interface Lead {
   purchasedAt?: string | null;
 }
 
+interface FacetEntry {
+  value: string;
+  count: number;
+}
+
+interface LeadFacets {
+  states: FacetEntry[];
+  services: FacetEntry[];
+}
+
 type ViewMode = 'list' | 'card' | 'table';
 type SortOption = 'date' | 'price' | 'location' | 'newest';
 
@@ -62,6 +72,7 @@ export const MarketplacePage: React.FC = () => {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
+  const [facets, setFacets] = useState<LeadFacets | null>(null);
 
   
   const fetchBillingStatus = async () => {
@@ -88,6 +99,10 @@ export const MarketplacePage: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filters change
   }, [favoritesOnly]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when filters change
+  }, [searchTerm, selectedStates, selectedServices]);
 
   // Restore saved filters on mount
   useEffect(() => {
@@ -136,7 +151,12 @@ export const MarketplacePage: React.FC = () => {
       setLoading(true);
       const response = await leadsAPI.getLeads({
         status: 'AVAILABLE',
+        // Server-side filtering
+        ...(searchTerm ? { location: searchTerm } : {}),
+        ...(selectedStates.length > 0 ? { states: selectedStates.join(',') } : {}),
+        ...(selectedServices.length > 0 ? { servicesNeeded: selectedServices.join(',') } : {}),
         favoritesOnly: favoritesOnly ? 'true' : 'false',
+        includeFacets: 'true',
         page: currentPage,
         limit: 20
       });
@@ -147,6 +167,10 @@ export const MarketplacePage: React.FC = () => {
       // Set pagination info
       if (response.data.pagination) {
         setPagination(response.data.pagination);
+      }
+
+      if (response.data.facets) {
+        setFacets(response.data.facets);
       }
     } catch (error) {
       logger.error('Failed to fetch leads:', error);
@@ -200,7 +224,7 @@ export const MarketplacePage: React.FC = () => {
     let results = [...allLeads];
 
     // Note: Purchased leads are already filtered out by backend
-    // Only apply client-side filters (search, states, services)
+    // Only apply client-side filters (search refinement + sorting)
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -210,18 +234,6 @@ export const MarketplacePage: React.FC = () => {
         lead.state?.toLowerCase().includes(term) ||
         lead.description?.toLowerCase().includes(term) ||
         lead.id.toLowerCase().includes(term)
-      );
-    }
-
-    if (selectedStates.length > 0) {
-      results = results.filter(lead => lead.state && selectedStates.includes(lead.state));
-    }
-
-    if (selectedServices.length > 0) {
-      results = results.filter(lead =>
-        selectedServices.some(service => 
-          lead.servicesNeeded.some(s => s.toLowerCase().includes(service.toLowerCase()))
-        )
       );
     }
 
@@ -600,7 +612,7 @@ export const MarketplacePage: React.FC = () => {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">State</p>
                 <div className="flex flex-wrap gap-2">
-                  {getUniqueStates().map(state => (
+                  {(facets?.states?.length ? facets.states.map(s => s.value) : getUniqueStates()).map(state => (
                     <button
                       key={state}
                       onClick={() => setSelectedStates(prev =>
@@ -613,6 +625,36 @@ export const MarketplacePage: React.FC = () => {
                       }`}
                     >
                       {state}
+                      {facets?.states?.length ? (
+                        <span className="ml-2 text-xs opacity-70">
+                          {facets.states.find(s => s.value === state)?.count ?? 0}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Services</p>
+                <div className="flex flex-wrap gap-2">
+                  {(facets?.services?.length ? facets.services.map(s => s.value) : getUniqueServices()).map(service => (
+                    <button
+                      key={service}
+                      onClick={() => setSelectedServices(prev =>
+                        prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]
+                      )}
+                      className={`px-3 py-2 text-sm font-medium border rounded transition-all whitespace-nowrap min-h-[40px] ${
+                        selectedServices.includes(service)
+                          ? 'bg-black'
+                          : 'bg-white'
+                      }`}
+                    >
+                      {service}
+                      {facets?.services?.length ? (
+                        <span className="ml-2 text-xs opacity-70">
+                          {facets.services.find(s => s.value === service)?.count ?? 0}
+                        </span>
+                      ) : null}
                     </button>
                   ))}
                 </div>

@@ -218,6 +218,13 @@ export const validations = {
     query('servicesNeeded')
       .optional()
       .trim(),
+    query('states')
+      .optional()
+      .trim(),
+    query('includeFacets')
+      .optional()
+      .isIn(['true', 'false'])
+      .withMessage('includeFacets must be true or false'),
     query('minBudget')
       .optional()
       .isFloat({ min: 0 })

@@ -10,7 +10,24 @@
 
 import { prisma } from '../../config/database.js';
 import { AppError, asyncHandler } from '../../middleware/errorHandler.js';
-import { VENDOR_TYPE_PURCHASE_LIMIT, calculateDynamicTags, hasDelayedAccess, getDelayedAccessCutoffDate } from './leadsHelpers.js';
+import {
+  VENDOR_TYPE_PURCHASE_LIMIT,
+  calculateDynamicTags,
+  hasDelayedAccess,
+  getDelayedAccessCutoffDate
+} from './leadsHelpers.js';
+
+const US_STATE_ABBRS = new Set([
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC','PR'
+]);
+
+const parseCsvQuery = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap(v => String(v).split(',')).map(v => v.trim()).filter(Boolean);
+  }
+  return String(value).split(',').map(v => v.trim()).filter(Boolean);
+};
 
 /**
  * Get all available leads (with filters)
@@ -22,16 +39,18 @@ export const getLeads = asyncHandler(async (req, res) => {
     status = 'AVAILABLE',
     location,
     servicesNeeded,
+    states,
     minBudget,
     maxBudget,
     favoritesOnly,
+    includeFacets,
     page = 1,
     limit = 20
   } = req.query;
 
   const where = { status };
 
-  // Apply filters
+  // Apply text/location search
   if (location) {
     where.OR = [
       { location: { contains: location, mode: 'insensitive' } },
@@ -40,8 +59,21 @@ export const getLeads = asyncHandler(async (req, res) => {
     ];
   }
 
-  if (servicesNeeded) {
-    where.servicesNeeded = { has: servicesNeeded };
+  // Apply services filter (supports single or CSV list)
+  const servicesList = parseCsvQuery(servicesNeeded);
+  if (servicesList.length === 1) {
+    where.servicesNeeded = { has: servicesList[0] };
+  } else if (servicesList.length > 1) {
+    where.servicesNeeded = { hasSome: servicesList };
+  }
+
+  // Apply state filter (CSV list)
+  const stateList = parseCsvQuery(states)
+    .map(s => s.toUpperCase())
+    .filter(s => US_STATE_ABBRS.has(s));
+
+  if (stateList.length > 0) {
+    where.state = { in: stateList };
   }
 
   if (minBudget) {
@@ -78,14 +110,11 @@ export const getLeads = asyncHandler(async (req, res) => {
   const purchasedLeadIds = new Set(userPurchases.map(p => p.leadId));
 
   // Fetch ALL matching leads (no pagination yet - we'll paginate after filtering)
-  const [allMatchingLeads, total, userFavorites] = await Promise.all([
+  const [allMatchingLeads, userFavorites] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: { createdAt: 'desc' }
-      // No skip/take - fetch all to filter properly
     }),
-    prisma.lead.count({ where }),
-    // Get all user's favorited lead IDs for quick lookup
     prisma.userLeadFavorite.findMany({
       where: { userId: user.id },
       select: { leadId: true }
@@ -111,30 +140,57 @@ export const getLeads = asyncHandler(async (req, res) => {
       _count: true
     });
 
-    // Create map: leadId -> purchase count
     const purchaseCountMap = new Map();
     vendorPurchaseCounts.forEach(item => {
       purchaseCountMap.set(item.leadId, item._count);
     });
 
-    // Filter leads: exclude if purchase count >= limit
     filteredLeads = filteredLeads.filter(lead => {
       const count = purchaseCountMap.get(lead.id) || 0;
       return count < VENDOR_TYPE_PURCHASE_LIMIT;
     });
   }
 
-  // Calculate total filtered count (for pagination)
+  // Facets (computed on full filtered set)
+  let facets = undefined;
+  if (includeFacets === 'true') {
+    const stateCounts = new Map();
+    const serviceCounts = new Map();
+
+    for (const lead of filteredLeads) {
+      if (lead.state && US_STATE_ABBRS.has(String(lead.state).toUpperCase())) {
+        const s = String(lead.state).toUpperCase();
+        stateCounts.set(s, (stateCounts.get(s) || 0) + 1);
+      }
+
+      if (Array.isArray(lead.servicesNeeded)) {
+        for (const svc of lead.servicesNeeded) {
+          if (!svc) continue;
+          const key = String(svc);
+          serviceCounts.set(key, (serviceCounts.get(key) || 0) + 1);
+        }
+      }
+    }
+
+    facets = {
+      states: Array.from(stateCounts.entries())
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value)),
+      services: Array.from(serviceCounts.entries())
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+    };
+  }
+
   const totalFiltered = filteredLeads.length;
 
   // Now paginate the filtered results
-  const paginationSkip = (parseInt(page) - 1) * parseInt(limit);
-  const paginatedLeads = filteredLeads.slice(paginationSkip, paginationSkip + parseInt(limit));
+  const paginationSkip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+  const paginatedLeads = filteredLeads.slice(paginationSkip, paginationSkip + parseInt(limit, 10));
 
   const favoritedLeadIds = new Set(userFavorites.map(f => f.leadId));
   const purchasedLeadsMap = new Map(userPurchases.map(p => [p.leadId, p.purchasedAt]));
 
-  // Return only masked info for available leads
   res.json({
     success: true,
     leads: paginatedLeads.map(lead => {
@@ -152,20 +208,21 @@ export const getLeads = asyncHandler(async (req, res) => {
         servicesNeeded: lead.servicesNeeded,
         price: parseFloat(lead.price),
         status: lead.status,
-        description: lead.description, // Package description
+        description: lead.description,
         ethnicReligious: lead.ethnicReligious,
         tags: dynamicTags,
         createdAt: lead.createdAt,
         active: lead.active,
-        purchasedAt: purchasedAt || null // Include purchase date for purchased leads
+        purchasedAt: purchasedAt || null
       };
     }),
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       total: totalFiltered,
-      totalPages: Math.ceil(totalFiltered / limit)
-    }
+      totalPages: Math.ceil(totalFiltered / parseInt(limit, 10))
+    },
+    ...(facets ? { facets } : {})
   });
 });
 
@@ -185,7 +242,6 @@ export const getLead = asyncHandler(async (req, res) => {
     throw new AppError('Lead not found', 404, 'NOT_FOUND');
   }
 
-  // Check if user has purchased this lead
   const purchase = await prisma.purchase.findUnique({
     where: {
       userId_leadId: {
@@ -195,7 +251,6 @@ export const getLead = asyncHandler(async (req, res) => {
     }
   });
 
-  // If purchased, return full info. Otherwise, masked info only.
   res.json({
     success: true,
     lead: {

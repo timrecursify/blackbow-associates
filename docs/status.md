@@ -1,7 +1,7 @@
 # BlackBow Associates - Project Status
 
-**Last Updated:** December 13, 2025
-**Version:** 3.2.0
+**Last Updated:** December 18, 2025
+**Version:** 3.2.2
 **Overall Status:** 🟢 **LIVE IN PRODUCTION** (Accepting Real Payments)
 **Session:** 18 - Signup Flow & Referral Attribution Fixes
 
@@ -13,11 +13,68 @@
 |-----------|--------|-------|
 | Backend API | 🟢 **Operational** | Running on port 3450, 26+ endpoints functional, v1.11.0 |
 | Frontend | 🟢 **Operational** | Running on port 3001, 9 pages implemented, CRM beta live |
-| Database | 🟢 **Operational** | PostgreSQL via Supabase, 100% schema aligned (12 tables verified) |
-| Authentication | 🟢 **Functional** | Supabase JWT auth, full authentication event logging |
+| Database | 🟢 **Operational** | Native PostgreSQL 15 (localhost:5432) |
+| Authentication | 🟢 **Functional** | Custom JWT + Google OAuth (cookie + JWT) |
 | Security | 🟢 **ENTERPRISE-GRADE** | 100% DeSaaS compliant, dual rate limiting, audit logging |
 | Compliance | 🟢 **100% DESAAS** | All audit, logging, and security standards met |
 | Cloudflare Tunnel | 🟢 **Configured** | Domains routed to services |
+
+---
+
+
+**2025-12-18 - v3.2.2 - Marketplace Filters + Webhook Safety + Ops Hardening** 🔧
+
+**Agent:** cursor-ide  
+**Status:** ✅ READY TO DEPLOY
+
+### Backend
+- Fixed Stripe `payment_intent.succeeded` webhook handler crash (removed duplicate log block referencing undefined variables).
+- Sanitized Pipedrive axios error logging to avoid leaking request config/`api_token` into logs.
+- Updated `backend/scripts/backup.sh` to auto-load Restic config from `/home/newadmin/infrastructure/backups/restic.env` when present, enabling off-server backups on the VPS.
+
+### Frontend
+- Removed sensitive debug `console.log` statements (including cookie output) from `OnboardingRoute` auth checks.
+- Marketplace filters now use **server-side filtering + facets**:
+  - Sends `states`, `servicesNeeded`, `location` to backend
+  - Uses `includeFacets=true` and renders state/service options with counts
+  - Stops building filter options from the current page of leads (prevents “junk/all regions” filter UX)
+
+### VPS Ops (current state + required actions)
+- Centralized logs: ✅ local `/var/log/desaas` (BlackBow logs rotating)
+- Log archival off-box: ⚠️ `log-archival-service` is currently stopped (should be restarted)
+- Server backups: ✅ `backups-daily.timer` and `backups-prune.timer` active
+- BlackBow DB dumps: ✅ running nightly, but **were not going off-box** until Restic env is loaded (this change enables it; verify on next run)
+
+---
+
+**2025-12-18 - v3.2.1 - Rate Limit + Auth/Referrals Stabilization** 🔧
+
+**Agent:** cursor-ide
+**Machine:** VPS
+**Status:** ✅ DEPLOYED TO PRODUCTION
+
+### Backend Fixes
+- Fixed production 429s causing "no leads" by making the global API limiter **user-aware** (rate limit by userId when authenticated, IP only when anonymous).
+- Added `backend/src/middleware/rateLimitIdentity.js` to extract userId from JWT (Authorization header or OAuth cookie) **before** rate limiting.
+- Updated `backend/src/middleware/rateLimiter.js` keying to use `req.rateLimitUserId` and increased allowance for normal authenticated UI usage.
+- Added `authLimiter` to Google OAuth endpoints to prevent login redirect loops from triggering 429s.
+- Throttled “Incomplete Leads After Sync” Telegram warnings to avoid spam (cooldown-based alerts) and improved missing-field labeling (city/state/location).
+
+### Frontend Fixes
+- Fixed auth client naming collision in `frontend/src/services/api.ts` (refresh token flow).
+- Fixed incorrect `getCurrentUser()` usage (wrong destructuring) that could cause repeated auth checks / noisy calls.
+- Fixed referrals "payout details" calls to use the correct API base (Axios client) instead of `fetch(/api/...)` hitting the frontend origin.
+
+### Files Modified
+- `backend/src/index.js`
+- `backend/src/middleware/rateLimiter.js`
+- `backend/src/routes/auth.routes.js`
+- `frontend/src/services/api.ts`
+- `frontend/src/services/authAPI.ts`
+- `frontend/src/pages/OnboardingPage.tsx`
+- `frontend/src/components/BillingAddressModal.tsx`
+- `frontend/src/pages/account/ReferralsTab.tsx`
+- `frontend/src/components/PayoutDetailsModal.tsx`
 
 ---
 

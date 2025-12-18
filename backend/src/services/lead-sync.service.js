@@ -5,6 +5,25 @@ import axios from 'axios';
 
 const PIPEDRIVE_API_TOKEN = process.env.PIPEDRIVE_API_TOKEN;
 
+// Terms that indicate incomplete/generic location data
+const INVALID_LOCATION_TERMS = [
+  'other destinations',
+  'other destination',
+  'location tbd',
+  'south florida',
+  'metro',
+  'destinations'
+];
+
+/**
+ * Check if location needs to be re-synced
+ */
+const needsLocationSync = (location, state) => {
+  if (!location || !state) return true;
+  const lower = location.toLowerCase().trim();
+  return INVALID_LOCATION_TERMS.some(term => lower.includes(term));
+};
+
 /**
  * Sync incomplete leads from Pipedrive
  * Checks for leads missing location or other critical data
@@ -14,28 +33,29 @@ export const syncIncompleteLeads = async () => {
   try {
     logger.info('Starting incomplete leads sync job');
 
-    // Find leads that are missing critical data
     // Only check leads created more than 10 minutes ago (to allow pixel time to populate)
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
 
+    // Find leads that are missing critical data OR have generic locations
     const incompleteLeads = await prisma.lead.findMany({
       where: {
         createdAt: {
-          gte: oneDayAgo, // Only check leads from last 24 hours
-          lte: tenMinutesAgo // Created more than 10 minutes ago
+          gte: thirtyDaysAgo, // Check leads from last 30 days
+          lte: tenMinutesAgo  // Created more than 10 minutes ago
         },
-        incompleteNotifiedAt: null, // Only leads that haven't been notified yet
         OR: [
           { location: null },
           { location: 'Location TBD' },
+          { location: { contains: 'Other Destinations', mode: 'insensitive' } },
+          { location: { contains: 'Other Destination', mode: 'insensitive' } },
           { city: null },
           { state: null },
           { weddingDate: null },
           { servicesNeeded: { equals: [] } }
         ]
       },
-      take: 50 // Limit to 50 per run to avoid overload
+      take: 500 // Process up to 100 per run
     });
 
     if (incompleteLeads.length === 0) {
@@ -66,15 +86,11 @@ export const syncIncompleteLeads = async () => {
 
         const deal = dealResponse.data.data;
 
-        // Transform deal to lead with fresh data
+        // Transform deal to lead with fresh data (now includes visitor location fallback)
         const freshLeadData = await transformDealToLead(deal);
 
         // Check if data is still incomplete
-        const isStillIncomplete = 
-          !freshLeadData.location || 
-          freshLeadData.location === 'Location TBD' ||
-          !freshLeadData.city ||
-          !freshLeadData.state ||
+        const isStillIncomplete = needsLocationSync(freshLeadData.location, freshLeadData.state) ||
           !freshLeadData.weddingDate ||
           !freshLeadData.servicesNeeded || 
           freshLeadData.servicesNeeded.length === 0;
@@ -89,24 +105,13 @@ export const syncIncompleteLeads = async () => {
             missingFields: []
           });
 
-          if (!freshLeadData.location || freshLeadData.location === 'Location TBD') {
-            stillIncompleteList[stillIncompleteList.length - 1].missingFields.push('location');
-          }
-          if (!freshLeadData.city) {
-            stillIncompleteList[stillIncompleteList.length - 1].missingFields.push('city');
-          }
-          if (!freshLeadData.state) {
-            stillIncompleteList[stillIncompleteList.length - 1].missingFields.push('state');
-          }
-          if (!freshLeadData.weddingDate) {
-            stillIncompleteList[stillIncompleteList.length - 1].missingFields.push('weddingDate');
-          }
-          if (!freshLeadData.servicesNeeded || freshLeadData.servicesNeeded.length === 0) {
-            stillIncompleteList[stillIncompleteList.length - 1].missingFields.push('services');
-          }
+          const lastItem = stillIncompleteList[stillIncompleteList.length - 1];
+          if (needsLocationSync(freshLeadData.location, freshLeadData.state)) lastItem.missingFields.push('location');
+          if (!freshLeadData.weddingDate) lastItem.missingFields.push('weddingDate');
+          if (!freshLeadData.servicesNeeded || freshLeadData.servicesNeeded.length === 0) lastItem.missingFields.push('services');
         }
 
-        // Update lead in database
+        // Update lead in database (always update to get latest data)
         await prisma.lead.update({
           where: { id: lead.id },
           data: {
@@ -118,6 +123,7 @@ export const syncIncompleteLeads = async () => {
             servicesNeeded: freshLeadData.servicesNeeded,
             maskedInfo: freshLeadData.maskedInfo,
             fullInfo: freshLeadData.fullInfo,
+            incompleteNotifiedAt: null, // Reset notification so we can re-check
             updatedAt: new Date()
           }
         });
@@ -128,7 +134,8 @@ export const syncIncompleteLeads = async () => {
           logger.info('Lead synced and completed', {
             leadId: lead.id,
             dealId: lead.pipedriveDealId,
-            personName: freshLeadData.personName
+            personName: freshLeadData.personName,
+            newLocation: freshLeadData.location
           });
         }
 
@@ -145,7 +152,7 @@ export const syncIncompleteLeads = async () => {
     // Send Telegram notification if there are still incomplete leads
     if (stillIncomplete > 0) {
       const incompleteDetails = stillIncompleteList
-        .slice(0, 10) // Limit to first 10 for notification
+        .slice(0, 10)
         .map(l => `• ${l.personName} (Deal #${l.dealId}): Missing ${l.missingFields.join(', ')}`)
         .join('\n');
 
@@ -153,28 +160,23 @@ export const syncIncompleteLeads = async () => {
 
       await notifyTelegram(message, 'warn');
 
-      // Mark these leads as notified so we don't spam about them again
+      // Mark these leads as notified
       const leadIdsToMark = stillIncompleteList.map(l => l.leadId);
       await prisma.lead.updateMany({
         where: { id: { in: leadIdsToMark } },
         data: { incompleteNotifiedAt: new Date() }
       });
-      logger.info(`Marked ${leadIdsToMark.length} leads as notified for incomplete data`);
     }
 
     // Send success notification if leads were updated
     if (updated > 0) {
       await notifyTelegram(
-        `✅ *Lead Sync Complete*\n\n${updated} leads updated with fresh data from Pipedrive`,
+        `✅ *Lead Sync Complete*\n\n${updated} leads updated with fresh location data from Pipedrive`,
         'success'
       );
     }
 
-    logger.info('Incomplete leads sync completed', {
-      synced,
-      updated,
-      stillIncomplete
-    });
+    logger.info('Incomplete leads sync completed', { synced, updated, stillIncomplete });
 
     return { synced, updated, stillIncomplete };
 
@@ -193,6 +195,4 @@ export const syncIncompleteLeads = async () => {
   }
 };
 
-export default {
-  syncIncompleteLeads
-};
+export default { syncIncompleteLeads };

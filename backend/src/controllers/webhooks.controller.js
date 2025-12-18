@@ -153,20 +153,6 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
         throw error;
       }
 
-      logger.info('Deposit processed successfully via webhook', {
-        userId,
-        email: user.email,
-        amount,
-        newBalance,
-        paymentIntentId: paymentIntent.id,
-        timestamp: new Date().toISOString()
-      });
-
-      await notifyTelegram(
-        `💰 Deposit successful: ${user.email} added $${amount}`,
-        'success'
-      );
-
       break;
     }
 

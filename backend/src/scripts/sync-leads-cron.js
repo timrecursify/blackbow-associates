@@ -2,9 +2,10 @@
 
 /**
  * Cron job to sync incomplete leads from Pipedrive
- * Runs hourly to check for leads missing location/data
+ * Runs every 15 minutes to check for leads missing location/data
  */
 
+import 'dotenv/config';
 import { syncIncompleteLeads } from '../services/lead-sync.service.js';
 import logger from '../utils/logger.js';
 

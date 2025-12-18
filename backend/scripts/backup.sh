@@ -332,6 +332,17 @@ main() {
     
     # Change to project root
     cd "$PROJECT_ROOT" || error_exit "Failed to change to project root"
+
+    # VPS integration: load Restic environment if available (enables off-server backups)
+    # - Server-wide restic config lives at /home/newadmin/infrastructure/backups/restic.env
+    # - We only source it if RESTIC_REPOSITORY/RESTIC_PASSWORD are not already set
+    if [ -z "${RESTIC_REPOSITORY:-}" ] && [ -z "${RESTIC_PASSWORD:-}" ] && [ -f "/home/newadmin/infrastructure/backups/restic.env" ]; then
+        set -a
+        # shellcheck disable=SC1091
+        source "/home/newadmin/infrastructure/backups/restic.env" || true
+        set +a
+        log "INFO" "Loaded Restic environment from /home/newadmin/infrastructure/backups/restic.env"
+    fi
     
     # Setup
     parse_database_url

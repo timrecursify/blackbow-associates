@@ -41,7 +41,7 @@ export const BillingAddressModal: React.FC<BillingAddressModalProps> = ({
   // Load user's location on mount
   useEffect(() => {
     if (isOpen) {
-      authAPI.getCurrentUser().then(({ user }) => {
+      authAPI.getCurrentUser().then((user) => {
         if (user?.location) {
           // Parse location (format: "City, State" or "City,State")
           const parts = user.location.split(',').map((p: string) => p.trim());

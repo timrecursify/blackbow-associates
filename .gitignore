@@ -57,6 +57,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+.claude/
+docs/tmp/
 .claude-work-log.md
 .claude-session-report.md
 

@@ -441,30 +441,26 @@ const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children 
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('[OnboardingRoute] Starting auth check...');
-      console.log('[OnboardingRoute] Document cookies:', document.cookie);
-      
       // First quick check for localStorage token
       const hasLocalToken = isAuthenticated();
-      console.log('[OnboardingRoute] Has localStorage token:', hasLocalToken);
-      
+
       if (hasLocalToken) {
-        console.log('[OnboardingRoute] Using localStorage token, setting signed in');
         setIsSignedIn(true);
         setCheckingAuth(false);
         return;
       }
 
       // If no localStorage token, try API call (works with OAuth cookies)
-      console.log('[OnboardingRoute] No localStorage token, trying API call with cookies...');
       try {
-        const response = await usersAPI.getProfile();
-        console.log('[OnboardingRoute] API call succeeded:', response);
+        await usersAPI.getProfile();
         // API succeeded - user is authenticated via cookies
         setIsSignedIn(true);
       } catch (error: any) {
-        console.error('[OnboardingRoute] API call failed:', error?.response?.status, error?.message);
-        console.error('[OnboardingRoute] Full error:', error);
+        // Don't log cookies/tokens; keep errors minimal in production
+        logger.warn('OnboardingRoute auth check failed', {
+          component: 'OnboardingRoute',
+          status: error?.response?.status
+        });
         // API failed - user is not authenticated
         setIsSignedIn(false);
       } finally {
@@ -474,8 +470,6 @@ const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children 
 
     checkAuth();
   }, []);
-
-  console.log('[OnboardingRoute] Render state - checkingAuth:', checkingAuth, 'isSignedIn:', isSignedIn);
 
   // Wait for auth check to complete
   if (checkingAuth || isSignedIn === null) {
@@ -490,11 +484,9 @@ const OnboardingRoute: React.FC<{ children: React.ReactElement }> = ({ children 
   }
 
   if (!isSignedIn) {
-    console.log('[OnboardingRoute] Not signed in, redirecting to /sign-in');
     return <Navigate to="/sign-in" replace />;
   }
 
-  console.log('[OnboardingRoute] Signed in, rendering children');
   return children;
 };
 

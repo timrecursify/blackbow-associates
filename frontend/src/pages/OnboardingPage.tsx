@@ -30,7 +30,7 @@ export const OnboardingPage: React.FC = () => {
 
   useEffect(() => {
     // Pre-fill business name from current user profile
-    authAPI.getCurrentUser().then(({ user }) => {
+    authAPI.getCurrentUser().then((user) => {
       if (user?.businessName) {
         // Only set if not already filled (e.g., OAuth users may already have it from Google profile)
         setFormData(prev => {

@@ -65,7 +65,7 @@ apiClient.interceptors.response.use(
 
       try {
         // Attempt to refresh the token
-        const response = await authAPI.refreshToken();
+        const response = await tokenAuthAPI.refreshToken();
         processQueue(null, response.accessToken);
 
         // Retry the original request with new token

@@ -22,10 +22,10 @@ import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// Google OAuth routes (Direct to Google - no Zitadel)
-router.get('/google/login', initiateGoogleLogin);
-router.get('/google/callback', handleGoogleCallback);
-router.post('/google/logout', handleOAuthLogout);
+// Google OAuth routes (public but rate limited)
+router.get('/google/login', authLimiter, initiateGoogleLogin);
+router.get('/google/callback', authLimiter, handleGoogleCallback);
+router.post('/google/logout', authLimiter, handleOAuthLogout);
 
 // Authentication routes (public - rate limited)
 router.post('/register', authLimiter, register);

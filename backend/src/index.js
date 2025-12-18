@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { logger, logRequest, notifyTelegram } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { attachRateLimitIdentity } from "./middleware/rateLimitIdentity.js";
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { testConnection, disconnect } from './config/database.js';
 import { requestIdMiddleware } from './middleware/requestId.js';
@@ -149,6 +150,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Cookie parser (for OAuth sessions)
 app.use(cookieParser());
+
+// Attach identity for rate limiting (must be after cookieParser)
+app.use(attachRateLimitIdentity);
 
 // Request logging
 app.use(morgan('combined', {

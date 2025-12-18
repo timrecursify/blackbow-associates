@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { logger } from '../../utils/logger';
-import { adminAPI } from '../../services/api';
+import { adminAPI, notificationsAPI } from '../../services/api';
 import { format } from 'date-fns';
 import { Gift, Users, DollarSign, TrendingUp, Search, Check, X, Eye, RefreshCw, ToggleLeft, ToggleRight, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -203,6 +203,7 @@ export default function ReferralsTab() {
   const [totalPages, setTotalPages] = useState(1);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expandedReferrer, setExpandedReferrer] = useState<string | null>(null);
+  const [unreadPayoutNotifications, setUnreadPayoutNotifications] = useState<number>(0);
 
   const fetchData = useCallback(async () => {
     try {
@@ -270,6 +271,24 @@ export default function ReferralsTab() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Show a lightweight "new payout request" indicator based on unread notifications
+  useEffect(() => {
+    const fetchUnreadPayoutNotifs = async () => {
+      try {
+        const res = await notificationsAPI.list(1, 50, true);
+        const notifs = res.data?.notifications || [];
+        const count = notifs.filter((n: { type?: string }) => n.type === 'PAYOUT_REQUESTED').length;
+        setUnreadPayoutNotifications(count);
+      } catch {
+        // non-blocking
+      }
+    };
+
+    fetchUnreadPayoutNotifs();
+    const id = window.setInterval(fetchUnreadPayoutNotifs, 30000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const handleViewReferrer = async (userId: string) => {
     try {
@@ -433,6 +452,11 @@ export default function ReferralsTab() {
               <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
                 {pendingPayouts.length}
               </span>
+              {unreadPayoutNotifications > 0 && (
+                <span className="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-bold rounded-full">
+                  New
+                </span>
+              )}
             </h2>
             <button
               onClick={handleRefresh}

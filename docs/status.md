@@ -41,7 +41,7 @@
 
 ### VPS Ops (current state + required actions)
 - Centralized logs: ✅ local `/var/log/desaas` (BlackBow logs rotating)
-- Log archival off-box: ⚠️ `log-archival-service` is currently stopped (should be restarted)
+- Log archival off-box: ✅ log-archival-service restarted (PM2)
 - Server backups: ✅ `backups-daily.timer` and `backups-prune.timer` active
 - BlackBow DB dumps: ✅ Restic off-box upload verified (tag: blackbow-db)
 

@@ -63,8 +63,16 @@ export const MarketplacePage: React.FC = () => {
 
   // Filters
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  
+  // Master list of US states for filter (always visible)
+  const US_STATES = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
+  ];
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const [bulkPurchasing, setBulkPurchasing] = useState(false);
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
@@ -102,7 +110,7 @@ export const MarketplacePage: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filters change
-  }, [searchTerm, selectedStates, selectedServices]);
+  }, [searchTerm, selectedStates]);
 
   // Restore saved filters on mount
   useEffect(() => {
@@ -112,7 +120,6 @@ export const MarketplacePage: React.FC = () => {
         const parsed = JSON.parse(savedFilters);
         if (parsed.searchTerm) setSearchTerm(parsed.searchTerm);
         if (parsed.selectedStates) setSelectedStates(parsed.selectedStates);
-        if (parsed.selectedServices) setSelectedServices(parsed.selectedServices);
         if (parsed.sortBy) setSortBy(parsed.sortBy);
         if (parsed.viewMode) setViewMode(parsed.viewMode);
         logger.info('Restored marketplace filters from localStorage');
@@ -128,19 +135,18 @@ export const MarketplacePage: React.FC = () => {
     const filters = {
       searchTerm,
       selectedStates,
-      selectedServices,
       sortBy,
       viewMode
     };
     localStorage.setItem('marketplaceFilters', JSON.stringify(filters));
-  }, [searchTerm, selectedStates, selectedServices, sortBy, viewMode]);
+  }, [searchTerm, selectedStates, sortBy, viewMode]);
 
   useEffect(() => {
     fetchLeads();
     fetchBalance();
     fetchPurchasedLeads();
     fetchBillingStatus();
-  }, [favoritesOnly, currentPage, selectedStates, selectedServices, searchTerm]);
+  }, [favoritesOnly, currentPage, selectedStates, searchTerm]);
 
   useEffect(() => {
     applyFiltersAndSort();
@@ -154,7 +160,6 @@ export const MarketplacePage: React.FC = () => {
         // Server-side filtering
         ...(searchTerm ? { location: searchTerm } : {}),
         ...(selectedStates.length > 0 ? { states: selectedStates.join(',') } : {}),
-        ...(selectedServices.length > 0 ? { servicesNeeded: selectedServices.join(',') } : {}),
         favoritesOnly: favoritesOnly ? 'true' : 'false',
         includeFacets: 'true',
         page: currentPage,
@@ -377,8 +382,6 @@ export const MarketplacePage: React.FC = () => {
     }
   };
 
-  const getUniqueStates = () => Array.from(new Set(allLeads.map(l => l.state).filter(Boolean))).sort();
-  const getUniqueServices = () => Array.from(new Set(allLeads.flatMap(l => l.servicesNeeded))).sort();
 
   const formatDate = (date: string | null) => {
     if (!date) return 'TBD';
@@ -578,74 +581,122 @@ export const MarketplacePage: React.FC = () => {
 
         {/* Filters */}
         {showFilters && (
-          <div className="mb-4 sm:mb-6 p-5 sm:p-5 bg-gray-50 transition-colors duration-200">
-            {/* Favorites Only Toggle */}
-            <div className="mb-5 pb-5 border-b border-gray-200 transition-colors duration-200">
-              <button
-                onClick={() => setFavoritesOnly(!favoritesOnly)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                  favoritesOnly
-                    ? 'bg-black'
-                    : 'bg-white'
-                }`}
-              >
-                <Star
-                  size={18}
-                  className={favoritesOnly ? 'fill-white' : ''}
-                />
-                <span>Favorites Only</span>
-              </button>
+          <div className="mb-4 sm:mb-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Filter Header */}
+            <div className="px-4 py-3 sm:px-5 sm:py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <SlidersHorizontal size={18} className="text-gray-500" />
+                <span className="font-semibold text-gray-800">Filters</span>
+                {(selectedStates.length > 0 || favoritesOnly) && (
+                  <span className="px-2 py-0.5 bg-black text-white text-xs font-medium rounded-full">
+                    {selectedStates.length + (favoritesOnly ? 1 : 0)} active
+                  </span>
+                )}
+              </div>
+              {(selectedStates.length > 0 || favoritesOnly) && (
+                <button
+                  onClick={() => {
+                    setSelectedStates([]);
+                    setFavoritesOnly(false);
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors flex items-center gap-1"
+                >
+                  <X size={14} />
+                  Clear all
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 min-w-0">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">State</p>
-                <div className="flex flex-wrap gap-2">
-                  {(facets?.states?.length ? facets.states.map(s => s.value) : getUniqueStates()).map(state => (
-                    <button
-                      key={state}
-                      onClick={() => setSelectedStates(prev =>
-                        prev.includes(state!) ? prev.filter(s => s !== state) : [...prev, state!]
-                      )}
-                      className={`px-3 py-2 text-sm font-medium border rounded transition-all whitespace-nowrap min-h-[40px] ${
-                        selectedStates.includes(state!)
-                          ? 'bg-black'
-                          : 'bg-white'
-                      }`}
-                    >
-                      {state}
-                      {facets?.states?.length ? (
-                        <span className="ml-2 text-xs opacity-70">
-                          {facets.states.find(s => s.value === state)?.count ?? 0}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
+            <div className="p-4 sm:p-5 space-y-5">
+              {/* Favorites Toggle */}
+              <div>
+                <button
+                  onClick={() => setFavoritesOnly(!favoritesOnly)}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg font-medium transition-all border-2 ${
+                    favoritesOnly
+                      ? 'bg-amber-50 border-amber-400 text-amber-700'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Star
+                    size={18}
+                    className={favoritesOnly ? 'fill-amber-400 text-amber-400' : 'text-gray-400'}
+                  />
+                  <span>Favorites Only</span>
+                </button>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Services</p>
-                <div className="flex flex-wrap gap-2">
-                  {(facets?.services?.length ? facets.services.map(s => s.value) : getUniqueServices()).map(service => (
+
+              {/* State Filter */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Filter by State</p>
+                  {selectedStates.length > 0 && (
                     <button
-                      key={service}
-                      onClick={() => setSelectedServices(prev =>
-                        prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]
-                      )}
-                      className={`px-3 py-2 text-sm font-medium border rounded transition-all whitespace-nowrap min-h-[40px] ${
-                        selectedServices.includes(service)
-                          ? 'bg-black'
-                          : 'bg-white'
-                      }`}
+                      onClick={() => setSelectedStates([])}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
                     >
-                      {service}
-                      {facets?.services?.length ? (
-                        <span className="ml-2 text-xs opacity-70">
-                          {facets.services.find(s => s.value === service)?.count ?? 0}
-                        </span>
-                      ) : null}
+                      Clear states
                     </button>
-                  ))}
+                  )}
+                </div>
+                
+                {/* Selected States Pills */}
+                {selectedStates.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3 pb-3 border-b border-gray-200">
+                    {selectedStates.map(state => (
+                      <button
+                        key={`selected-${state}`}
+                        onClick={() => setSelectedStates(prev => prev.filter(s => s !== state))}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors"
+                      >
+                        {state}
+                        <X size={14} className="opacity-70" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* State Grid */}
+                <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-12 lg:grid-cols-17 gap-1.5 sm:gap-2">
+                  {US_STATES.map(state => {
+                    const isSelected = selectedStates.includes(state);
+                    const facetCount = facets?.states?.find(s => s.value === state)?.count ?? 0;
+                    const hasLeads = facetCount > 0 || selectedStates.length === 0;
+                    
+                    return (
+                      <button
+                        key={state}
+                        onClick={() => setSelectedStates(prev =>
+                          prev.includes(state) ? prev.filter(s => s !== state) : [...prev, state]
+                        )}
+                        className={`relative px-2 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all min-h-[36px] sm:min-h-[40px] ${
+                          isSelected
+                            ? 'bg-black text-white shadow-md ring-2 ring-black ring-offset-1'
+                            : hasLeads
+                              ? 'bg-white text-gray-700 border border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                              : 'bg-gray-100 text-gray-400 border border-gray-100 cursor-pointer hover:bg-gray-200'
+                        }`}
+                        title={facetCount > 0 ? `${facetCount} leads in ${state}` : `No leads in ${state}`}
+                      >
+                        {state}
+                        {facetCount > 0 && !isSelected && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* Legend */}
+                <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span>Has leads</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-4 h-4 bg-black rounded" />
+                    <span>Selected</span>
+                  </div>
                 </div>
               </div>
             </div>

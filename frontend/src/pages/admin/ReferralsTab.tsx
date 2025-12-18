@@ -1,8 +1,121 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { logger } from '../../utils/logger';
 import { adminAPI } from '../../services/api';
 import { format } from 'date-fns';
-import { Gift, Users, DollarSign, TrendingUp, Search, Check, X, Eye, RefreshCw, ToggleLeft, ToggleRight, Copy, Link, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gift, Users, DollarSign, TrendingUp, Search, Check, X, Eye, RefreshCw, ToggleLeft, ToggleRight, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+
+type BackendReferralOverview = {
+  totalReferred: number;
+  commissions?: {
+    pending?: { amount?: number };
+  };
+  payouts?: {
+    pending?: { count?: number };
+    paid?: { amount?: number };
+  };
+};
+
+type BackendReferralOverviewResponse = {
+  success: boolean;
+  overview?: BackendReferralOverview;
+};
+
+type BackendUserLite = {
+  id: string;
+  email: string;
+  businessName: string;
+};
+
+type BackendPayout = {
+  id: string;
+  amount?: number;
+  status: string;
+  requestedAt: string;
+  paidAt?: string | null;
+  notes?: string | null;
+  user?: BackendUserLite;
+};
+
+type BackendPendingPayoutsResponse = {
+  success: boolean;
+  payouts?: BackendPayout[];
+};
+
+type BackendReferrerListItem = {
+  id: string;
+  email: string;
+  businessName: string;
+  referralCode: string;
+  referralEnabled: boolean;
+  signupDate: string;
+  stats?: {
+    totalReferred?: number;
+    totalEarned?: number;
+    pendingAmount?: number;
+    paidAmount?: number;
+  };
+};
+
+type BackendReferrersResponse = {
+  success: boolean;
+  referrers?: BackendReferrerListItem[];
+  pagination?: { totalPages?: number };
+};
+
+type BackendReferralItem = {
+  id: string;
+  email: string;
+  businessName: string;
+  signupDate: string;
+  totalPurchases?: number;
+  totalSpent?: number;
+};
+
+type BackendCommissionItem = {
+  id: string;
+  amount?: number;
+  status: string;
+  createdAt: string;
+  sourceUser?: { email?: string };
+};
+
+type BackendPayoutHistoryItem = {
+  id: string;
+  amount?: number;
+  status: string;
+  requestedAt: string;
+  paidAt?: string | null;
+  notes?: string | null;
+};
+
+type BackendReferrerDetailsPayload = {
+  id: string;
+  email: string;
+  businessName: string;
+  referralCode: string;
+  referralEnabled: boolean;
+  signupDate: string;
+  stats?: {
+    totalReferred?: number;
+    totalEarned?: number;
+    pendingAmount?: number;
+    paidAmount?: number;
+  };
+  referrals?: BackendReferralItem[];
+  commissions?: BackendCommissionItem[];
+  payouts?: BackendPayoutHistoryItem[];
+};
+
+type BackendReferrerDetailsResponse = {
+  success: boolean;
+  referrer?: BackendReferrerDetailsPayload;
+};
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return 'Unknown error';
+}
 
 interface AdminReferralOverview {
   totalReferrals: number;
@@ -42,7 +155,8 @@ interface ReferredUser {
   id: string;
   email: string;
   businessName: string;
-  totalPurchases: number;
+  totalPurchasesCount: number;
+  totalSpent: number;
   totalCommission: number;
   createdAt: string;
 }
@@ -90,11 +204,7 @@ export default function ReferralsTab() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expandedReferrer, setExpandedReferrer] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [currentPage, searchTerm]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [overviewRes, payoutsRes, referrersRes] = await Promise.all([
@@ -103,25 +213,121 @@ export default function ReferralsTab() {
         adminAPI.getAllReferrers(currentPage, 50, searchTerm || undefined),
       ]);
 
-      setOverview(overviewRes.data);
-      setPendingPayouts(payoutsRes.data.payouts || []);
-      setReferrers(referrersRes.data.referrers || []);
-      setTotalPages(Math.ceil((referrersRes.data.pagination?.total || 0) / 50));
+      // Backend responses are wrapped as { success: true, ... } and have nested objects.
+      const overviewPayload = overviewRes.data as BackendReferralOverviewResponse;
+      const overviewData = overviewPayload?.overview;
+      setOverview({
+        totalReferrals: overviewData?.totalReferred ?? 0,
+        totalCommissionsOwed: overviewData?.commissions?.pending?.amount ?? 0,
+        pendingPayoutRequests: overviewData?.payouts?.pending?.count ?? 0,
+        totalPaidOut: overviewData?.payouts?.paid?.amount ?? 0,
+      });
+
+      const payoutsPayload = payoutsRes.data as BackendPendingPayoutsResponse;
+      const payouts = Array.isArray(payoutsPayload?.payouts) ? payoutsPayload.payouts : [];
+      setPendingPayouts(
+        payouts.map((p) => ({
+          id: p.id,
+          referrer: {
+            id: p.user?.id ?? '',
+            email: p.user?.email ?? '',
+            businessName: p.user?.businessName ?? '',
+          },
+          amount: p.amount ?? 0,
+          status: p.status,
+          requestedAt: p.requestedAt,
+          processedAt: p.paidAt ?? null,
+          notes: p.notes ?? null,
+        }))
+      );
+
+      const referrersPayload = referrersRes.data as BackendReferrersResponse;
+      const referrersRaw = Array.isArray(referrersPayload?.referrers) ? referrersPayload.referrers : [];
+      setReferrers(
+        referrersRaw.map((r) => ({
+          id: r.id,
+          email: r.email,
+          businessName: r.businessName,
+          referralCode: r.referralCode,
+          referralEnabled: !!r.referralEnabled,
+          referralCount: r.stats?.totalReferred ?? 0,
+          totalEarned: r.stats?.totalEarned ?? 0,
+          pendingAmount: r.stats?.pendingAmount ?? 0,
+          paidAmount: r.stats?.paidAmount ?? 0,
+          createdAt: r.signupDate,
+        }))
+      );
+
+      setTotalPages(referrersPayload?.pagination?.totalPages ?? 1);
     } catch (error) {
-      logger.error('Failed to fetch referral data:', error);
+      logger.error('Failed to fetch referral data', { error: getErrorMessage(error) });
       alert('Failed to fetch referral data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleViewReferrer = async (userId: string) => {
     try {
       const response = await adminAPI.getReferrerDetails(userId);
-      setSelectedReferrer(response.data);
+      const payload = response.data as BackendReferrerDetailsResponse;
+      const ref = payload?.referrer;
+      const referrals = Array.isArray(ref?.referrals) ? ref.referrals : [];
+      const commissions = Array.isArray(ref?.commissions) ? ref.commissions : [];
+      const payouts = Array.isArray(ref?.payouts) ? ref.payouts : [];
+
+      const commissionByEmail = new Map<string, number>();
+      for (const c of commissions) {
+        const email = c?.sourceUser?.email;
+        if (!email) continue;
+        const prev = commissionByEmail.get(email) ?? 0;
+        commissionByEmail.set(email, prev + (c.amount ?? 0));
+      }
+
+      setSelectedReferrer({
+        referrer: {
+          id: ref?.id ?? '',
+          email: ref?.email ?? '',
+          businessName: ref?.businessName ?? '',
+          referralCode: ref?.referralCode ?? '',
+          referralEnabled: !!ref?.referralEnabled,
+          referralCount: ref?.stats?.totalReferred ?? 0,
+          totalEarned: ref?.stats?.totalEarned ?? 0,
+          pendingAmount: ref?.stats?.pendingAmount ?? 0,
+          paidAmount: ref?.stats?.paidAmount ?? 0,
+          createdAt: ref?.signupDate ?? new Date().toISOString(),
+        },
+        referredUsers: referrals.map((u) => ({
+          id: u.id,
+          email: u.email,
+          businessName: u.businessName,
+          totalPurchasesCount: u.totalPurchases ?? 0,
+          totalSpent: u.totalSpent ?? 0,
+          totalCommission: commissionByEmail.get(u.email) ?? 0,
+          createdAt: u.signupDate,
+        })),
+        commissions: commissions.map((c) => ({
+          id: c.id,
+          amount: c.amount ?? 0,
+          status: c.status,
+          createdAt: c.createdAt,
+        })),
+        payouts: payouts.map((p) => ({
+          id: p.id,
+          amount: p.amount ?? 0,
+          status: p.status,
+          requestedAt: p.requestedAt,
+          processedAt: p.paidAt ?? null,
+          notes: p.notes ?? null,
+        })),
+      });
       setShowReferrerModal(true);
     } catch (error) {
-      logger.error('Failed to fetch referrer details:', error);
+      logger.error('Failed to fetch referrer details', { error: getErrorMessage(error) });
       alert('Failed to fetch referrer details');
     }
   };
@@ -136,23 +342,23 @@ export default function ReferralsTab() {
       setSelectedPayout(null);
       setPayoutNotes('');
       fetchData();
-    } catch (error: any) {
-      logger.error('Failed to mark payout as paid:', error);
-      alert(error.response?.data?.message || 'Failed to mark payout as paid');
+    } catch (error) {
+      logger.error('Failed to mark payout as paid', { error: getErrorMessage(error) });
+      alert('Failed to mark payout as paid');
     }
   };
 
-  const handleToggleReferral = async (userId: string, e?: React.MouseEvent) => {
+  const handleToggleReferral = async (userId: string, currentEnabled: boolean, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm('Are you sure you want to toggle this user\'s referral status?')) return;
 
     try {
-      await adminAPI.toggleUserReferral(userId);
+      await adminAPI.toggleUserReferral(userId, !currentEnabled);
       alert('Referral status toggled successfully');
       fetchData();
-    } catch (error: any) {
-      logger.error('Failed to toggle referral status:', error);
-      alert(error.response?.data?.message || 'Failed to toggle referral status');
+    } catch (error) {
+      logger.error('Failed to toggle referral status', { error: getErrorMessage(error) });
+      alert('Failed to toggle referral status');
     }
   };
 
@@ -168,7 +374,7 @@ export default function ReferralsTab() {
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (error) {
-      logger.error('Failed to copy:', error);
+      logger.error('Failed to copy', { error: getErrorMessage(error) });
     }
   };
 
@@ -356,10 +562,7 @@ export default function ReferralsTab() {
                       </div>
                       <div className="flex items-center gap-2 ml-2">
                         <div className="text-right">
-                          <div className="flex items-center gap-1 justify-end">
-                            <Users size={12} className="text-blue-600" />
-                            <span className="text-sm font-bold text-blue-600">{referrer.referralCount}</span>
-                          </div>
+                          <p className="text-sm font-bold text-blue-600">{referrer.referralCount ?? 0}</p>
                           <p className="text-xs text-gray-500">signups</p>
                         </div>
                         {expandedReferrer === referrer.id ? (
@@ -424,7 +627,7 @@ export default function ReferralsTab() {
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
                         <button
-                          onClick={(e) => handleToggleReferral(referrer.id, e)}
+                          onClick={(e) => handleToggleReferral(referrer.id, referrer.referralEnabled, e)}
                           className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
                             referrer.referralEnabled
                               ? 'bg-green-100 text-green-800'
@@ -500,9 +703,8 @@ export default function ReferralsTab() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-                          <Users size={14} />
-                          {referrer.referralCount}
+                        <span className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                          {referrer.referralCount ?? 0}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm font-semibold text-right">${(referrer.totalEarned ?? 0).toFixed(2)}</td>
@@ -510,7 +712,7 @@ export default function ReferralsTab() {
                       <td className="py-3 px-4 text-sm text-green-600 font-medium text-right">${(referrer.paidAmount ?? 0).toFixed(2)}</td>
                       <td className="py-3 px-4 text-center">
                         <button
-                          onClick={() => handleToggleReferral(referrer.id)}
+                          onClick={() => handleToggleReferral(referrer.id, referrer.referralEnabled)}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 ${
                             referrer.referralEnabled
                               ? 'bg-green-100 text-green-800'
@@ -634,15 +836,15 @@ export default function ReferralsTab() {
             {/* Referred Users */}
             <div className="mb-4 sm:mb-6">
               <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3">
-                Referred Users ({selectedReferrer.referredUsers.length})
+                Referred Users ({selectedReferrer.referredUsers?.length ?? 0})
               </h4>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 {/* Mobile: Cards */}
                 <div className="block sm:hidden divide-y divide-gray-200">
-                  {selectedReferrer.referredUsers.length === 0 ? (
+                  {(selectedReferrer.referredUsers?.length ?? 0) === 0 ? (
                     <div className="py-8 text-center text-sm text-gray-500">No referred users yet</div>
                   ) : (
-                    selectedReferrer.referredUsers.map((user) => (
+                    (selectedReferrer.referredUsers ?? []).map((user) => (
                       <div key={user.id} className="p-3">
                         <div className="flex justify-between items-start">
                           <div>
@@ -652,7 +854,9 @@ export default function ReferralsTab() {
                           <span className="text-sm font-semibold text-green-600">${(user.totalCommission ?? 0).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between mt-2 text-xs text-gray-500">
-                          <span>Purchases: ${(user.totalPurchases ?? 0).toFixed(2)}</span>
+                          <span>
+                            Purchases: {user.totalPurchasesCount ?? 0} • Spent: ${(user.totalSpent ?? 0).toFixed(2)}
+                          </span>
                           <span>{format(new Date(user.createdAt), 'MMM dd, yyyy')}</span>
                         </div>
                       </div>
@@ -671,16 +875,18 @@ export default function ReferralsTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedReferrer.referredUsers.length === 0 ? (
+                    {(selectedReferrer.referredUsers?.length ?? 0) === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-sm text-gray-500">No referred users yet</td>
                       </tr>
                     ) : (
-                      selectedReferrer.referredUsers.map((user) => (
+                      (selectedReferrer.referredUsers ?? []).map((user) => (
                         <tr key={user.id} className="border-t border-gray-100">
                           <td className="py-2 px-4 text-sm">{user.email}</td>
                           <td className="py-2 px-4 text-sm">{user.businessName}</td>
-                          <td className="py-2 px-4 text-sm">${(user.totalPurchases ?? 0).toFixed(2)}</td>
+                          <td className="py-2 px-4 text-sm">
+                            {user.totalPurchasesCount ?? 0} • ${(user.totalSpent ?? 0).toFixed(2)}
+                          </td>
                           <td className="py-2 px-4 text-sm font-semibold text-green-600">${(user.totalCommission ?? 0).toFixed(2)}</td>
                           <td className="py-2 px-4 text-sm text-gray-600">{format(new Date(user.createdAt), 'MMM dd, yyyy')}</td>
                         </tr>
@@ -694,15 +900,15 @@ export default function ReferralsTab() {
             {/* Payout History */}
             <div className="mb-4 sm:mb-6">
               <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3">
-                Payout History ({selectedReferrer.payouts.length})
+                Payout History ({selectedReferrer.payouts?.length ?? 0})
               </h4>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 {/* Mobile: Cards */}
                 <div className="block sm:hidden divide-y divide-gray-200">
-                  {selectedReferrer.payouts.length === 0 ? (
+                  {(selectedReferrer.payouts?.length ?? 0) === 0 ? (
                     <div className="py-8 text-center text-sm text-gray-500">No payout history</div>
                   ) : (
-                    selectedReferrer.payouts.map((payout) => (
+                    (selectedReferrer.payouts ?? []).map((payout) => (
                       <div key={payout.id} className="p-3">
                         <div className="flex justify-between items-start">
                           <span className="text-sm font-semibold">${(payout.amount ?? 0).toFixed(2)}</span>
@@ -734,12 +940,12 @@ export default function ReferralsTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedReferrer.payouts.length === 0 ? (
+                    {(selectedReferrer.payouts?.length ?? 0) === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-sm text-gray-500">No payout history</td>
                       </tr>
                     ) : (
-                      selectedReferrer.payouts.map((payout) => (
+                      (selectedReferrer.payouts ?? []).map((payout) => (
                         <tr key={payout.id} className="border-t border-gray-100">
                           <td className="py-2 px-4 text-sm font-semibold">${(payout.amount ?? 0).toFixed(2)}</td>
                           <td className="py-2 px-4 text-sm">

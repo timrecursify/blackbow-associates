@@ -224,8 +224,8 @@ export const adminAPI = {
     apiClient.get('/admin/referrals/payouts', { params: { page, limit } }),
   markPayoutAsPaid: (payoutId: string, notes?: string) =>
     apiClient.post(`/admin/referrals/payouts/${payoutId}/mark-paid`, { notes }),
-  toggleUserReferral: (userId: string) =>
-    apiClient.post(`/admin/referrals/users/${userId}/toggle-referral`),
+  toggleUserReferral: (userId: string, enabled: boolean) =>
+    apiClient.post(`/admin/referrals/users/${userId}/toggle-referral`, { enabled }),
 };
 
 export default {

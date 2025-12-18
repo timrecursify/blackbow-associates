@@ -95,6 +95,21 @@ export const AccountPage: React.FC = () => {
   const [leadsPage, setLeadsPage] = useState(1);
   const [leadsPagination, setLeadsPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
 
+  const getPageRange = (page: number, totalPages: number, maxButtons = 5): number[] => {
+    if (totalPages <= maxButtons) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const half = Math.floor(maxButtons / 2);
+    let start = Math.max(1, page - half);
+    let end = start + maxButtons - 1;
+
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - maxButtons + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
   useEffect(() => {
     fetchData();
 
@@ -571,7 +586,7 @@ export const AccountPage: React.FC = () => {
                     </div>
                   ) : (
                     /* Name Fields (if individual) */
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">
                           First Name <span className="text-red-500">*</span>
@@ -625,8 +640,8 @@ export const AccountPage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-6 gap-4">
-                    <div className="col-span-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
+                    <div className="sm:col-span-3">
                       <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">
                         City <span className="text-red-500">*</span>
                       </label>
@@ -638,7 +653,7 @@ export const AccountPage: React.FC = () => {
                         placeholder="New York"
                       />
                     </div>
-                    <div className="col-span-1">
+                    <div className="sm:col-span-1">
                       <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">
                         State <span className="text-red-500">*</span>
                       </label>
@@ -651,7 +666,7 @@ export const AccountPage: React.FC = () => {
                         maxLength={2}
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">
                         ZIP <span className="text-red-500">*</span>
                       </label>
@@ -1114,7 +1129,7 @@ export const AccountPage: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  {Array.from({ length: leadsPagination.totalPages }, (_, i) => i + 1).map(page => (
+                  {getPageRange(leadsPage, leadsPagination.totalPages).map(page => (
                     <button
                       key={page}
                       onClick={() => setLeadsPage(page)}

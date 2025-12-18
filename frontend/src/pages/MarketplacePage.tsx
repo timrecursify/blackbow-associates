@@ -1127,7 +1127,7 @@ export const MarketplacePage: React.FC = () => {
       {/* Confirmation Modal */}
       {showConfirmModal && selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative transition-colors duration-200">
+          <div className="bg-white rounded-lg shadow-xl p-5 sm:p-6 max-w-md w-full relative transition-colors duration-200 max-h-[90vh] overflow-y-auto">
             {/* Close Button */}
             <button
               onClick={() => {
@@ -1135,7 +1135,7 @@ export const MarketplacePage: React.FC = () => {
                 setSelectedLead(null);
               }}
               disabled={purchasing === selectedLead.id}
-              className="absolute top-4 right-4 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Close"
             >
               <X size={24} />
@@ -1159,21 +1159,21 @@ export const MarketplacePage: React.FC = () => {
             </p>
 
             {/* Buttons */}
-            <div className="flex gap-3 mt-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 mt-4">
               <button
                 onClick={() => {
                   setShowConfirmModal(false);
                   setSelectedLead(null);
                 }}
                 disabled={purchasing === selectedLead.id}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 min-h-[44px] text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmPurchase}
                 disabled={purchasing === selectedLead.id}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 min-h-[44px] text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {purchasing === selectedLead.id ? (
                   <>

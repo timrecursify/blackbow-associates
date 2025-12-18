@@ -120,12 +120,16 @@ export const PayoutDetailsModal: React.FC<PayoutDetailsModalProps> = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="sticky top-0 z-10 bg-white flex items-center justify-between p-4 sm:p-6 border-b">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Payout Details</h2>
             <p className="text-sm text-gray-500 mt-1">Set up how you want to receive payouts</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close"
+          >
             <X size={20} className="text-gray-500" />
           </button>
         </div>
@@ -139,7 +143,7 @@ export const PayoutDetailsModal: React.FC<PayoutDetailsModalProps> = ({
             <p className="text-gray-600">You can now request payouts.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
             {/* Method Selection */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">Payout Method</label>
@@ -147,7 +151,7 @@ export const PayoutDetailsModal: React.FC<PayoutDetailsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMethod('ZELLE')}
-                  className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
+                  className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all min-h-[96px] ${
                     method === 'ZELLE'
                       ? 'border-black bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -160,7 +164,7 @@ export const PayoutDetailsModal: React.FC<PayoutDetailsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMethod('ACH')}
-                  className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
+                  className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all min-h-[96px] ${
                     method === 'ACH'
                       ? 'border-black bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -295,7 +299,7 @@ export const PayoutDetailsModal: React.FC<PayoutDetailsModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className={`w-full mt-6 py-3 px-4 rounded-xl font-semibold text-white transition-all ${
+              className={`w-full mt-6 py-3 px-4 rounded-xl font-semibold text-white transition-all min-h-[48px] ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-black hover:bg-gray-800'

@@ -72,7 +72,7 @@ export const LeadFeedbackModal: React.FC<LeadFeedbackModalProps> = ({
         <button
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-600 hover:text-black transition-colors disabled:opacity-50"
+          className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-600 hover:text-black transition-colors disabled:opacity-50 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Close"
         >
           <X size={20} className="sm:w-6 sm:h-6" />

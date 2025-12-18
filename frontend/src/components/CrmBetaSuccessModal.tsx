@@ -9,18 +9,18 @@ interface CrmBetaSuccessModalProps {
 const CrmBetaSuccessModal: React.FC<CrmBetaSuccessModalProps> = ({ data, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative max-w-2xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative max-w-2xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-gray-100 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Close"
         >
           <X className="w-6 h-6 text-gray-600" />
         </button>
 
         {/* Success Icon */}
-        <div className="pt-12 pb-6 px-8 text-center bg-gradient-to-br from-green-50 to-emerald-50">
+        <div className="pt-10 sm:pt-12 pb-6 px-5 sm:px-8 text-center bg-gradient-to-br from-green-50 to-emerald-50">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500 rounded-full mb-6">
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
@@ -33,7 +33,7 @@ const CrmBetaSuccessModal: React.FC<CrmBetaSuccessModalProps> = ({ data, onClose
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-5 sm:p-8">
           <div className="space-y-6">
             {/* What's Next Section */}
             <div>

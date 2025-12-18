@@ -10,8 +10,8 @@ export const FeedbackSuccessModal: React.FC<FeedbackSuccessModalProps> = ({ isOp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 max-w-md w-full text-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 max-w-md w-full text-center max-h-[90vh] overflow-y-auto my-6">
         {/* Success Icon */}
         <div className="flex justify-center mb-4 sm:mb-6">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center">

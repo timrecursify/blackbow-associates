@@ -39,6 +39,32 @@
   - Uses `includeFacets=true` and renders state/service options with counts
   - Stops building filter options from the current page of leads (prevents “junk/all regions” filter UX)
 
+---
+
+**2025-12-18 - Mobile UX polish (Account/Admin/Marketplace modals + pagination)** 📱
+
+**Agent:** cursor-ide  
+**Status:** ✅ READY TO DEPLOY
+
+### Frontend
+- Improved mobile pagination on `AccountPage` (prevents rendering hundreds of page buttons; shows a compact range).
+- Fixed mobile form layout in billing edit (City/State/ZIP now stacks cleanly on small screens).
+- Standardized modal behavior for small viewports:
+  - Added `max-h-[90vh]` + `overflow-y-auto` where missing
+  - Made overlays `items-start` on mobile to avoid clipped content
+  - Increased close button tap targets (44x44) where needed
+
+### Files Modified
+- `frontend/src/pages/AccountPage.tsx`
+- `frontend/src/pages/MarketplacePage.tsx`
+- `frontend/src/pages/AdminDashboardPage.tsx`
+- `frontend/src/pages/admin/ReferralsTab.tsx`
+- `frontend/src/components/ConfirmationModal.tsx`
+- `frontend/src/components/CrmBetaSuccessModal.tsx`
+- `frontend/src/components/FeedbackSuccessModal.tsx`
+- `frontend/src/components/LeadFeedbackModal.tsx`
+- `frontend/src/components/PayoutDetailsModal.tsx`
+
 ### VPS Ops Integration (verified December 18, 2025)
 - Centralized logs: ✅ local `/var/log/desaas` (BlackBow logs rotating daily)
 - Log archival off-box: ✅ `log-archival-service` restarted and persisted (PM2)

@@ -740,10 +740,11 @@ const AdminDashboardContent: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {/* CRM Beta Signup Details Modal */}
       {signupModalOpen && selectedSignup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-2xl w-full mx-4 shadow-2xl my-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 max-w-2xl w-full mx-auto shadow-2xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-start justify-between mb-6 border-b border-gray-200 pb-4">
+            <div className="sticky top-0 bg-white z-10 -mx-5 sm:-mx-6 md:-mx-8 px-5 sm:px-6 md:px-8 pt-5 sm:pt-6 md:pt-8 mb-6 border-b border-gray-200 pb-4">
+              <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-1">Beta Application Details</h3>
                 <p className="text-sm text-gray-500">Submitted {format(new Date(selectedSignup.createdAt), 'PPP')}</p>
@@ -753,12 +754,14 @@ const AdminDashboardContent: React.FC = () => {
                   setSignupModalOpen(false);
                   setSelectedSignup(null);
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
+                aria-label="Close"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+              </div>
             </div>
 
             {/* Status Badge */}

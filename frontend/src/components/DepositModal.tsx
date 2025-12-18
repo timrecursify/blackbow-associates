@@ -1,11 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { logger } from '../utils/logger';
 import { X, DollarSign, CheckCircle, Loader } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { paymentsAPI, usersAPI } from '../services/api';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Lazy load Stripe only when needed - prevents loading on pages that don't use the modal
+let stripePromise: Promise<any> | null = null;
+
+const getStripePromise = () => {
+  if (!stripePromise) {
+    const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+    if (stripeKey) {
+      stripePromise = loadStripe(stripeKey);
+    } else {
+      // Return a rejected promise if no key is configured
+      stripePromise = Promise.reject(new Error('Stripe publishable key not configured'));
+    }
+  }
+  return stripePromise;
+};
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -68,38 +82,8 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
         const userData = response.data.user || response.data;
         const billing = userData.billing;
 
-        // Check if billing address exists and has required fields
-        if (!billing || !billing.addressLine1 ||
-            !billing.city || !billing.state || !billing.zip) {
-          // No billing address - show error and close modal
-          setError('Billing address is required. Please complete your registration first.');
-          setLoadingProfile(false);
-          setTimeout(() => {
-            onClose();
-          }, 3000);
-          return;
-        }
-
-        // Check if company or individual name is provided
-        if (!billing.isCompany && (!billing.firstName || !billing.lastName)) {
-          setError('Billing address is incomplete. Please update your billing address in Account settings.');
-          setLoadingProfile(false);
-          setTimeout(() => {
-            onClose();
-          }, 3000);
-          return;
-        }
-
-        if (billing.isCompany && !billing.companyName) {
-          setError('Billing address is incomplete. Please update your billing address in Account settings.');
-          setLoadingProfile(false);
-          setTimeout(() => {
-            onClose();
-          }, 3000);
-          return;
-        }
-
-        // Billing address exists - proceed to payment
+        // Billing address validation now handled by AccountPage
+        // This modal only opens after billing address is confirmed
         setLoadingProfile(false);
       } catch (error) {
         logger.error('Failed to load profile:', error);
@@ -456,6 +440,14 @@ const DepositForm: React.FC<{ onClose: () => void; onSuccess: () => void; redire
 };
 
 export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess, redirectUrl }) => {
+  // Lazy load Stripe only when modal is opened
+  const stripePromiseMemo = useMemo(() => {
+    if (isOpen) {
+      return getStripePromise();
+    }
+    return null;
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -467,6 +459,20 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onS
     onSuccess();
     // Note: Modal will be closed by DepositForm after success
   };
+
+  // Don't render Stripe Elements if Stripe hasn't loaded yet
+  if (!stripePromiseMemo) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="text-center">
+            <Loader className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-600" />
+            <p className="text-gray-600">Loading payment form...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -492,7 +498,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onS
 
         {/* Form - Mobile Optimized */}
         <div className="p-4 sm:p-6">
-          <Elements stripe={stripePromise}>
+          <Elements stripe={stripePromiseMemo}>
             <DepositForm onClose={handleClose} onSuccess={handleSuccess} redirectUrl={redirectUrl} isOpen={isOpen} />
           </Elements>
         </div>

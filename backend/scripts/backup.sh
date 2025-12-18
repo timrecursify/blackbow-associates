@@ -238,34 +238,56 @@ upload_to_restic() {
     if [ "$RESTIC_AVAILABLE" != "true" ]; then
         return 0
     fi
-    
+
     local backup_file="$1"
-    
+
     # Check if Restic repository is configured
     if [ -z "${RESTIC_REPOSITORY:-}" ]; then
         log "WARN" "RESTIC_REPOSITORY not set - skipping remote backup"
         return 0
     fi
-    
+
     if [ -z "${RESTIC_PASSWORD:-}" ]; then
         log "WARN" "RESTIC_PASSWORD not set - skipping remote backup"
         return 0
     fi
-    
+
     log "INFO" "Uploading to Restic repository..."
-    
+
+    # Check for and clear stale locks before starting
+    log "INFO" "Checking for stale repository locks..."
+    if ! restic list locks > /dev/null 2>&1; then
+        log "WARN" "Repository appears locked, attempting to unlock stale locks"
+        if restic unlock 2>&1 | tee -a "$LOG_FILE" | grep -q "successfully removed"; then
+            log "INFO" "Stale locks removed successfully"
+        fi
+        sleep 2
+    fi
+
     # Initialize repository if needed
     if ! restic snapshots &> /dev/null; then
         log "INFO" "Initializing Restic repository..."
         restic init || log "WARN" "Restic init failed (may already exist)"
     fi
-    
+
     # Backup the backup file
     if restic backup "$backup_file" --tag "blackbow-db" --tag "database-backup"; then
         log "INFO" "Backup uploaded to Restic successfully"
-        
-        # Prune old snapshots (keep last 30 days)
-        restic forget --keep-daily 30 --prune || log "WARN" "Restic prune failed"
+
+        # Prune old snapshots (keep last 30 days) with proper timeout and error handling
+        log "INFO" "Pruning old snapshots..."
+        if timeout 300 restic forget --keep-daily 30 --prune 2>&1 | tee -a "$LOG_FILE"; then
+            log "INFO" "Prune completed successfully"
+        else
+            local exit_code=$?
+            if [ $exit_code -eq 124 ]; then
+                log "ERROR" "Restic prune timed out after 5 minutes - may need manual intervention"
+                # Try to unlock in case timeout left a lock
+                restic unlock 2>&1 | tee -a "$LOG_FILE" || true
+            else
+                log "WARN" "Restic prune failed with exit code $exit_code"
+            fi
+        fi
     else
         log "WARN" "Restic upload failed - local backup still available"
     fi

@@ -39,11 +39,11 @@
   - Uses `includeFacets=true` and renders state/service options with counts
   - Stops building filter options from the current page of leads (prevents “junk/all regions” filter UX)
 
-### VPS Ops (current state + required actions)
-- Centralized logs: ✅ local `/var/log/desaas` (BlackBow logs rotating)
-- Log archival off-box: ✅ log-archival-service restarted (PM2)
+### VPS Ops Integration (verified December 18, 2025)
+- Centralized logs: ✅ local `/var/log/desaas` (BlackBow logs rotating daily)
+- Log archival off-box: ✅ `log-archival-service` restarted and persisted (PM2)
 - Server backups: ✅ `backups-daily.timer` and `backups-prune.timer` active
-- BlackBow DB dumps: ✅ Restic off-box upload verified (tag: blackbow-db)
+- BlackBow DB dumps: ✅ Restic off-box upload verified (tag: `blackbow-db`, Raspberry Pi SSD)
 
 ---
 

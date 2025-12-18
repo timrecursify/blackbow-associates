@@ -8,6 +8,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { logger } from "../utils/logger.js";
+import { prisma } from "../config/database.js";
 
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -18,7 +19,12 @@ const __dirname = dirname(__filename);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = `${process.env.DEFAULT_FROM_NAME || "Black Bow Associates"} <${process.env.DEFAULT_FROM_EMAIL || "noreply@blackbowassociates.com"}>`;
-const ADMIN_EMAIL = "slava@blackbowassociates.com";
+
+function isValidEmail(email) {
+  if (!email || typeof email !== "string") return false;
+  // Simple, practical validation (Resend will still validate too)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
 
 class EmailService {
   static generateToken() {
@@ -42,9 +48,16 @@ class EmailService {
 
   static async sendEmail(to, subject, html) {
     try {
+      const recipients = Array.isArray(to) ? to : [to];
+      const normalized = recipients.map(r => (r || "").trim()).filter(isValidEmail);
+      if (normalized.length === 0) {
+        logger.warn("Email skipped (no valid recipients)", { subject });
+        return { success: false, skipped: true };
+      }
+
       const result = await resend.emails.send({
         from: FROM_EMAIL,
-        to,
+        to: normalized,
         subject,
         html
       });
@@ -53,11 +66,41 @@ class EmailService {
         throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
       }
 
-      logger.info("Email sent", { to, subject, emailId: result.data?.id || result.id });
+      logger.info("Email sent", { to: normalized, subject, emailId: result.data?.id || result.id });
       return { success: true, emailId: result.data?.id || result.id };
     } catch (error) {
       logger.error("Failed to send email", { to, subject, error: error.message });
       throw error;
+    }
+  }
+
+  static async getAdminNotificationEmails() {
+    const envEmails = (process.env.ADMIN_NOTIFICATION_EMAILS || "")
+      .split(",")
+      .map(e => e.trim())
+      .filter(isValidEmail);
+
+    if (envEmails.length > 0) return envEmails;
+
+    // Fallback: all verified, active admins
+    try {
+      const admins = await prisma.user.findMany({
+        where: {
+          isAdmin: true,
+          adminVerifiedAt: { not: null },
+          isBlocked: false
+        },
+        select: { email: true }
+      });
+
+      const dbEmails = admins.map(a => (a.email || "").trim()).filter(isValidEmail);
+      if (dbEmails.length === 0) {
+        logger.warn("No admin emails found (env unset, DB returned none)");
+      }
+      return dbEmails;
+    } catch (error) {
+      logger.error("Failed to resolve admin emails", { error: error.message });
+      return [];
     }
   }
 
@@ -153,7 +196,8 @@ class EmailService {
         hour: "2-digit", minute: "2-digit"
       })
     });
-    return this.sendEmail(ADMIN_EMAIL, `New Payout Request - $${parseFloat(amount).toFixed(2)} - ${businessName}`, html);
+    const adminEmails = await this.getAdminNotificationEmails();
+    return this.sendEmail(adminEmails, `New Payout Request - $${parseFloat(amount).toFixed(2)} - ${businessName}`, html);
   }
 
   static generateConfirmationToken() { return this.generateToken(); }

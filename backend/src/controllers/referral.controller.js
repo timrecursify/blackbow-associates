@@ -3,6 +3,7 @@ import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { generateReferralCode, getReferrerStats } from '../services/referral.service.js';
 import EmailService from '../services/emailService.js';
+import { NotificationService } from '../services/notification.service.js';
 
 const COMMISSION_RATE = 0.10; // 10%
 const MINIMUM_PAYOUT = 50.00;
@@ -332,6 +333,39 @@ export const requestPayout = asyncHandler(async (req, res) => {
     );
   } catch (emailError) {
     logger.warn('Failed to send payout confirmation email to user', { error: emailError.message });
+  }
+
+  // Create in-app notification for user (never break payout flow)
+  await NotificationService.create({
+    userId,
+    type: 'PAYOUT_REQUESTED',
+    title: 'Payout request submitted',
+    body: `We received your payout request for $${totalAmount.toFixed(2)}. Expect payout within 3–5 business days.`,
+    linkUrl: '/account?tab=referrals',
+    metadata: { payoutId: payout.id, amount: totalAmount }
+  });
+
+  // Create in-app notifications for admins (one per admin user)
+  try {
+    const admins = await prisma.user.findMany({
+      where: { isAdmin: true, adminVerifiedAt: { not: null }, isBlocked: false },
+      select: { id: true }
+    });
+
+    await Promise.all(
+      admins.map(a =>
+        NotificationService.create({
+          userId: a.id,
+          type: 'PAYOUT_REQUESTED',
+          title: 'New payout request',
+          body: `${user.businessName} requested $${totalAmount.toFixed(2)} (${pendingCommissions.length} commissions).`,
+          linkUrl: '/admin',
+          metadata: { payoutId: payout.id, userId, amount: totalAmount }
+        })
+      )
+    );
+  } catch (error) {
+    logger.warn('Failed to create admin payout notifications', { error: error.message });
   }
 
   // Send payout request email to admin (Slava)

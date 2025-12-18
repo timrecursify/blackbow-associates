@@ -61,6 +61,7 @@ model User {
   referralCommissions    ReferralCommission[] @relation("CommissionEarner")
   generatedCommissions   ReferralCommission[] @relation("CommissionSource")
   referralPayouts        ReferralPayout[]
+  notifications          Notification[]
 
   // Payout details
   payoutMethod           String?            @map("payout_method")
@@ -71,6 +72,36 @@ model User {
   payoutDetailsSet       Boolean            @default(false) @map("payout_details_set")
 
   @@map("users")
+}
+
+enum NotificationType {
+  DEPOSIT_CONFIRMED
+  LEAD_PURCHASED
+  PAYOUT_REQUESTED
+  PAYOUT_PAID
+  FEEDBACK_REWARD
+  REFERRAL_COMMISSION_EARNED
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String           @map("user_id")
+  type        NotificationType
+  title       String
+  body        String
+  linkUrl     String?          @map("link_url")
+  metadata    Json?
+  readAt      DateTime?        @map("read_at")
+  dismissedAt DateTime?        @map("dismissed_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([userId, dismissedAt])
+  @@index([type, createdAt])
+  @@map("notifications")
 }
 
 model Lead {

@@ -140,11 +140,11 @@ export const MarketplacePage: React.FC = () => {
     fetchBalance();
     fetchPurchasedLeads();
     fetchBillingStatus();
-  }, [favoritesOnly, currentPage]);
+  }, [favoritesOnly, currentPage, selectedStates, selectedServices, searchTerm]);
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [allLeads, searchTerm, sortBy, selectedStates, selectedServices]);
+  }, [allLeads, sortBy]);
 
   const fetchLeads = async () => {
     try {
@@ -223,19 +223,8 @@ export const MarketplacePage: React.FC = () => {
   const applyFiltersAndSort = () => {
     let results = [...allLeads];
 
-    // Note: Purchased leads are already filtered out by backend
-    // Only apply client-side filters (search refinement + sorting)
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      results = results.filter(lead => 
-        lead.location?.toLowerCase().includes(term) ||
-        lead.city?.toLowerCase().includes(term) ||
-        lead.state?.toLowerCase().includes(term) ||
-        lead.description?.toLowerCase().includes(term) ||
-        lead.id.toLowerCase().includes(term)
-      );
-    }
+    // Note: All filtering (states, services, location search) is now done server-side.
+    // Only apply client-side sorting.
 
     results.sort((a, b) => {
       switch (sortBy) {

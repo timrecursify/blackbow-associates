@@ -62,6 +62,8 @@ model User {
   generatedCommissions   ReferralCommission[] @relation("CommissionSource")
   referralPayouts        ReferralPayout[]
   notifications          Notification[]
+  leadNotificationPref   LeadNotificationPreference?
+  emailSequences         EmailSequenceEnrollment[]
 
   // Payout details
   payoutMethod           String?            @map("payout_method")
@@ -111,6 +113,7 @@ model Lead {
   city               String?
   state              String?
   location           String?
+  venueHint          String?            @map("venue_hint")
   description        String?
   ethnicReligious    String?            @map("ethnic_religious")
   firstName          String?            @map("first_name")
@@ -374,6 +377,7 @@ enum WebhookEventStatus {
   FAILED
   RETRYING
   DEAD_LETTER
+  PENDING_DATA
 }
 
 enum CommissionStatus {
@@ -386,4 +390,152 @@ enum PayoutStatus {
   PROCESSING
   PAID
   REJECTED
+}
+
+enum NotificationFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+}
+
+model LeadNotificationPreference {
+  id        String                @id @default(cuid())
+  userId    String                @unique @map("user_id")
+  states    String[]              @default([])
+  frequency NotificationFrequency @default(INSTANT)
+  enabled   Boolean               @default(true)
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([enabled])
+  @@index([frequency])
+  @@map("lead_notification_preferences")
+}
+
+enum EmailSequenceStatus {
+  ACTIVE
+  COMPLETED
+  EXITED
+  PAUSED
+}
+
+model EmailSequenceEnrollment {
+  id              String              @id @default(cuid())
+  userId          String              @map("user_id")
+  sequenceName    String              @default("onboarding") @map("sequence_name")
+  currentStep     Int                 @default(0) @map("current_step")
+  enrolledAt      DateTime            @default(now()) @map("enrolled_at")
+  lastEmailSentAt DateTime?           @map("last_email_sent_at")
+  nextEmailAt     DateTime?           @map("next_email_at")
+  status          EmailSequenceStatus @default(ACTIVE)
+  creditApplied   Boolean             @default(false) @map("credit_applied")
+  completedAt     DateTime?           @map("completed_at")
+  exitReason      String?             @map("exit_reason")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sequenceName])
+  @@index([status])
+  @@index([nextEmailAt])
+  @@index([userId])
+  @@map("email_sequence_enrollments")
+}
+
+// ============================================
+// EMPLOYEE REPORTING SYSTEM
+// ============================================
+
+model ReportingEmployee {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  clockInCodes ReportingClockInCode[]
+  workdays     ReportingWorkday[]
+
+  @@map("reporting_employees")
+}
+
+model ReportingClockInCode {
+  id          String            @id @default(cuid())
+  code        String            @unique
+  employeeId  String            @map("employee_id")
+  date        DateTime          @db.Date
+  expiresAt   DateTime          @map("expires_at")
+  usedAt      DateTime?         @map("used_at")
+  emailSentAt DateTime?         @map("email_sent_at")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  employee   ReportingEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([code])
+  @@index([expiresAt])
+  @@map("reporting_clock_in_codes")
+}
+
+model ReportingWorkday {
+  id           String            @id @default(cuid())
+  employeeId   String            @map("employee_id")
+  date         DateTime          @db.Date
+  clockInTime  DateTime          @map("clock_in_time")
+  clockOutTime DateTime?         @map("clock_out_time")
+  sessionToken String            @unique @map("session_token")
+  completed    Boolean           @default(false)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  employee     ReportingEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  reports      ReportingSlotReport[]
+  summary      ReportingDailySummary?
+
+  @@unique([employeeId, date])
+  @@index([sessionToken])
+  @@index([completed])
+  @@map("reporting_workdays")
+}
+
+model ReportingSlotReport {
+  id          String           @id @default(cuid())
+  workdayId   String           @map("workday_id")
+  slotNumber  Int              @map("slot_number") // 1, 2, or 3
+  bullets     Json             @default("[]") // Array of strings
+  submitted   Boolean          @default(false)
+  submittedAt DateTime?        @map("submitted_at")
+  isLate      Boolean          @default(false) @map("is_late")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  workday     ReportingWorkday @relation(fields: [workdayId], references: [id], onDelete: Cascade)
+
+  @@unique([workdayId, slotNumber])
+  @@index([submitted])
+  @@map("reporting_slot_reports")
+}
+
+model ReportingDailySummary {
+  id          String           @id @default(cuid())
+  workdayId   String           @unique @map("workday_id")
+  rawContent  String           @db.Text @map("raw_content")
+  aiSummary   String           @db.Text @map("ai_summary")
+  emailSentAt DateTime?        @map("email_sent_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  workday     ReportingWorkday @relation(fields: [workdayId], references: [id], onDelete: Cascade)
+
+  @@map("reporting_daily_summaries")
+}
+
+model ReportingReminderSent {
+  id         String   @id @default(cuid())
+  workdayId  String   @map("workday_id")
+  slotNumber Int      @map("slot_number")
+  sentAt     DateTime @default(now()) @map("sent_at")
+
+  @@unique([workdayId, slotNumber])
+  @@map("reporting_reminders_sent")
 }

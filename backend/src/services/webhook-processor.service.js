@@ -1,6 +1,7 @@
 import prisma from '../config/database.js';
 import { transformDealToLead } from './pipedrive.service.js';
 import logger, { notifyTelegram } from '../utils/logger.js';
+import { processNewLead } from './leadNotificationService.js';
 
 // Retry configuration
 const RETRY_DELAYS = [60, 300, 900, 3600, 14400]; // seconds: 1min, 5min, 15min, 1hr, 4hr
@@ -172,6 +173,13 @@ export const processWebhookEvent = async (eventId) => {
       );
     } catch (notifError) {
       logger.warn('Failed to send Telegram notification', { error: notifError.message });
+    }
+
+    // Send email notifications to users with matching state preferences
+    try {
+      await processNewLead(lead);
+    } catch (notifError) {
+      logger.warn('Failed to process lead notifications', { error: notifError.message });
     }
 
     return { status: 'SUCCESS', leadId: lead.id };

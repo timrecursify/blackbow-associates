@@ -130,6 +130,12 @@ export const usersAPI = {
     state: string;
     zip: string;
   }) => apiClient.put('/users/billing-address', data),
+  getNotificationPreferences: () => apiClient.get('/users/notification-preferences'),
+  updateNotificationPreferences: (data: {
+    states?: string[];
+    frequency?: 'INSTANT' | 'DAILY' | 'WEEKLY';
+    enabled?: boolean;
+  }) => apiClient.put('/users/notification-preferences', data),
 };
 
 // Leads API

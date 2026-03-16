@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Lead Available - Black Bow Associates</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #f5f5f5;
+            -webkit-font-smoothing: antialiased;
+        }
+        .email-wrapper { padding: 40px 20px; }
+        .email-container { max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; }
+        .header { padding: 40px 32px 32px; text-align: center; }
+        .brand-name { font-size: 28px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+        .tagline { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; }
+        .content { padding: 0 32px 40px; text-align: center; }
+        .alert-badge { display: inline-block; background-color: #10b981; color: #ffffff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .greeting { font-size: 18px; color: #1a1a1a; margin-bottom: 16px; }
+        .message { font-size: 15px; color: #555; margin-bottom: 24px; line-height: 1.7; }
+        .lead-box { background-color: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; margin-bottom: 24px; text-align: left; }
+        .lead-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 16px; text-align: center; }
+        .lead-detail { display: table; width: 100%; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .lead-detail:last-child { border-bottom: none; }
+        .lead-label { display: table-cell; width: 40%; font-size: 13px; color: #888; vertical-align: top; padding-right: 16px; }
+        .lead-value { display: table-cell; width: 60%; font-size: 13px; color: #1a1a1a; font-weight: 500; text-align: right; word-break: break-word; }
+        .price-box { background-color: #000; color: #fff; border-radius: 8px; padding: 16px; margin-top: 16px; }
+        .price-row { display: table; width: 100%; }
+        .price-label { display: table-cell; font-size: 14px; vertical-align: middle; width: 50%; }
+        .price-amount { display: table-cell; font-size: 24px; font-weight: 700; text-align: right; width: 50%; }
+        .cta-button {
+            display: inline-block; background-color: #000000; color: #ffffff !important;
+            padding: 14px 40px; text-decoration: none; font-size: 14px; font-weight: 500;
+            letter-spacing: 0.5px; border-radius: 4px; margin-top: 24px;
+        }
+        .note { margin-top: 24px; font-size: 12px; color: #888; }
+        .footer { padding: 24px 32px; background-color: #fafafa; text-align: center; border-top: 1px solid #eee; }
+        .footer p { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+        .unsubscribe { color: #888; text-decoration: underline; }
+        @media (max-width: 520px) {
+            .email-wrapper { padding: 20px 12px; }
+            .header, .content { padding-left: 20px; padding-right: 20px; }
+            .brand-name { font-size: 24px; }
+            .cta-button { padding: 12px 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <h1 class="brand-name">Black Bow Associates</h1>
+                <p class="tagline">Wedding Lead Marketplace</p>
+            </div>
+            <div class="content">
+                <span class="alert-badge">New Lead</span>
+                <p class="greeting">Hi {{businessName}},</p>
+                <p class="message">A new wedding lead matching your preferences is now available!</p>
+                <div class="lead-box">
+                    <p class="lead-title">Lead Details</p>
+                    <div class="lead-detail">
+                        <span class="lead-label">Location</span>
+                        <span class="lead-value">{{location}}</span>
+                    </div>
+                    <div class="lead-detail">
+                        <span class="lead-label">Wedding Date</span>
+                        <span class="lead-value">{{weddingDate}}</span>
+                    </div>
+                    <div class="lead-detail">
+                        <span class="lead-label">Services Needed</span>
+                        <span class="lead-value">{{servicesNeeded}}</span>
+                    </div>
+                    <div class="price-box">
+                        <div class="price-row">
+                            <span class="price-label">Lead Price</span>
+                            <span class="price-amount">${{price}}</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="message">Act fast! Wedding leads are available to multiple vendors and sell quickly.</p>
+                <a href="https://blackbowassociates.com/marketplace" class="cta-button">View Lead in Marketplace</a>
+                <p class="note">Your current balance: ${{balance}}</p>
+            </div>
+            <div class="footer">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>You're receiving this because you have lead notifications enabled.</p>
+                <p><a href="https://blackbowassociates.com/account?tab=notifications" class="unsubscribe">Manage notification settings</a></p>
+                <p>© 2025 Black Bow Associates</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

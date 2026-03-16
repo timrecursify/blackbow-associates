@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Lead Marketplace Works</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #f5f5f5;
+        }
+        .email-wrapper { padding: 40px 20px; }
+        .email-container { max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; }
+        .header { padding: 40px 32px 24px; text-align: center; border-bottom: 1px solid #eee; }
+        .brand-name { font-size: 28px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+        .tagline { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; }
+        .content { padding: 32px; }
+        .greeting { font-size: 20px; color: #1a1a1a; margin-bottom: 20px; font-weight: 600; }
+        .paragraph { font-size: 15px; color: #444; margin-bottom: 20px; line-height: 1.7; }
+        .highlight-box { background-color: #f8f9fa; border-left: 4px solid #000; padding: 20px; margin: 24px 0; }
+        .highlight-box p { margin: 0; font-size: 15px; color: #333; }
+        .section-title { font-size: 17px; font-weight: 600; color: #1a1a1a; margin: 28px 0 12px; }
+        .step-box { background-color: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        .step-number { display: inline-block; width: 28px; height: 28px; background: #000; color: #fff; border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px; font-weight: 600; margin-right: 12px; }
+        .step-title { font-size: 15px; font-weight: 600; color: #1a1a1a; display: inline; }
+        .step-desc { font-size: 14px; color: #666; margin-top: 8px; margin-left: 40px; }
+        .cta-section { text-align: center; margin: 32px 0; }
+        .cta-button {
+            display: inline-block; background-color: #000000; color: #ffffff !important;
+            padding: 14px 40px; text-decoration: none; font-size: 14px; font-weight: 500;
+            letter-spacing: 0.5px; border-radius: 4px;
+        }
+        .signature { margin-top: 32px; padding-top: 24px; border-top: 1px solid #eee; }
+        .signature p { font-size: 14px; color: #666; margin-bottom: 4px; }
+        .signature .name { font-weight: 600; color: #1a1a1a; }
+        .footer { padding: 24px 32px; background-color: #fafafa; text-align: center; border-top: 1px solid #eee; }
+        .footer p { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+        .footer a { color: #888; }
+        .email-number { font-size: 11px; color: #ccc; margin-top: 12px; }
+        .unsubscribe { margin-top: 16px; }
+        .unsubscribe a { font-size: 10px; color: #ccc; text-decoration: none; }
+        @media (max-width: 520px) {
+            .email-wrapper { padding: 20px 12px; }
+            .header, .content { padding-left: 20px; padding-right: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <h1 class="brand-name">Black Bow Associates</h1>
+                <p class="tagline">Wedding Lead Marketplace</p>
+            </div>
+            <div class="content">
+                <p class="greeting">How the Marketplace Works</p>
+
+                <p class="paragraph">Hi {{businessName}},</p>
+
+                <p class="paragraph">Ready to find your next wedding client? Let us walk you through how our lead marketplace works.</p>
+
+                <p class="section-title">Getting Started in 4 Simple Steps</p>
+
+                <div class="step-box">
+                    <span class="step-number">1</span>
+                    <span class="step-title">Browse Available Leads</span>
+                    <p class="step-desc">Visit the marketplace to see wedding leads in your area. Each listing shows the wedding date, location, and services the couple is looking for.</p>
+                </div>
+
+                <div class="step-box">
+                    <span class="step-number">2</span>
+                    <span class="step-title">Filter by Location</span>
+                    <p class="step-desc">Use our state filters to find leads in your service area. Focus on couples you can actually serve.</p>
+                </div>
+
+                <div class="step-box">
+                    <span class="step-number">3</span>
+                    <span class="step-title">Purchase a Lead</span>
+                    <p class="step-desc">When you find a promising lead, purchase it to receive full contact details including name, email, and phone number.</p>
+                </div>
+
+                <div class="step-box">
+                    <span class="step-number">4</span>
+                    <span class="step-title">Reach Out</span>
+                    <p class="step-desc">Contact the couple directly via text, email, or phone. Let them know you were referred by Precious Pics!</p>
+                </div>
+
+                <div class="highlight-box">
+                    <p><strong>Lead Pricing:</strong> Most leads are priced at $20 each. Add funds to your account to start purchasing leads. We'll show you exactly what you get before you buy.</p>
+                </div>
+
+                <div class="cta-section">
+                    <a href="https://blackbowassociates.com/marketplace" class="cta-button">Browse Leads Now</a>
+                </div>
+
+                <div class="signature">
+                    <p class="name">The Black Bow Team</p>
+                    <p>Questions? Reply to this email&mdash;we're here to help.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>A subsidiary of Precious Pics Production</p>
+                <p class="email-number">Email 2 of 10 in your welcome series</p>
+                <p class="unsubscribe"><a href="https://blackbowassociates.com/account?tab=notifications">Unsubscribe</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -23,10 +23,12 @@ import analyticsRoutes from './routes/analyticsRoutes.js';
 import crmBetaRoutes from './routes/crmBeta.routes.js';
 import referralRoutes from './routes/referral.routes.js';
 import notificationRoutes from './routes/notifications.routes.js';
+import reportingRoutes from './routes/reporting.routes.js';
 
 // Import cron jobs
 import { initRetryScheduler } from './jobs/webhook-retry.job.js';
 import { initNotificationsCleanupScheduler } from './jobs/notifications-cleanup.job.js';
+import { initReportingScheduler } from './jobs/reporting.job.js';
 
 // Initialize Express app
 const app = express();
@@ -89,7 +91,9 @@ const corsOptions = {
       'https://blackbowassociates.com',
       'https://www.blackbowassociates.com',
       'http://blackbowassociates.com', // HTTP fallback
-      'http://www.blackbowassociates.com' // HTTP fallback
+      'http://www.blackbowassociates.com', // HTTP fallback
+      'https://reporting.blackbowassociates.com', // Employee reporting subdomain
+      'http://reporting.blackbowassociates.com' // HTTP fallback
     ];
 
     // Add environment-specific frontend URL if set
@@ -214,6 +218,7 @@ app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/crm-beta', crmBetaRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reporting', reportingRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
@@ -265,6 +270,9 @@ const server = app.listen(PORT, HOST, async () => {
     // Initialize notifications cleanup scheduler
     initNotificationsCleanupScheduler();
     logger.info('Notifications cleanup scheduler initialized');
+
+    // Initialize reporting scheduler (daily clock-in codes, reminders)
+    initReportingScheduler();
   } catch (error) {
     logger.error('Failed to connect to database on startup', { error: error.message });
     // Database connection failed - log error but don't spam notifications

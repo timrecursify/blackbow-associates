@@ -2,11 +2,12 @@ import { prisma } from '../config/database.js';
 import { logger, notifyTelegram } from '../utils/logger.js';
 import { AppError, asyncHandler } from '../middleware/errorHandler.js';
 import { parse } from 'csv-parse/sync';
+import { processNewLead } from '../services/leadNotificationService.js';
 
 // Get all users
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
-  
+
   // SECURITY: Validate and sanitize pagination parameters
   const pageNum = Math.max(1, Math.min(1000, parseInt(page) || 1));
   const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 100));
@@ -28,6 +29,14 @@ export const getAllUsers = asyncHandler(async (req, res) => {
         blockedAt: true,
         blockedReason: true,
         createdAt: true,
+        referredByUserId: true,
+        referredBy: {
+          select: {
+            id: true,
+            email: true,
+            businessName: true
+          }
+        },
         _count: {
           select: {
             purchases: true,
@@ -39,11 +48,33 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     prisma.user.count()
   ]);
 
+  // Get total deposits for each user (sum of DEPOSIT transactions)
+  const userIds = users.map(u => u.id);
+  const depositTotals = await prisma.transaction.groupBy({
+    by: ['userId'],
+    where: {
+      userId: { in: userIds },
+      type: 'DEPOSIT'
+    },
+    _sum: { amount: true }
+  });
+
+  // Create a map for quick lookup
+  const depositMap = new Map(
+    depositTotals.map(d => [d.userId, parseFloat(d._sum.amount || 0)])
+  );
+
   res.json({
     success: true,
     users: users.map(u => ({
       ...u,
       balance: parseFloat(u.balance),
+      totalDeposits: depositMap.get(u.id) || 0,
+      referredBy: u.referredBy ? {
+        id: u.referredBy.id,
+        email: u.referredBy.email,
+        businessName: u.referredBy.businessName
+      } : null,
       purchaseCount: u._count.purchases,
       transactionCount: u._count.transactions
     })),
@@ -134,6 +165,13 @@ export const importLeads = asyncHandler(async (req, res) => {
     });
 
     createdLeads.push(lead);
+
+    // Send email notifications to users with matching state preferences
+    try {
+      await processNewLead(lead);
+    } catch (notifError) {
+      logger.warn('Failed to process lead notifications', { leadId: lead.id, error: notifError.message });
+    }
   }
 
   logger.info('Leads imported via CSV', {

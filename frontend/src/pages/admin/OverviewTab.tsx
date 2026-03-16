@@ -1,11 +1,26 @@
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils/logger';
 import { Card, Title } from '@tremor/react';
-import { DollarSign, Users, FileText, TrendingUp, RefreshCw, Activity } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, RefreshCw, ShoppingCart, MapPin } from 'lucide-react';
 import KPICard from '../../components/admin/KPICard';
 import DateRangePicker from '../../components/admin/DateRangePicker';
-import { subDays } from 'date-fns';
+import { subDays, format } from 'date-fns';
 import { adminAPI } from '../../services/api';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  Legend
+} from 'recharts';
 
 interface OverviewData {
   revenue: { total: number; count: number; avgOrderValue: number };
@@ -25,11 +40,6 @@ interface RevenueData {
   deposits: number;
   purchases: number;
   net: number;
-}
-
-interface UserGrowthData {
-  date: string;
-  count: number;
 }
 
 interface VendorTypeData {
@@ -58,8 +68,18 @@ interface UserEngagementData {
   avgPurchasesPerUser: number;
   avgTimeToFirstPurchase: number;
   churnRate: number;
-  activeUsersTrend: UserGrowthData[];
 }
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+
+const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
+const formatDate = (dateStr: string) => {
+  try {
+    return format(new Date(dateStr), 'MMM d');
+  } catch {
+    return dateStr;
+  }
+};
 
 export default function OverviewTab() {
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
@@ -67,7 +87,6 @@ export default function OverviewTab() {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<OverviewData | null>(null);
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
-  const [userGrowth, setUserGrowth] = useState<UserGrowthData[]>([]);
   const [vendorTypes, setVendorTypes] = useState<VendorTypeData[]>([]);
   const [topLocations, setTopLocations] = useState<LeadLocationData[]>([]);
   const [revenueGrowth, setRevenueGrowth] = useState<RevenueGrowthData[]>([]);
@@ -96,7 +115,6 @@ export default function OverviewTab() {
 
       setOverview(overviewRes.data);
       setRevenueData(revenueRes.data);
-      setUserGrowth(userRes.data.growth || []);
       setVendorTypes(userRes.data.vendorTypes || []);
       setTopLocations(leadRes.data.topLocations || []);
       setRevenueGrowth(revenueGrowthRes.data.growth || []);
@@ -124,191 +142,34 @@ export default function OverviewTab() {
     fetchData();
   };
 
-  // Simple Bar Chart Component
-  const SimpleBarChart = ({ data, indexKey, valueKey, title, color = 'blue' }: { data: any[], indexKey: string, valueKey: string, title: string, color?: string }) => {
-    const maxValue = Math.max(...data.map(d => d[valueKey] || 0), 1);
-    const colorClasses = {
-      blue: 'bg-blue-500',
-      green: 'bg-green-500',
-      purple: 'bg-purple-500',
-      orange: 'bg-orange-500',
-      red: 'bg-red-500'
-    };
-
-    return (
-      <div className="space-y-3">
-        {data.slice(0, 10).map((item, idx) => (
-          <div key={idx} className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="font-medium text-gray-700 truncate max-w-[200px]">{item[indexKey]}</span>
-              <span className="text-gray-900 font-semibold">{typeof item[valueKey] === 'number' ? item[valueKey].toLocaleString() : item[valueKey]}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className={`${colorClasses[color as keyof typeof colorClasses]} h-2.5 rounded-full transition-all`}
-                style={{ width: `${((item[valueKey] || 0) / maxValue) * 100}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Simple Line Chart Component
-  const SimpleLineChart = ({ data, indexKey, valueKeys, title, colors = ['blue', 'green'] }: { data: any[], indexKey: string, valueKeys: string[], title: string, colors?: string[] }) => {
-    if (!data || data.length === 0) return null;
-    
-    const width = 800;
-    const height = 200;
-    const padding = 40;
-    const chartWidth = width - padding * 2;
-    const chartHeight = height - padding * 2;
-
-    const allValues = data.flatMap(d => valueKeys.map(k => d[k] || 0));
-    const maxValue = Math.max(...allValues, 1);
-    const minValue = Math.min(...allValues, 0);
-    const range = maxValue - minValue || 1;
-
-    const colorClasses = {
-      blue: 'stroke-blue-500',
-      green: 'stroke-green-500',
-      red: 'stroke-red-500',
-      purple: 'stroke-purple-500'
-    };
-
-    return (
-      <div className="relative overflow-x-auto">
-        <svg width={width} height={height + 60} className="overflow-visible">
-          {/* Grid lines */}
-          {[0, 1, 2, 3, 4].map(i => {
-            const y = padding + (chartHeight - (i * chartHeight / 4));
-            return (
-              <line
-                key={i}
-                x1={padding}
-                y1={y}
-                x2={width - padding}
-                y2={y}
-                stroke="#e5e7eb"
-                strokeWidth="1"
-              />
-            );
-          })}
-          
-          {/* Data lines */}
-          {valueKeys.map((key, keyIdx) => {
-            const points = data.map((item, idx) => {
-              const x = padding + (idx / Math.max(data.length - 1, 1)) * chartWidth;
-              const y = padding + chartHeight - (((item[key] || 0) - minValue) / range) * chartHeight;
-              return `${x},${y}`;
-            }).join(' ');
-
-            return (
-              <polyline
-                key={key}
-                points={points}
-                fill="none"
-                strokeWidth="2"
-                className={colorClasses[colors[keyIdx] as keyof typeof colorClasses] || 'stroke-blue-500'}
-              />
-            );
-          })}
-        </svg>
-        
-        {/* X-axis labels */}
-        <div className="flex justify-between text-xs text-gray-500 mt-2 px-2">
-          {data.length > 0 && <span>{new Date(data[0][indexKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
-          {data.length > 0 && <span>{new Date(data[data.length - 1][indexKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
-        </div>
-        
-        {/* Legend */}
-        <div className="flex gap-4 mt-4 text-sm flex-wrap">
-          {valueKeys.map((key, idx) => (
-            <div key={key} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${colorClasses[colors[idx] as keyof typeof colorClasses]?.replace('stroke-', 'bg-') || 'bg-blue-500'}`} />
-              <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-            </div>
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="text-sm font-medium text-gray-900 mb-1">{formatDate(label)}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}: {formatCurrency(entry.value)}
+            </p>
           ))}
         </div>
-      </div>
-    );
-  };
-
-  // Simple Donut Chart Component
-  const SimpleDonutChart = ({ data, indexKey, valueKey, title }: { data: any[], indexKey: string, valueKey: string, title: string }) => {
-    const total = data.reduce((sum, item) => sum + (item[valueKey] || 0), 0);
-    if (total === 0) return <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>;
-    
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-
-    let currentAngle = 0;
-    const radius = 80;
-    const centerX = 100;
-    const centerY = 100;
-
-    return (
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-        <div className="relative flex-shrink-0" style={{ width: '200px', height: '200px' }}>
-          <svg width="200" height="200" viewBox="0 0 200 200">
-            {data.map((item, idx) => {
-              const value = item[valueKey] || 0;
-              const percentage = value / total;
-              const angle = percentage * 360;
-              const startAngle = currentAngle;
-              const endAngle = currentAngle + angle;
-              currentAngle = endAngle;
-
-              const x1 = centerX + radius * Math.cos((startAngle - 90) * Math.PI / 180);
-              const y1 = centerY + radius * Math.sin((startAngle - 90) * Math.PI / 180);
-              const x2 = centerX + radius * Math.cos((endAngle - 90) * Math.PI / 180);
-              const y2 = centerY + radius * Math.sin((endAngle - 90) * Math.PI / 180);
-              const largeArc = angle > 180 ? 1 : 0;
-
-              return (
-                <path
-                  key={idx}
-                  d={`M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                  fill={colors[idx % colors.length]}
-                  className="hover:opacity-80 transition-opacity"
-                />
-              );
-            })}
-          </svg>
-        </div>
-        <div className="flex-1 space-y-2 min-w-0">
-          {data.map((item, idx) => {
-            const value = item[valueKey] || 0;
-            const percentage = ((value / total) * 100).toFixed(1);
-            return (
-              <div key={idx} className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded flex-shrink-0" style={{ backgroundColor: colors[idx % colors.length] }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium text-gray-700 truncate">{item[indexKey]}</span>
-                    <span className="text-gray-900 font-semibold ml-2">{value.toLocaleString()}</span>
-                  </div>
-                  <div className="text-xs text-gray-500">{percentage}%</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
+      );
+    }
+    return null;
   };
 
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header with date range and refresh */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <Title className="text-xl md:text-2xl font-bold">Dashboard Overview</Title>
-          <p className="text-base text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             Key performance indicators and analytics
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <DateRangePicker
             startDate={startDate}
             endDate={endDate}
@@ -317,217 +178,348 @@ export default function OverviewTab() {
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
+            aria-label="Refresh data"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* Primary KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <KPICard
           title="Total Deposits"
           value={`$${overview?.totalDeposits?.toLocaleString() || '0'}`}
           loading={loading}
-          icon={<DollarSign className="w-6 h-6 text-green-600" />}
-        />
-        <KPICard
-          title="Deposit Leftovers"
-          value={`$${overview?.totalBalance?.toLocaleString() || '0'}`}
-          loading={loading}
-          icon={<DollarSign className="w-6 h-6 text-blue-600" />}
+          icon={<DollarSign className="w-5 h-5 md:w-6 md:h-6 text-green-600" />}
         />
         <KPICard
           title="Net Profit"
           value={`$${overview?.netProfit?.toLocaleString() || '0'}`}
           loading={loading}
-          icon={<TrendingUp className="w-6 h-6 text-green-600" />}
+          icon={<TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />}
         />
         <KPICard
           title="Active Users"
           value={`${overview?.users.active || 0} / ${overview?.users.total || 0}`}
           changeLabel="onboarded"
           loading={loading}
-          icon={<Users className="w-6 h-6 text-purple-600" />}
+          icon={<Users className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />}
+        />
+        <KPICard
+          title="Purchases"
+          value={`${overview?.purchases.count || 0}`}
+          loading={loading}
+          icon={<ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />}
         />
       </div>
 
-      {/* Secondary KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <Card className="p-4 md:p-6">
-          <p className="text-sm md:text-base text-gray-700 mb-1 font-medium">Avg. Order Value</p>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">
-            ${overview?.revenue.avgOrderValue.toFixed(2) || '0.00'}
+      {/* Secondary Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Avg. Order Value</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
+            ${overview?.revenue.avgOrderValue?.toFixed(2) || '0.00'}
           </p>
         </Card>
-        <Card className="p-4 md:p-6">
-          <p className="text-sm md:text-base text-gray-700 mb-1 font-medium">ARPU</p>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">ARPU</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
             ${arpu.toFixed(2)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Average Revenue Per User</p>
         </Card>
-        <Card className="p-4 md:p-6">
-          <p className="text-sm md:text-base text-gray-700 mb-1 font-medium">Conversion Rate</p>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">{overview?.conversionRate.toFixed(1) || '0'}%</p>
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Conversion Rate</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
+            {overview?.conversionRate?.toFixed(1) || '0'}%
+          </p>
         </Card>
-        <Card className="p-4 md:p-6">
-          <p className="text-sm md:text-base text-gray-700 mb-1 font-medium">Booking Rate</p>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">{overview?.bookingRate.toFixed(1) || '0'}%</p>
-        </Card>
-      </div>
-
-      {/* New Financial Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <KPICard
-          title="Revenue Growth"
-          value={revenueGrowth.length > 0 && revenueGrowth[revenueGrowth.length - 1].momGrowth !== null
-            ? `${revenueGrowth[revenueGrowth.length - 1].momGrowth > 0 ? '+' : ''}${revenueGrowth[revenueGrowth.length - 1].momGrowth.toFixed(1)}%`
-            : 'N/A'}
-          loading={loading}
-          icon={<TrendingUp className="w-6 h-6 text-blue-600" />}
-          change={revenueGrowth.length > 0 && revenueGrowth[revenueGrowth.length - 1].momGrowth !== null
-            ? revenueGrowth[revenueGrowth.length - 1].momGrowth
-            : undefined}
-          changeLabel="MoM"
-        />
-        <KPICard
-          title="User Retention"
-          value={`${userEngagement?.retentionRate.toFixed(1) || '0'}%`}
-          loading={loading}
-          icon={<Activity className="w-6 h-6 text-green-600" />}
-        />
-        <KPICard
-          title="Avg Purchases/User"
-          value={userEngagement?.avgPurchasesPerUser.toFixed(2) || '0.00'}
-          loading={loading}
-          icon={<Users className="w-6 h-6 text-purple-600" />}
-        />
-        <Card className="p-4 md:p-6">
-          <p className="text-sm md:text-base text-gray-700 mb-1 font-medium">Refund Rate</p>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">{refundRate.toFixed(2)}%</p>
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Retention Rate</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
+            {userEngagement?.retentionRate?.toFixed(1) || '0'}%
+          </p>
         </Card>
       </div>
 
-      {/* Charts Row 1: Revenue & User Growth */}
+      {/* Revenue Chart - Full Width */}
+      <Card className="p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <Title className="text-base md:text-lg font-bold">Revenue Over Time</Title>
+            <p className="text-xs md:text-sm text-gray-500">Deposits vs spending trends</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs md:text-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-gray-600">Deposits</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-gray-600">Purchases</span>
+            </div>
+          </div>
+        </div>
+        {revenueData.length > 0 ? (
+          <div className="h-64 md:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorPurchases" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatDate}
+                  tick={{ fontSize: 11 }}
+                  stroke="#9ca3af"
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(v) => `$${v}`}
+                  tick={{ fontSize: 11 }}
+                  stroke="#9ca3af"
+                  tickLine={false}
+                  axisLine={false}
+                  width={50}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="deposits"
+                  name="Deposits"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorDeposits)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="purchases"
+                  name="Purchases"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorPurchases)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-64 flex items-center justify-center text-gray-500">
+            {loading ? 'Loading...' : 'No data available for selected period'}
+          </div>
+        )}
+      </Card>
+
+      {/* Two Column Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Vendor Type Distribution */}
         <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">Revenue Over Time</Title>
-          <p className="text-base text-gray-600 mb-4">Deposits vs. Purchases</p>
-          {revenueData.length > 0 ? (
-            <SimpleLineChart
-              data={revenueData}
-              indexKey="date"
-              valueKeys={['deposits', 'purchases']}
-              title="Revenue"
-              colors={['green', 'red']}
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>
-          )}
-        </Card>
-
-        <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">User Growth</Title>
-          <p className="text-base text-gray-600 mb-4">New registrations over time</p>
-          {userGrowth.length > 0 ? (
-            <SimpleBarChart
-              data={userGrowth}
-              indexKey="date"
-              valueKey="count"
-              title="User Growth"
-              color="purple"
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>
-          )}
-        </Card>
-      </div>
-
-      {/* Charts Row 2: Vendor Types & Top Locations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">Users by Vendor Type</Title>
-          <p className="text-base text-gray-600 mb-4">Distribution of vendor categories</p>
+          <div className="mb-4">
+            <Title className="text-base md:text-lg font-bold">Users by Vendor Type</Title>
+            <p className="text-xs md:text-sm text-gray-500">Distribution of registered vendors</p>
+          </div>
           {vendorTypes.length > 0 ? (
-            <SimpleDonutChart
-              data={vendorTypes}
-              indexKey="vendorType"
-              valueKey="count"
-              title="Vendor Types"
-            />
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={vendorTypes}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="count"
+                    nameKey="vendorType"
+                    label={({ vendorType, percent }) =>
+                      `${vendorType} (${(percent * 100).toFixed(0)}%)`
+                    }
+                    labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+                  >
+                    {vendorTypes.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [value, name]}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>
+            <div className="h-64 flex items-center justify-center text-gray-500">
+              {loading ? 'Loading...' : 'No vendor data available'}
+            </div>
           )}
         </Card>
 
+        {/* Top Lead Locations */}
         <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">Top Lead Locations</Title>
-          <p className="text-base text-gray-600 mb-4">Most purchased lead locations</p>
+          <div className="mb-4 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-600" />
+            <div>
+              <Title className="text-base md:text-lg font-bold">Top Lead Locations</Title>
+              <p className="text-xs md:text-sm text-gray-500">Most purchased regions</p>
+            </div>
+          </div>
           {topLocations.length > 0 ? (
-            <SimpleBarChart
-              data={topLocations}
-              indexKey="location"
-              valueKey="count"
-              title="Locations"
-              color="blue"
-            />
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={topLocations.slice(0, 8)}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="#9ca3af" />
+                  <YAxis
+                    type="category"
+                    dataKey="location"
+                    tick={{ fontSize: 11 }}
+                    stroke="#9ca3af"
+                    width={100}
+                    tickFormatter={(v) => v.length > 15 ? v.slice(0, 15) + '...' : v}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [value, 'Purchases']}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                  />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>
+            <div className="h-64 flex items-center justify-center text-gray-500">
+              {loading ? 'Loading...' : 'No location data available'}
+            </div>
           )}
         </Card>
       </div>
 
-      {/* Charts Row 3: Revenue Growth & Revenue by Vendor Type */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      {/* Revenue by Vendor Type - Full Width */}
+      {revenueByVendorType.length > 0 && (
         <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">Revenue Growth Trend</Title>
-          <p className="text-base text-gray-600 mb-4">Month-over-month revenue</p>
-          {revenueGrowth.length > 0 ? (
-            <SimpleBarChart
-              data={revenueGrowth}
-              indexKey="month"
-              valueKey="revenue"
-              title="Revenue Growth"
-              color="green"
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>
-          )}
-        </Card>
-
-        <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">Revenue by Vendor Type</Title>
-          <p className="text-base text-gray-600 mb-4">Total revenue generated by vendor category</p>
-          {revenueByVendorType.length > 0 ? (
-            <SimpleBarChart
-              data={revenueByVendorType}
-              indexKey="vendorType"
-              valueKey="revenue"
-              title="Revenue by Vendor"
-              color="blue"
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-gray-500">No data available</div>
-          )}
-        </Card>
-      </div>
-
-      {/* Charts Row 4: Active Users Trend */}
-      {userEngagement && userEngagement.activeUsersTrend.length > 0 && (
-        <Card className="p-4 md:p-6">
-          <Title className="text-lg md:text-xl font-bold mb-2">Active Users Trend</Title>
-          <p className="text-base text-gray-600 mb-4">Daily active users (users who made purchases)</p>
-          <SimpleBarChart
-            data={userEngagement.activeUsersTrend}
-            indexKey="date"
-            valueKey="count"
-            title="Active Users"
-            color="purple"
-          />
+          <div className="mb-4">
+            <Title className="text-base md:text-lg font-bold">Revenue by Vendor Type</Title>
+            <p className="text-xs md:text-sm text-gray-500">Total deposits by vendor category</p>
+          </div>
+          <div className="h-48 md:h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueByVendorType} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="vendorType"
+                  tick={{ fontSize: 10, angle: -45, textAnchor: 'end' }}
+                  stroke="#9ca3af"
+                  interval={0}
+                  height={60}
+                />
+                <YAxis
+                  tickFormatter={(v) => `$${v}`}
+                  tick={{ fontSize: 11 }}
+                  stroke="#9ca3af"
+                  width={50}
+                />
+                <Tooltip
+                  formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                />
+                <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       )}
+
+      {/* Monthly Revenue Trend */}
+      {revenueGrowth.length > 0 && (
+        <Card className="p-4 md:p-6">
+          <div className="mb-4">
+            <Title className="text-base md:text-lg font-bold">Monthly Revenue Trend</Title>
+            <p className="text-xs md:text-sm text-gray-500">Revenue growth over time</p>
+          </div>
+          <div className="h-48 md:h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueGrowth} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11 }}
+                  stroke="#9ca3af"
+                />
+                <YAxis
+                  tickFormatter={(v) => `$${v}`}
+                  tick={{ fontSize: 11 }}
+                  stroke="#9ca3af"
+                  width={50}
+                />
+                <Tooltip
+                  formatter={(value: number, name: string) => {
+                    if (name === 'revenue') return [formatCurrency(value), 'Revenue'];
+                    return [value, name];
+                  }}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorRevenue)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* Bottom Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Deposit Leftovers</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600">
+            ${overview?.totalBalance?.toLocaleString() || '0'}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Unused balance in system</p>
+        </Card>
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Booking Rate</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
+            {overview?.bookingRate?.toFixed(1) || '0'}%
+          </p>
+          <p className="text-xs text-gray-500 mt-1">From lead feedback</p>
+        </Card>
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Refund Rate</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
+            {refundRate.toFixed(2)}%
+          </p>
+        </Card>
+        <Card className="p-3 md:p-4">
+          <p className="text-xs md:text-sm text-gray-600 mb-1">Avg Purchases/User</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900">
+            {userEngagement?.avgPurchasesPerUser?.toFixed(2) || '0.00'}
+          </p>
+        </Card>
+      </div>
     </div>
   );
 }

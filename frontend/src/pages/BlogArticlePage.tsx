@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { Clock, Calendar, ArrowLeft, Tag, ArrowRight, Instagram, Facebook, Youtube, UserX } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { blogArticles } from '../data/blogArticles';
 
 // Function to style article content with callouts, boxes, highlights
@@ -123,7 +124,11 @@ export const BlogArticlePage: React.FC = () => {
 
   const styledContent = useMemo(() => {
     if (!article) return '';
-    return styleArticleContent(article.content);
+    const styled = styleArticleContent(article.content);
+    return DOMPurify.sanitize(styled, {
+      ADD_TAGS: ['style'],
+      ADD_ATTR: ['class', 'style', 'itemProp', 'itemScope', 'itemType'],
+    });
   }, [article]);
 
   useEffect(() => {

@@ -140,40 +140,46 @@ export const logAdminAction = (action, data = {}) => {
 
 // Telegram notification helper - sends directly to Telegram API
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_IDS
+  ? process.env.TELEGRAM_CHAT_IDS.split(',').map(id => id.trim()).filter(Boolean)
+  : (process.env.TELEGRAM_CHAT_ID ? [process.env.TELEGRAM_CHAT_ID] : []);
 
 export const notifyTelegram = async (message, level = 'info') => {
   // Skip if Telegram not configured
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_CHAT_IDS.length === 0) {
     return;
   }
 
-  try {
-    const emoji = {
-      info: 'ℹ️',
-      warn: '⚠️',
-      error: '🚨',
-      success: '✅'
-    }[level] || 'ℹ️';
+  const emoji = {
+    info: 'ℹ️',
+    warn: '⚠️',
+    error: '🚨',
+    success: '✅'
+  }[level] || 'ℹ️';
 
-    const formattedMessage = `${emoji} *BlackBow Associates*\n\n${message}`;
+  const formattedMessage = `${emoji} *BlackBow Associates*\n\n${message}`;
 
-    await axios.post(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        chat_id: TELEGRAM_CHAT_ID,
-        text: formattedMessage,
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true
-      },
-      { timeout: 10000 }
-    );
-  } catch (error) {
-    // Log locally but don't throw - notifications should never break the app
-    logger.warn('Failed to send Telegram notification', {
-      error: error.message,
-      code: error.response?.data?.error_code
-    });
+  // Send to all configured chat IDs
+  for (const chatId of TELEGRAM_CHAT_IDS) {
+    try {
+      await axios.post(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          chat_id: chatId,
+          text: formattedMessage,
+          parse_mode: 'Markdown',
+          disable_web_page_preview: true
+        },
+        { timeout: 10000 }
+      );
+    } catch (error) {
+      // Log locally but don't throw - notifications should never break the app
+      logger.warn('Failed to send Telegram notification', {
+        error: error.message,
+        chatId,
+        code: error.response?.data?.error_code
+      });
+    }
   }
 };
 

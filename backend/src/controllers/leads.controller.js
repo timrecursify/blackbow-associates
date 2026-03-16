@@ -140,7 +140,7 @@ export const getLeads = asyncHandler(async (req, res) => {
 
   // Calculate dynamic tags for each lead
   const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
 
@@ -151,8 +151,8 @@ export const getLeads = asyncHandler(async (req, res) => {
       const dynamicTags = [...lead.tags]; // Start with existing tags
       const purchasedAt = purchasedLeadsMap.get(lead.id);
 
-      // NEW tag: leads created within last 3 days OR recently purchased by this user (within 7 days)
-      const isNewlyCreated = new Date(lead.createdAt) >= threeDaysAgo;
+      // NEW tag: leads created within last 5 days OR recently purchased by this user (within 7 days)
+      const isNewlyCreated = new Date(lead.createdAt) >= fiveDaysAgo;
       const isNewlyPurchased = purchasedAt && new Date(purchasedAt) >= sevenDaysAgo;
       
       // Remove NEW if it exists but shouldn't (cleanup old tags)
@@ -178,6 +178,7 @@ export const getLeads = asyncHandler(async (req, res) => {
         location: lead.location,
         city: lead.city,
         state: lead.state,
+        venueHint: lead.venueHint,
         isFavorited: favoritedLeadIds.has(lead.id),
         servicesNeeded: lead.servicesNeeded,
         price: parseFloat(lead.price),
@@ -231,6 +232,7 @@ export const getLead = asyncHandler(async (req, res) => {
       location: lead.location,
       city: lead.city,
       state: lead.state,
+      venueHint: lead.venueHint,
       budgetMin: lead.budgetMin ? parseFloat(lead.budgetMin) : null,
       budgetMax: lead.budgetMax ? parseFloat(lead.budgetMax) : null,
       servicesNeeded: lead.servicesNeeded,
@@ -466,7 +468,7 @@ export const getFavorites = asyncHandler(async (req, res) => {
 
   // Calculate dynamic tags for each lead
   const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
   const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
 
   res.json({
@@ -474,8 +476,8 @@ export const getFavorites = asyncHandler(async (req, res) => {
     favorites: favorites.map(fav => {
       const dynamicTags = [...fav.lead.tags]; // Start with existing tags
 
-      // NEW tag: leads created within last 3 days
-      if (new Date(fav.lead.createdAt) >= threeDaysAgo && !dynamicTags.includes('NEW')) {
+      // NEW tag: leads created within last 5 days
+      if (new Date(fav.lead.createdAt) >= fiveDaysAgo && !dynamicTags.includes('NEW')) {
         dynamicTags.push('NEW');
       }
 
@@ -491,6 +493,7 @@ export const getFavorites = asyncHandler(async (req, res) => {
         location: fav.lead.location,
         city: fav.lead.city,
         state: fav.lead.state,
+        venueHint: fav.lead.venueHint,
         description: fav.lead.description,
         servicesNeeded: fav.lead.servicesNeeded,
         ethnicReligious: fav.lead.ethnicReligious,

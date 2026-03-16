@@ -351,11 +351,96 @@ export const updateBillingAddress = asyncHandler(async (req, res) => {
   });
 });
 
+// Get lead notification preferences
+export const getNotificationPreferences = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const preferences = await prisma.leadNotificationPreference.findUnique({
+    where: { userId: user.id }
+  });
+
+  res.json({
+    success: true,
+    preferences: preferences || {
+      states: [],
+      frequency: 'INSTANT',
+      enabled: false
+    }
+  });
+});
+
+// Update lead notification preferences
+export const updateNotificationPreferences = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const { states, frequency, enabled } = req.body;
+
+  // Validate frequency
+  const validFrequencies = ['INSTANT', 'DAILY', 'WEEKLY'];
+  if (frequency && !validFrequencies.includes(frequency)) {
+    throw new AppError('Invalid frequency. Must be INSTANT, DAILY, or WEEKLY', 400, 'INVALID_FREQUENCY');
+  }
+
+  // Validate states (should be array of 2-letter state codes)
+  if (states && !Array.isArray(states)) {
+    throw new AppError('States must be an array', 400, 'INVALID_STATES');
+  }
+
+  const validStates = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
+  ];
+
+  if (states) {
+    const invalidStates = states.filter(s => !validStates.includes(s.toUpperCase()));
+    if (invalidStates.length > 0) {
+      throw new AppError(`Invalid state codes: ${invalidStates.join(', ')}`, 400, 'INVALID_STATES');
+    }
+  }
+
+  const preferences = await prisma.leadNotificationPreference.upsert({
+    where: { userId: user.id },
+    update: {
+      states: states ? states.map(s => s.toUpperCase()) : undefined,
+      frequency: frequency || undefined,
+      enabled: typeof enabled === 'boolean' ? enabled : undefined,
+      updatedAt: new Date()
+    },
+    create: {
+      id: `lnp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: user.id,
+      states: states ? states.map(s => s.toUpperCase()) : [],
+      frequency: frequency || 'INSTANT',
+      enabled: typeof enabled === 'boolean' ? enabled : true
+    }
+  });
+
+  logger.info('Notification preferences updated', {
+    userId: user.id,
+    states: preferences.states,
+    frequency: preferences.frequency,
+    enabled: preferences.enabled
+  });
+
+  res.json({
+    success: true,
+    preferences: {
+      states: preferences.states,
+      frequency: preferences.frequency,
+      enabled: preferences.enabled
+    }
+  });
+});
+
 export default {
   getProfile,
   updateProfile,
   getTransactions,
   getPurchasedLeads,
   updateLeadNote,
-  updateBillingAddress
+  updateBillingAddress,
+  getNotificationPreferences,
+  updateNotificationPreferences
 };

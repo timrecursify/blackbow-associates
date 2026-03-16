@@ -51,7 +51,17 @@ const FIELD_KEYS = {
   ipAddress: '511d65babf591015ec6be0b58434327933c6f703'
 };
 
-const BAD_LOCATION_TERMS = ['other destinations', 'other destination', 'location tbd', 'tbd', 'metro', 'destinations'];
+const BAD_LOCATION_TERMS = [
+  'other destinations',
+  'other destination',
+  'location tbd',
+  'tbd',
+  'metro',
+  'destinations',
+  'south florida',
+  'boston, hartford, providence',
+  'seattle, spokane'
+];
 const isBadLocation = (loc) => {
   if (!loc) return true;
   const lower = loc.toLowerCase().trim();
@@ -72,11 +82,109 @@ const STATE_ABBR = {
   'district of columbia': 'DC', 'puerto rico': 'PR'
 };
 
+// Map Pipedrive state enum IDs to state abbreviations
+const STATE_ENUM_MAP = {
+  102: 'AL', 103: 'AK', 104: 'AZ', 105: 'AR', 106: 'CA',
+  107: 'CO', 108: 'CT', 156: 'DC', 109: 'DE', 110: 'FL',
+  111: 'GA', 112: 'HI', 113: 'ID', 114: 'IL', 115: 'IN',
+  116: 'IA', 117: 'KS', 118: 'KY', 119: 'LA', 120: 'ME',
+  121: 'MD', 122: 'MA', 123: 'MI', 124: 'MN', 125: 'MS',
+  126: 'MO', 127: 'MT', 128: 'NE', 129: 'NV', 130: 'NH',
+  131: 'NJ', 132: 'NM', 133: 'NY', 134: 'NC', 135: 'ND',
+  136: 'OH', 137: 'OK', 138: 'OR', 139: 'PA', 140: 'RI',
+  141: 'SC', 142: 'SD', 143: 'TN', 144: 'TX', 145: 'UT',
+  146: 'VT', 147: 'VA', 148: 'WA', 149: 'WV', 150: 'WI',
+  151: 'WY', 171: 'MX', 174: 'MX', 172: 'DEST'
+};
+
+/**
+ * Normalize enum field values from Pipedrive
+ * Handles both webhook format {id: 110, type: enum} and API format 110
+ */
+const normalizeEnumValue = (value, enumMap) => {
+  if (!value) return null;
+  // Webhook format: {id: 110, type: enum}
+  if (typeof value === 'object' && value.id) {
+    return enumMap[value.id] || null;
+  }
+  // API format: 110 or 110
+  const numericId = parseInt(value, 10);
+  if (!isNaN(numericId)) {
+    return enumMap[numericId] || null;
+  }
+  // Already a string label
+  if (typeof value === 'string' && value.length === 2) {
+    return value.toUpperCase();
+  }
+  return null;
+};
+
+
 const toStateAbbr = (state) => {
   if (!state) return null;
   const s = state.trim();
   if (s.length === 2) return s.toUpperCase();
   return STATE_ABBR[s.toLowerCase()] || s;
+};
+
+/**
+ * Map generic region names to state abbreviations
+ */
+const REGION_TO_STATE = {
+  'south florida': 'FL',
+  'boston, hartford, providence': 'MA',
+  'boston': 'MA',
+  'hartford': 'CT',
+  'providence': 'RI',
+  'seattle, spokane': 'WA',
+  'seattle': 'WA',
+  'spokane': 'WA',
+  'denver, aspen, vail': 'CO',
+  'denver': 'CO',
+  'aspen': 'CO',
+  'vail': 'CO'
+};
+
+/**
+ * Infer state from generic region name
+ */
+const inferStateFromRegion = (region) => {
+  if (!region) return null;
+  const lower = region.toLowerCase().trim();
+  return REGION_TO_STATE[lower] || null;
+};
+
+/**
+ * Extract state abbreviation from a full location string like "Miami, Florida, US"
+ * Returns the 2-letter state code or null if not parseable
+ */
+const extractStateFromVisitorLocation = (visitorLocation) => {
+  if (!visitorLocation) return null;
+  
+  // First, check if it's a generic region we can map
+  const inferredState = inferStateFromRegion(visitorLocation);
+  if (inferredState) return inferredState;
+  
+  // Handle formats like "Miami, Florida, US" or "Pembroke Pines, Florida, US"
+  const parts = visitorLocation.split(',').map(p => p.trim());
+  
+  // Try to find a state name in the parts
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    // Skip if it's obviously a country or city
+    if (lower === 'us' || lower === 'usa' || lower === 'united states') continue;
+    
+    // Check if this part is a known state name
+    if (STATE_ABBR[lower]) {
+      return STATE_ABBR[lower];
+    }
+    // Check if it's already a 2-letter abbreviation
+    if (part.length === 2 && /^[A-Z]{2}$/i.test(part)) {
+      return part.toUpperCase();
+    }
+  }
+  
+  return null;
 };
 
 export const fetchDeals = async (params = {}, fetchAll = false) => {
@@ -155,11 +263,19 @@ export const transformDealToLead = async (deal) => {
 
     const comments = deal[FIELD_KEYS.comments] || '';
     const title = deal.title || '';
-    const description = deal[FIELD_KEYS.description] || '';
-    const servicesNeeded = parseServicesFromDescription(description);
+    const rawDescription = deal[FIELD_KEYS.description] || '';
+    // Remove "Type of Coverage" / "Tupe of Coverage" lines from description
+    const description = rawDescription
+      .split('\n')
+      .filter(line => !line.toLowerCase().includes('upe of coverage'))
+      .join('\n')
+      .trim() || null;
+    const servicesNeeded = parseServicesFromDescription(rawDescription);
     
-    let city = deal[FIELD_KEYS.city] || extractCityFromComments(comments);
-    let state = deal[FIELD_KEYS.state] || extractStateFromTitle(title);
+    // Try to extract city and state from comments first
+    const cityStateFromComments = extractCityStateFromComments(comments);
+    let city = deal[FIELD_KEYS.city] || cityStateFromComments?.city || extractCityFromComments(comments);
+    let state = normalizeEnumValue(deal[FIELD_KEYS.state], STATE_ENUM_MAP) || cityStateFromComments?.state || extractStateFromTitle(title);
     let location = buildLocationString(city, state, comments);
     
     // FALLBACK: If location is bad, use visitor data from person
@@ -175,16 +291,64 @@ export const transformDealToLead = async (deal) => {
           visitorLocation
         });
         
-        if (visitorCity) city = visitorCity;
-        if (visitorLocation) state = toStateAbbr(visitorLocation);
+        if (visitorCity && !isBadLocation(visitorCity)) {
+          // Only use visitorCity if it's a real city (not generic)
+          city = visitorCity;
+        }
         
+        // Extract proper state abbreviation from visitorLocation
+        // Handles both full strings ("Miami, Florida, US" → "FL") and generic regions ("South Florida" → "FL")
+        const extractedState = extractStateFromVisitorLocation(visitorLocation);
+        if (extractedState) {
+          state = extractedState;
+          // If we inferred state from a generic region (like "South Florida"), clear city if it's also generic
+          // This prevents leads from staying incomplete due to generic city names
+          if (isBadLocation(visitorLocation) && isBadLocation(city)) {
+            city = null; // Clear generic city when we have state from generic region
+          }
+        }
+        
+        // Build location string
         if (city && state) {
-          location = `${city}, ${state}`;
-        } else if (city) {
-          location = city;
+          // If city is still generic (like "South Florida"), use state only
+          if (isBadLocation(city)) {
+            location = state;
+            city = null; // Clear generic city
+          } else {
+            location = `${city}, ${state}`;
+          }
         } else if (state) {
           location = state;
+        } else if (city && !isBadLocation(city)) {
+          location = city;
         }
+      }
+    }
+    
+    // FINAL FALLBACK: If we still don't have city/state, try to extract from location string itself
+    // Handles cases like "Other Destinations, Tampa" → Tampa, FL
+    if ((!city || !state) && location && isBadLocation(location)) {
+      const extracted = extractCityStateFromLocation(location);
+      if (extracted) {
+        if (extracted.city && !city) city = extracted.city;
+        if (extracted.state && !state) state = extracted.state;
+        // Rebuild location with extracted data
+        if (city && state) {
+          location = `${city}, ${state}`;
+        } else if (state) {
+          location = state;
+        } else if (city) {
+          location = city;
+        }
+      }
+    }
+
+        // FALLBACK: Try to infer state from known region names in location
+    if (!state && location) {
+      const regionState = inferStateFromRegion(location);
+      if (regionState) {
+        state = regionState;
+        logger.info('Inferred state from region', { dealId: deal.id, location, state });
       }
     }
 
@@ -221,6 +385,7 @@ export const transformDealToLead = async (deal) => {
       price: 20.00,
       status: 'AVAILABLE',
       active: true,
+      venueHint: extractVenueHint(comments),
       maskedInfo: { weddingDate: deal[FIELD_KEYS.weddingDate] || null, location, servicesNeeded },
       fullInfo: { coupleName: person?.name || 'N/A', email: person?.email?.[0]?.value || 'N/A', phone: person?.phone?.[0]?.value || 'N/A', notes: comments || '' }
     };
@@ -239,6 +404,103 @@ const parseServicesFromDescription = (d) => {
   if (l.includes('multi-day')) s.push('Multi-Day');
   if (l.includes('raw')) s.push('RAW Files');
   return s.length > 0 ? s : ['Photography'];
+};
+
+/**
+ * Extract venue hint from comments/notes
+ * Looks for specific venue names in:
+ * 1. "Venue Location:" field - after the vague region (e.g., "DC & DMV Metro, Wampanoag country club")
+ * 2. "Client's Notes:" field - venue names like "First Baptist Church", "country club", etc.
+ * Returns null if no specific venue found
+ */
+const extractVenueHint = (comments) => {
+  if (!comments) return null;
+
+  // Vague location terms to filter out
+  const VAGUE_TERMS = [
+    'dc & dmv metro', 'dmv metro', 'ny, nj , pa metro', 'ny, nj, pa metro',
+    'south florida', 'other destinations', 'location tbd', 'tbd',
+    'boston, hartford, providence', 'seattle, spokane', 'denver, aspen, vail',
+    'cancun, tulum, vallarta, cabos', 'metro'
+  ];
+
+  const isVague = (text) => {
+    if (!text) return true;
+    const lower = text.toLowerCase().trim();
+    if (lower.length < 3) return true;
+    return VAGUE_TERMS.some(term => lower === term || lower.startsWith(term + ','));
+  };
+
+  let venueHint = null;
+
+  // 1. Try to extract from "Venue Location:" - look for specific venue after vague region
+  const venueMatch = comments.match(/Venue Location:\s*([^\n]+)/i);
+  if (venueMatch) {
+    const venueLine = venueMatch[1].trim();
+    const parts = venueLine.split(',').map(p => p.trim()).filter(p => p);
+
+    // Find the first non-vague, non-state part that looks like a venue name
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      // Skip vague terms and 2-letter state codes
+      if (isVague(part)) continue;
+      if (part.length === 2 && /^[A-Z]{2}$/i.test(part)) continue;
+
+      // This might be a venue - check if it's descriptive enough
+      // Look for venue-like words or proper nouns (capitalized words)
+      const hasVenueKeyword = /club|church|hall|manor|barn|estate|hotel|resort|garden|farm|house|center|museum|library|park|winery|vineyard|brewery|restaurant|ballroom|pavilion|lodge|inn|venue|chapel/i.test(part);
+      const isProperNoun = /^[A-Z][a-z]+(\s+[A-Z][a-z]+)*/.test(part) && part.length > 5;
+
+      if (hasVenueKeyword || isProperNoun) {
+        venueHint = part;
+        break;
+      }
+    }
+  }
+
+  // 2. If no venue from Venue Location, try Client's Notes
+  if (!venueHint) {
+    const clientNotesMatch = comments.match(/Client's Notes:\s*([\s\S]*?)(?=\n\n|$)/i);
+    if (clientNotesMatch) {
+      const notes = clientNotesMatch[1].trim();
+
+      // Look for venue patterns in client notes
+      const venuePatterns = [
+        // "at [Venue Name]" or "in [Venue Name]"
+        /(?:at|in)\s+(?:the\s+)?([A-Z][A-Za-z\s'-]+(?:church|club|hall|manor|barn|estate|hotel|resort|garden|farm|house|center|museum|venue|chapel|winery|ballroom|pavilion|lodge|inn)[A-Za-z\s'-]*)/i,
+        // "ceremony/reception at [Venue]"
+        /(?:ceremony|reception|wedding)\s+(?:will be\s+)?(?:at|in)\s+(?:the\s+)?([A-Z][A-Za-z\s'-]+)/i,
+        // "[Venue Name] country club" or similar
+        /([A-Z][A-Za-z\s'-]+(?:country\s+club|golf\s+club|yacht\s+club|beach\s+club))/i,
+        // "Venue location: [specific]" inline
+        /venue\s*(?:location)?:?\s*([A-Z][A-Za-z\s'-]+(?:church|club|hall|manor|barn|estate|hotel|resort))/i
+      ];
+
+      for (const pattern of venuePatterns) {
+        const match = notes.match(pattern);
+        if (match && match[1]) {
+          const extracted = match[1].trim();
+          // Validate it's not too short or too long
+          if (extracted.length >= 5 && extracted.length <= 60 && !isVague(extracted)) {
+            venueHint = extracted;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Clean up the venue hint
+  if (venueHint) {
+    // Remove trailing punctuation and clean whitespace
+    venueHint = venueHint.replace(/[,.\s]+$/, '').trim();
+    // Capitalize properly if all lowercase
+    if (venueHint === venueHint.toLowerCase()) {
+      venueHint = venueHint.replace(/\b\w/g, c => c.toUpperCase());
+    }
+  }
+
+  return venueHint || null;
 };
 
 const extractStateFromTitle = (title) => {
@@ -274,4 +536,153 @@ const extractCityFromComments = (comments) => {
   return null;
 };
 
-export default { fetchDeals, fetchPerson, transformDealToLead, FIELD_KEYS };
+
+/**
+ * Extract both city and state from comments
+ * Handles formats like:
+ * - "Venue Location: Virginia" → { city: null, state: 'VA' }
+ * - "Venue Location: Other Destinations, Powhatan, VA" → { city: 'Powhatan', state: 'VA' }
+ * - "Venue Location: Other Destinations, Cedar Oaks Farm -  Bedford, VA" → { city: 'Bedford', state: 'VA' }
+ */
+const extractCityStateFromComments = (comments) => {
+  if (!comments) return null;
+  const m = comments.match(/Venue Location:\s*([^\n]+)/i);
+  if (!m) return null;
+  
+  const venueLocation = m[1].trim();
+  const parts = venueLocation.split(',').map(p => p.trim()).filter(p => p);
+  
+  if (parts.length === 0) return null;
+  
+  let extractedCity = null;
+  let extractedState = null;
+  
+  // Check if last part is a 2-letter state code (e.g., "VA", "FL")
+  const lastPart = parts[parts.length - 1];
+  if (lastPart.length === 2 && /^[A-Z]{2}$/i.test(lastPart)) {
+    extractedState = lastPart.toUpperCase();
+    // City is the part before the state
+    if (parts.length >= 2) {
+      // Handle cases like "Cedar Oaks Farm -  Bedford" → extract "Bedford"
+      const cityPart = parts[parts.length - 2];
+      // Extract city name from compound strings like "Cedar Oaks Farm -  Bedford"
+      const cityMatch = cityPart.match(/([^-]+)$/);
+      if (cityMatch) {
+        extractedCity = cityMatch[1].trim();
+        // Filter out bad location terms
+        if (isBadLocation(extractedCity)) {
+          extractedCity = null;
+        }
+      } else if (!isBadLocation(cityPart)) {
+        extractedCity = cityPart;
+      }
+    }
+  } else {
+    // Check if last part is a full state name (e.g., "Virginia", "Florida")
+    const stateMatch = Object.entries(STATE_ABBR).find(([name]) => 
+      lastPart.toLowerCase() === name.toLowerCase()
+    );
+    if (stateMatch) {
+      extractedState = stateMatch[1];
+      // If only one part and it's a state name, no city
+      if (parts.length === 1) {
+        extractedCity = null;
+      } else if (parts.length >= 2) {
+        const cityPart = parts[parts.length - 2];
+        if (!isBadLocation(cityPart)) {
+          extractedCity = cityPart;
+        }
+      }
+    } else {
+      // No state found, try to extract city only
+      const cityPart = parts[parts.length - 1];
+      if (!isBadLocation(cityPart) && cityPart.length > 2) {
+        extractedCity = cityPart;
+      }
+    }
+  }
+  
+  // Filter out bad location terms from city
+  if (extractedCity && isBadLocation(extractedCity)) {
+    extractedCity = null;
+  }
+  
+  if (extractedCity || extractedState) {
+    return { city: extractedCity, state: extractedState };
+  }
+  
+  return null;
+};
+
+
+/**
+ * Extract city and state from location strings like "Other Destinations, Tampa" or "Other Destinations, Shelby NC"
+ * Returns { city, state } or null if not parseable
+ * Note: We still try to extract even if location contains bad terms, as long as it has real city names
+ */
+const extractCityStateFromLocation = (locationStr) => {
+  if (!locationStr) return null;
+  
+  // Handle patterns like "Other Destinations, Tampa" or "Other Destinations, Shelby NC"
+  const parts = locationStr.split(',').map(p => p.trim()).filter(p => p && !isBadLocation(p));
+  
+  if (parts.length === 0) return null;
+  
+  // Try to find a state abbreviation in the last part
+  const lastPart = parts[parts.length - 1];
+  let extractedState = null;
+  let extractedCity = null;
+  
+  // Check if last part is a 2-letter state code
+  if (lastPart.length === 2 && /^[A-Z]{2}$/i.test(lastPart)) {
+    extractedState = lastPart.toUpperCase();
+    // City is the part before it
+    if (parts.length >= 2) {
+      extractedCity = parts[parts.length - 2];
+    }
+  } else {
+    // Check if last part contains a state name
+    const stateMatch = Object.entries(STATE_ABBR).find(([name]) => 
+      lastPart.toLowerCase().includes(name.toLowerCase())
+    );
+    if (stateMatch) {
+      extractedState = stateMatch[1];
+      // City is everything before the state
+      if (parts.length >= 2) {
+        extractedCity = parts.slice(0, -1).join(', ');
+      }
+    } else {
+      // No state found, try to infer from known cities
+      // Common cities that might appear without state
+      const cityOnly = parts[parts.length - 1];
+      if (cityOnly && cityOnly.length > 2 && !isBadLocation(cityOnly)) {
+        extractedCity = cityOnly;
+        // Try to infer state from city name (e.g., "Tampa" → FL, "Shelby" → NC)
+        // This is a best-effort guess
+        if (cityOnly.toLowerCase().includes('tampa') || cityOnly.toLowerCase().includes('miami') || 
+            cityOnly.toLowerCase().includes('orlando') || cityOnly.toLowerCase().includes('jacksonville')) {
+          extractedState = 'FL';
+        } else if (cityOnly.toLowerCase().includes('shelby')) {
+          extractedState = 'NC';
+        } else if (cityOnly.toLowerCase().includes('lake mary')) {
+          extractedState = 'FL';
+        }
+      }
+    }
+  }
+  
+  if (extractedCity && extractedState) {
+    return { city: extractedCity, state: extractedState };
+  }
+  if (extractedState) {
+    return { city: null, state: extractedState };
+  }
+  if (extractedCity && !isBadLocation(extractedCity)) {
+    return { city: extractedCity, state: null };
+  }
+  
+  return null;
+};
+
+export { extractVenueHint };
+export default { fetchDeals, fetchPerson, transformDealToLead, FIELD_KEYS, extractVenueHint };

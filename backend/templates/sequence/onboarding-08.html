@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maximizing Your Lead Conversion</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #f5f5f5;
+        }
+        .email-wrapper { padding: 40px 20px; }
+        .email-container { max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; }
+        .header { padding: 40px 32px 24px; text-align: center; border-bottom: 1px solid #eee; }
+        .brand-name { font-size: 28px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+        .tagline { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; }
+        .content { padding: 32px; }
+        .greeting { font-size: 20px; color: #1a1a1a; margin-bottom: 20px; font-weight: 600; }
+        .paragraph { font-size: 15px; color: #444; margin-bottom: 20px; line-height: 1.7; }
+        .section-title { font-size: 17px; font-weight: 600; color: #1a1a1a; margin: 28px 0 12px; }
+        .tip-card { background-color: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        .tip-number { display: inline-block; background: #000; color: #fff; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: 600; margin-right: 10px; }
+        .tip-title { display: inline; font-size: 15px; font-weight: 600; color: #1a1a1a; }
+        .tip-desc { font-size: 14px; color: #666; margin-top: 10px; margin-left: 34px; }
+        .stat-box { background: linear-gradient(135deg, #000 0%, #333 100%); color: #fff; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center; }
+        .stat-row { display: table; width: 100%; }
+        .stat-item { display: table-cell; width: 33.33%; text-align: center; padding: 10px; }
+        .stat-number { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .highlight-box { background-color: #f8f9fa; border-left: 4px solid #000; padding: 20px; margin: 24px 0; }
+        .highlight-box p { margin: 0; font-size: 15px; color: #333; }
+        .cta-section { text-align: center; margin: 32px 0; }
+        .cta-button {
+            display: inline-block; background-color: #000000; color: #ffffff !important;
+            padding: 14px 40px; text-decoration: none; font-size: 14px; font-weight: 500;
+            letter-spacing: 0.5px; border-radius: 4px;
+        }
+        .signature { margin-top: 32px; padding-top: 24px; border-top: 1px solid #eee; }
+        .signature p { font-size: 14px; color: #666; margin-bottom: 4px; }
+        .signature .name { font-weight: 600; color: #1a1a1a; }
+        .footer { padding: 24px 32px; background-color: #fafafa; text-align: center; border-top: 1px solid #eee; }
+        .footer p { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+        .email-number { font-size: 11px; color: #ccc; margin-top: 12px; }
+        .unsubscribe { margin-top: 16px; }
+        .unsubscribe a { font-size: 10px; color: #ccc; text-decoration: none; }
+        @media (max-width: 520px) {
+            .email-wrapper { padding: 20px 12px; }
+            .header, .content { padding-left: 20px; padding-right: 20px; }
+            .stat-row { display: block; }
+            .stat-item { display: block; width: 100%; padding: 16px 10px; border-bottom: 1px solid #444; }
+            .stat-item:last-child { border-bottom: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <h1 class="brand-name">Black Bow Associates</h1>
+                <p class="tagline">Wedding Lead Marketplace</p>
+            </div>
+            <div class="content">
+                <p class="greeting">Turn More Leads Into Clients</p>
+
+                <p class="paragraph">Hi {{businessName}},</p>
+
+                <p class="paragraph">Ready to boost your conversion rate? Here are our top strategies for turning leads into booked clients.</p>
+
+                <p class="section-title">5 Proven Strategies</p>
+
+                <div class="tip-card">
+                    <span class="tip-number">1</span>
+                    <span class="tip-title">Respond Within 1 Hour</span>
+                    <p class="tip-desc">The faster you respond, the higher your chances. Leads are actively searching&mdash;catch them while they're engaged.</p>
+                </div>
+
+                <div class="tip-card">
+                    <span class="tip-number">2</span>
+                    <span class="tip-title">Lead With Value</span>
+                    <p class="tip-desc">Don't just sell&mdash;offer something helpful. Share a planning tip, a venue recommendation, or insight about their wedding date.</p>
+                </div>
+
+                <div class="tip-card">
+                    <span class="tip-number">3</span>
+                    <span class="tip-title">Show, Don't Tell</span>
+                    <p class="tip-desc">Your portfolio does the heavy lifting. Include your best 3-5 pieces of work that match their style or venue type.</p>
+                </div>
+
+                <div class="tip-card">
+                    <span class="tip-number">4</span>
+                    <span class="tip-title">Follow Up Strategically</span>
+                    <p class="tip-desc">Day 1: Initial outreach. Day 3: Friendly check-in. Day 7: Share a recent project. Don't give up after one message.</p>
+                </div>
+
+                <div class="tip-card">
+                    <span class="tip-number">5</span>
+                    <span class="tip-title">Make Booking Easy</span>
+                    <p class="tip-desc">Include clear next steps. Offer a quick call, share your calendar link, or provide a simple quote. Remove friction.</p>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <div class="stat-number">78%</div>
+                            <div class="stat-label">Book with first responder</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">3x</div>
+                            <div class="stat-label">More replies with portfolio</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">2-3</div>
+                            <div class="stat-label">Follow-ups to conversion</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <p><strong>Remember:</strong> These couples found us while searching for wedding vendors. They're ready to book&mdash;help them choose you!</p>
+                </div>
+
+                <div class="cta-section">
+                    <a href="https://blackbowassociates.com/marketplace" class="cta-button">Find Your Next Client</a>
+                </div>
+
+                <div class="signature">
+                    <p class="name">The Black Bow Team</p>
+                    <p>Questions? Reply to this email&mdash;we're here to help.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>A subsidiary of Precious Pics Production</p>
+                <p class="email-number">Email 8 of 10 in your welcome series</p>
+                <p class="unsubscribe"><a href="https://blackbowassociates.com/account?tab=notifications">Unsubscribe</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

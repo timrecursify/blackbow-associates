@@ -5,7 +5,8 @@ import { DepositModal } from '../components/DepositModal';
 import { BillingAddressModal } from '../components/BillingAddressModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Notification from '../components/Notification';
-import { Search, SlidersHorizontal, List, Grid, Table as TableIcon, ChevronDown, ChevronRight, X, Star, ShoppingCart, Clock, Flame, Zap } from 'lucide-react';
+import { ServiceReferralTags } from '../components/ServiceReferralTags';
+import { Search, SlidersHorizontal, List, Grid, Table as TableIcon, ChevronDown, ChevronRight, X, Star, ShoppingCart, Clock, Flame, Zap, MapPinned } from 'lucide-react';
 import { leadsAPI, usersAPI } from '../services/api';
 import { format, differenceInDays, differenceInMonths } from 'date-fns';
 import { useNavigate, Link } from 'react-router-dom';
@@ -17,6 +18,7 @@ interface Lead {
   location: string;
   city: string | null;
   state: string | null;
+  venueHint: string | null;
   servicesNeeded: string[];
   price: number;
   status: string;
@@ -801,7 +803,19 @@ export const MarketplacePage: React.FC = () => {
                       </td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 hidden sm:table-cell transition-colors duration-200">{formatDate(lead.createdAt)}</td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
-                        <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
+                          {lead.venueHint && (
+                            <div className="relative group">
+                              <MapPinned size={14} className="text-emerald-600 cursor-help" />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                                <div className="font-medium text-emerald-400 mb-0.5">Venue Info</div>
+                                {lead.venueHint}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         {lead.state && <div className="text-xs text-gray-500 transition-colors duration-200">{lead.state}</div>}
                       </td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
@@ -838,15 +852,20 @@ export const MarketplacePage: React.FC = () => {
                         )}
                       </td>
                     </tr>
-                    {expandedLead === lead.id && lead.description && (
+                    {expandedLead === lead.id && (
                       <tr>
-                        <td colSpan={8} className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-50 transition-colors duration-200">
-                          <div className="flex items-start gap-2">
-                            <ChevronRight size={14} className="sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 transition-colors duration-200" />
-                            <div>
-                              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Package Description</p>
-                              <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap transition-colors duration-200">{lead.description}</p>
-                            </div>
+                        <td colSpan={9} className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-50 transition-colors duration-200">
+                          <div className="space-y-4">
+                            {lead.description && (
+                              <div className="flex items-start gap-2">
+                                <ChevronRight size={14} className="sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 mt-0.5 transition-colors duration-200" />
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Package Description</p>
+                                  <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap transition-colors duration-200">{lead.description}</p>
+                                </div>
+                              </div>
+                            )}
+                            <ServiceReferralTags className={lead.description ? 'ml-5 sm:ml-6 pt-3 border-t border-gray-200' : ''} />
                           </div>
                         </td>
                       </tr>
@@ -863,69 +882,98 @@ export const MarketplacePage: React.FC = () => {
         {viewMode === 'list' && (
           <div className="space-y-2">
             {filteredLeads.map((lead) => (
-              <div key={lead.id} className="p-3 sm:p-4 bg-white rounded-lg transition-all">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                    <input
-                      type="checkbox"
-                      checked={selectedLeadIds.has(lead.id)}
-                      onChange={() => handleToggleSelect(lead.id)}
-                      className="w-4 h-4 text-black sm:ring-blacks:ring-white cursor-pointer mt-1 transition-colors duration-200"
-                    />
-                    <button
-                      onClick={() => toggleFavorite(lead.id, lead.isFavorited || false)}
-                      className="p-1 hover:bg-gray-100 transition-colors"
-                      title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      <Star
-                        size={18}
-                        className={`${lead.isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'} transition-colors`}
+              <div key={lead.id} className="bg-white rounded-lg transition-all">
+                <div
+                  className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
+                >
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.has(lead.id)}
+                        onChange={() => handleToggleSelect(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-black sm:ring-blacks:ring-white cursor-pointer mt-1 transition-colors duration-200"
                       />
-                    </button>
-                    <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-black transition-colors duration-200">
-                      <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
-                      <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
-                      {lead.tags?.includes('NEW') && (
-                        <span className="px-2 py-0.5 text-xs font-bold bg-green-100 transition-colors duration-200">
-                          NEW
-                        </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(lead.id, lead.isFavorited || false); }}
+                        className="p-1 hover:bg-gray-100 transition-colors"
+                        title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <Star
+                          size={18}
+                          className={`${lead.isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'} transition-colors`}
+                        />
+                      </button>
+                      <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-black transition-colors duration-200">
+                        <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
+                        <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
+                        {lead.tags?.includes('NEW') && (
+                          <span className="px-2 py-0.5 text-xs font-bold bg-green-100 transition-colors duration-200">
+                            NEW
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-black transition-colors duration-200">
+                        {lead.city || lead.location}
+                        {lead.venueHint && (
+                          <div className="relative group">
+                            <MapPinned size={14} className="text-emerald-600 cursor-help" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                              <div className="font-medium text-emerald-400 mb-0.5">Venue Info</div>
+                              {lead.venueHint}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {(() => {
+                          const urgency = getTimelineUrgency(lead.weddingDate);
+                          const IconComponent = urgency.icon;
+                          return (
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
+                              <IconComponent size={12} />
+                              {urgency.label}
+                              {urgency.subLabel && <span className="opacity-75">• {urgency.subLabel}</span>}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                      <span className="text-sm font-semibold text-black transition-colors duration-200">${lead.price.toFixed(2)}</span>
+                      {purchasing === lead.id ? (
+                        <button
+                          disabled
+                          className="px-3 sm:px-4 py-1.5 bg-gray-400 text-white sm:text-sm font-medium rounded disabled:bg-gray-400 whitespace-nowrap transition-colors duration-200"
+                        >
+                          Buying...
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleBuyClick(lead); }}
+                          className="px-3 sm:px-4 py-1.5 bg-black text-white sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
+                        >
+                          Buy
+                        </button>
                       )}
                     </div>
-                    <div className="text-xs sm:text-sm text-black transition-colors duration-200">{lead.city || lead.location}</div>
-                    <div className="flex flex-wrap gap-1">
-                      {(() => {
-                        const urgency = getTimelineUrgency(lead.weddingDate);
-                        const IconComponent = urgency.icon;
-                        return (
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
-                            <IconComponent size={12} />
-                            {urgency.label}
-                            {urgency.subLabel && <span className="opacity-75">• {urgency.subLabel}</span>}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <span className="text-sm font-semibold text-black transition-colors duration-200">${lead.price.toFixed(2)}</span>
-                    {purchasing === lead.id ? (
-                      <button
-                        disabled
-                        className="px-3 sm:px-4 py-1.5 bg-gray-400 text-white sm:text-sm font-medium rounded disabled:bg-gray-400 whitespace-nowrap transition-colors duration-200"
-                      >
-                        Buying...
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleBuyClick(lead)}
-                        className="px-3 sm:px-4 py-1.5 bg-black text-white sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
-                      >
-                        Buy
-                      </button>
-                    )}
                   </div>
                 </div>
+                {expandedLead === lead.id && (
+                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-gray-100 bg-gray-50">
+                    {lead.description && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Package Description</p>
+                        <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">{lead.description}</p>
+                      </div>
+                    )}
+                    <ServiceReferralTags className={lead.description ? 'pt-3 border-t border-gray-200' : ''} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -934,69 +982,98 @@ export const MarketplacePage: React.FC = () => {
         {viewMode === 'card' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredLeads.map((lead) => (
-              <div key={lead.id} className="p-3 sm:p-4 bg-white rounded-lg transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedLeadIds.has(lead.id)}
-                      onChange={() => handleToggleSelect(lead.id)}
-                      className="w-4 h-4 text-black focus:ring-black cursor-pointer transition-colors duration-200"
-                    />
-                    <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
+              <div key={lead.id} className="bg-white rounded-lg transition-all overflow-hidden">
+                <div
+                  className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.has(lead.id)}
+                        onChange={() => handleToggleSelect(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-black focus:ring-black cursor-pointer transition-colors duration-200"
+                      />
+                      <div className="text-xs text-gray-500 transition-colors duration-200">{lead.id.substring(0, 8)}</div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(lead.id, lead.isFavorited || false); }}
+                      className="p-1 hover:bg-gray-100 transition-colors"
+                      title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Star
+                        size={18}
+                        className={`${lead.isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'} transition-colors`}
+                      />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => toggleFavorite(lead.id, lead.isFavorited || false)}
-                    className="p-1 hover:bg-gray-100 transition-colors"
-                    title={lead.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <Star
-                      size={18}
-                      className={`${lead.isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'} transition-colors`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-black transition-colors duration-200">
-                  <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
-                  <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
-                  {lead.tags?.includes('NEW') && (
-                    <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-300 rounded-full">
-                      NEW
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs sm:text-sm text-black mb-2">{lead.city || lead.location}</div>
-                <div className="mb-3 flex flex-wrap gap-1">
-                  {(() => {
-                    const urgency = getTimelineUrgency(lead.weddingDate);
-                    const IconComponent = urgency.icon;
-                    return (
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
-                        <IconComponent size={14} />
-                        {urgency.label}
-                        {urgency.subLabel && <span className="opacity-75 text-xs">• {urgency.subLabel}</span>}
+                  <div className="flex items-center gap-2 text-sm font-medium text-black transition-colors duration-200">
+                    <span className="block sm:hidden">{formatDateMobile(lead.weddingDate)}</span>
+                    <span className="hidden sm:block">{formatDate(lead.weddingDate)}</span>
+                    {lead.tags?.includes('NEW') && (
+                      <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 border border-green-300 rounded-full">
+                        NEW
                       </span>
-                    );
-                  })()}
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-black mb-2">
+                    {lead.city || lead.location}
+                    {lead.venueHint && (
+                      <div className="relative group">
+                        <MapPinned size={14} className="text-emerald-600 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                          <div className="font-medium text-emerald-400 mb-0.5">Venue Info</div>
+                          {lead.venueHint}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-3 flex flex-wrap gap-1">
+                    {(() => {
+                      const urgency = getTimelineUrgency(lead.weddingDate);
+                      const IconComponent = urgency.icon;
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 rounded-full ${urgency.classes}`}>
+                          <IconComponent size={14} />
+                          {urgency.label}
+                          {urgency.subLabel && <span className="opacity-75 text-xs">• {urgency.subLabel}</span>}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <span className="text-sm font-semibold text-black">${lead.price.toFixed(2)}</span>
+                    {purchasing === lead.id ? (
+                      <button
+                        disabled
+                        className="px-3 py-1.5 bg-gray-400 text-white text-xs sm:text-sm font-medium rounded disabled:bg-gray-400"
+                      >
+                        Buying...
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleBuyClick(lead); }}
+                        className="px-3 py-1.5 bg-black text-white text-xs sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors"
+                      >
+                        Buy
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-sm font-semibold text-black">${lead.price.toFixed(2)}</span>
-                  {purchasing === lead.id ? (
-                    <button
-                      disabled
-                      className="px-3 py-1.5 bg-gray-400 text-white text-xs sm:text-sm font-medium rounded disabled:bg-gray-400"
-                    >
-                      Buying...
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleBuyClick(lead)}
-                      className="px-3 py-1.5 bg-black text-white text-xs sm:text-sm font-medium rounded hover:bg-gray-800 transition-colors"
-                    >
-                      Buy
-                    </button>
-                  )}
-                </div>
+                {expandedLead === lead.id && (
+                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-gray-100 bg-gray-50">
+                    {lead.description && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Package Description</p>
+                        <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">{lead.description}</p>
+                      </div>
+                    )}
+                    <ServiceReferralTags className={lead.description ? 'pt-3 border-t border-gray-200' : ''} />
+                  </div>
+                )}
               </div>
             ))}
           </div>

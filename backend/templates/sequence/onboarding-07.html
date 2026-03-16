@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Never Miss a Lead in Your Area</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #f5f5f5;
+        }
+        .email-wrapper { padding: 40px 20px; }
+        .email-container { max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; }
+        .header { padding: 40px 32px 24px; text-align: center; border-bottom: 1px solid #eee; }
+        .brand-name { font-size: 28px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+        .tagline { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; }
+        .content { padding: 32px; }
+        .greeting { font-size: 20px; color: #1a1a1a; margin-bottom: 20px; font-weight: 600; }
+        .paragraph { font-size: 15px; color: #444; margin-bottom: 20px; line-height: 1.7; }
+        .feature-highlight { background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%); border: 2px solid #000; border-radius: 12px; padding: 28px; margin: 24px 0; text-align: center; }
+        .feature-icon { font-size: 40px; margin-bottom: 12px; }
+        .feature-title { font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+        .feature-desc { font-size: 14px; color: #666; }
+        .section-title { font-size: 17px; font-weight: 600; color: #1a1a1a; margin: 28px 0 12px; }
+        .option-box { background-color: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 12px; }
+        .option-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
+        .option-desc { font-size: 14px; color: #666; }
+        .steps-list { margin: 20px 0; }
+        .step-item { display: table; width: 100%; margin-bottom: 16px; }
+        .step-num { display: table-cell; width: 32px; vertical-align: top; }
+        .step-circle { width: 24px; height: 24px; background: #000; color: #fff; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: 600; }
+        .step-text { display: table-cell; padding-left: 12px; font-size: 15px; color: #444; vertical-align: middle; }
+        .highlight-box { background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 24px 0; }
+        .highlight-box p { margin: 0; font-size: 15px; color: #333; }
+        .cta-section { text-align: center; margin: 32px 0; }
+        .cta-button {
+            display: inline-block; background-color: #000000; color: #ffffff !important;
+            padding: 14px 40px; text-decoration: none; font-size: 14px; font-weight: 500;
+            letter-spacing: 0.5px; border-radius: 4px;
+        }
+        .signature { margin-top: 32px; padding-top: 24px; border-top: 1px solid #eee; }
+        .signature p { font-size: 14px; color: #666; margin-bottom: 4px; }
+        .signature .name { font-weight: 600; color: #1a1a1a; }
+        .footer { padding: 24px 32px; background-color: #fafafa; text-align: center; border-top: 1px solid #eee; }
+        .footer p { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+        .email-number { font-size: 11px; color: #ccc; margin-top: 12px; }
+        .unsubscribe { margin-top: 16px; }
+        .unsubscribe a { font-size: 10px; color: #ccc; text-decoration: none; }
+        @media (max-width: 520px) {
+            .email-wrapper { padding: 20px 12px; }
+            .header, .content { padding-left: 20px; padding-right: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <h1 class="brand-name">Black Bow Associates</h1>
+                <p class="tagline">Wedding Lead Marketplace</p>
+            </div>
+            <div class="content">
+                <p class="greeting">Set Up Lead Notifications</p>
+
+                <p class="paragraph">Hi {{businessName}},</p>
+
+                <p class="paragraph">Don't want to check the marketplace every day? We've got you covered. Set up email notifications and we'll alert you whenever new leads appear in your selected states.</p>
+
+                <div class="feature-highlight">
+                    <div class="feature-icon">&#128276;</div>
+                    <p class="feature-title">Lead Notifications</p>
+                    <p class="feature-desc">Get notified instantly, daily, or weekly when leads matching your preferences become available</p>
+                </div>
+
+                <p class="section-title">Choose Your Notification Frequency</p>
+
+                <div class="option-box">
+                    <p class="option-title">Instant Notifications</p>
+                    <p class="option-desc">Get an email the moment a new lead in your area is posted. Perfect for those who want first dibs.</p>
+                </div>
+
+                <div class="option-box">
+                    <p class="option-title">Daily Digest</p>
+                    <p class="option-desc">Receive a summary of new leads once a day. Great for staying informed without inbox overload.</p>
+                </div>
+
+                <div class="option-box">
+                    <p class="option-title">Weekly Roundup</p>
+                    <p class="option-desc">Get a weekly email with all new leads. Ideal for vendors with flexible schedules.</p>
+                </div>
+
+                <p class="section-title">How to Set It Up</p>
+
+                <div class="steps-list">
+                    <div class="step-item">
+                        <div class="step-num"><div class="step-circle">1</div></div>
+                        <span class="step-text">Go to your Account page</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num"><div class="step-circle">2</div></div>
+                        <span class="step-text">Click the "Notifications" tab</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num"><div class="step-circle">3</div></div>
+                        <span class="step-text">Select the states you serve</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num"><div class="step-circle">4</div></div>
+                        <span class="step-text">Choose your notification frequency</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num"><div class="step-circle">5</div></div>
+                        <span class="step-text">Save your preferences&mdash;done!</span>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <p><strong>Tip:</strong> Select all the states where you're willing to travel or offer services. More states = more opportunities!</p>
+                </div>
+
+                <div class="cta-section">
+                    <a href="https://blackbowassociates.com/account?tab=notifications" class="cta-button">Set Up Notifications</a>
+                </div>
+
+                <div class="signature">
+                    <p class="name">The Black Bow Team</p>
+                    <p>Questions? Reply to this email&mdash;we're here to help.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>A subsidiary of Precious Pics Production</p>
+                <p class="email-number">Email 7 of 10 in your welcome series</p>
+                <p class="unsubscribe"><a href="https://blackbowassociates.com/account?tab=notifications">Unsubscribe</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -12,6 +12,7 @@ import {
   validateEmail
 } from '../services/auth.service.js';
 import { generateReferralCode, validateReferralCode } from '../services/referral.service.js';
+import { enrollUser } from '../services/emailSequenceService.js';
 
 /**
  * Admin access is granted by setting isAdmin=true directly in the database.
@@ -410,6 +411,14 @@ export const confirmEmail = asyncHandler(async (req, res) => {
       confirmationToken: null
     }
   });
+
+  // Enroll user in onboarding email sequence
+  try {
+    await enrollUser(user.id, 'onboarding');
+    logger.info('User enrolled in onboarding sequence', { userId: user.id });
+  } catch (enrollError) {
+    logger.warn('Failed to enroll user in sequence', { userId: user.id, error: enrollError.message });
+  }
 
   // Generate tokens for auto-login
   const accessToken = generateAccessToken(user);

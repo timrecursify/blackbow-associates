@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You've Got $60 Free Credit!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6; color: #2c2c2c; background-color: #f5f5f5;
+        }
+        .email-wrapper { padding: 40px 20px; }
+        .email-container { max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; }
+        .header { padding: 40px 32px 24px; text-align: center; border-bottom: 1px solid #eee; }
+        .brand-name { font-size: 28px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+        .tagline { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; }
+        .content { padding: 32px; }
+        .greeting { font-size: 20px; color: #1a1a1a; margin-bottom: 20px; font-weight: 600; }
+        .paragraph { font-size: 15px; color: #444; margin-bottom: 20px; line-height: 1.7; }
+        .credit-box { background: linear-gradient(135deg, #000 0%, #333 100%); color: #fff; border-radius: 12px; padding: 32px; margin: 28px 0; text-align: center; }
+        .credit-label { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #aaa; margin-bottom: 8px; }
+        .credit-amount { font-size: 56px; font-weight: 700; margin-bottom: 8px; }
+        .credit-desc { font-size: 15px; color: #ccc; }
+        .highlight-box { background-color: #f8f9fa; border-left: 4px solid #10b981; padding: 20px; margin: 24px 0; }
+        .highlight-box p { margin: 0; font-size: 15px; color: #333; }
+        .section-title { font-size: 17px; font-weight: 600; color: #1a1a1a; margin: 28px 0 12px; }
+        .step-box { display: table; width: 100%; margin-bottom: 16px; }
+        .step-num { display: table-cell; width: 32px; vertical-align: top; }
+        .step-circle { width: 24px; height: 24px; background: #000; color: #fff; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: 600; }
+        .step-content { display: table-cell; padding-left: 12px; vertical-align: top; }
+        .step-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+        .step-desc { font-size: 14px; color: #666; margin-top: 4px; }
+        .cta-section { text-align: center; margin: 32px 0; }
+        .cta-button {
+            display: inline-block; background-color: #10b981; color: #ffffff !important;
+            padding: 16px 48px; text-decoration: none; font-size: 16px; font-weight: 600;
+            letter-spacing: 0.5px; border-radius: 4px;
+        }
+        .signature { margin-top: 32px; padding-top: 24px; border-top: 1px solid #eee; }
+        .signature p { font-size: 14px; color: #666; margin-bottom: 4px; }
+        .signature .name { font-weight: 600; color: #1a1a1a; }
+        .footer { padding: 24px 32px; background-color: #fafafa; text-align: center; border-top: 1px solid #eee; }
+        .footer p { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+        .email-number { font-size: 11px; color: #ccc; margin-top: 12px; }
+        .unsubscribe { margin-top: 16px; }
+        .unsubscribe a { font-size: 10px; color: #ccc; text-decoration: none; }
+        @media (max-width: 520px) {
+            .email-wrapper { padding: 20px 12px; }
+            .header, .content { padding-left: 20px; padding-right: 20px; }
+            .credit-amount { font-size: 42px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <h1 class="brand-name">Black Bow Associates</h1>
+                <p class="tagline">Wedding Lead Marketplace</p>
+            </div>
+            <div class="content">
+                <p class="greeting">We've Got a Gift for You!</p>
+
+                <p class="paragraph">Hi {{businessName}},</p>
+
+                <p class="paragraph">We want you to experience the power of our wedding leads firsthand. So we've added a special credit to your account:</p>
+
+                <div class="credit-box">
+                    <p class="credit-label">Your Account Credit</p>
+                    <p class="credit-amount">$60</p>
+                    <p class="credit-desc">Ready to use on any leads</p>
+                </div>
+
+                <div class="highlight-box">
+                    <p><strong>That's 3 leads for free!</strong> Use this credit to test our platform and see the quality of our leads for yourself. No strings attached.</p>
+                </div>
+
+                <p class="section-title">How to Use Your Credit</p>
+
+                <div class="step-box">
+                    <div class="step-num"><div class="step-circle">1</div></div>
+                    <div class="step-content">
+                        <p class="step-title">Log in to your account</p>
+                        <p class="step-desc">Your $60 credit is already waiting in your balance</p>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-num"><div class="step-circle">2</div></div>
+                    <div class="step-content">
+                        <p class="step-title">Browse the marketplace</p>
+                        <p class="step-desc">Filter leads by state to find couples in your area</p>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-num"><div class="step-circle">3</div></div>
+                    <div class="step-content">
+                        <p class="step-title">Purchase your first lead</p>
+                        <p class="step-desc">Your credit will be applied automatically</p>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-num"><div class="step-circle">4</div></div>
+                    <div class="step-content">
+                        <p class="step-title">Reach out to the couple</p>
+                        <p class="step-desc">Send a text with your portfolio and watch the magic happen</p>
+                    </div>
+                </div>
+
+                <p class="paragraph" style="margin-top: 24px;">Remember: We sell each lead to only one vendor per category. When you buy a lead, you're the exclusive contact in your service area.</p>
+
+                <div class="cta-section">
+                    <a href="https://blackbowassociates.com/marketplace" class="cta-button">Use Your $60 Credit Now</a>
+                </div>
+
+                <div class="signature">
+                    <p class="name">The Black Bow Team</p>
+                    <p>Questions? Reply to this email&mdash;we're here to help.</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p><strong>Black Bow Associates</strong></p>
+                <p>A subsidiary of Precious Pics Production</p>
+                <p class="email-number">Email 4 of 10 in your welcome series</p>
+                <p class="unsubscribe"><a href="https://blackbowassociates.com/account?tab=notifications">Unsubscribe</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

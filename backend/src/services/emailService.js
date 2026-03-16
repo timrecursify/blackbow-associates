@@ -215,6 +215,21 @@ class EmailService {
     return this.sendEmail(email, "Payout Completed - Black Bow Associates", html);
   }
 
+  static async sendNewLeadNotification(email, businessName, leadData, userBalance) {
+    const template = this.readTemplate("new-lead-notification.html");
+    const html = this.replaceVariables(template, {
+      businessName,
+      location: leadData.location || leadData.state || "Not specified",
+      weddingDate: leadData.weddingDate ? new Date(leadData.weddingDate).toLocaleDateString("en-US", {
+        year: "numeric", month: "long", day: "numeric"
+      }) : "TBD",
+      servicesNeeded: Array.isArray(leadData.servicesNeeded) ? leadData.servicesNeeded.join(", ") : "Various",
+      price: parseFloat(leadData.price || 20).toFixed(2),
+      balance: parseFloat(userBalance || 0).toFixed(2)
+    });
+    return this.sendEmail(email, `New Wedding Lead Available in ${leadData.state || leadData.location || 'Your Area'} - Black Bow Associates`, html);
+  }
+
   static generateConfirmationToken() { return this.generateToken(); }
   static generatePasswordResetToken() { return this.generateToken(); }
 }

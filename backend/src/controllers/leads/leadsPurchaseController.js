@@ -14,6 +14,7 @@ import { AppError, asyncHandler } from '../../middleware/errorHandler.js';
 import { VENDOR_TYPE_PURCHASE_LIMIT, getPurchaseCountByVendorType } from './leadsHelpers.js';
 import EmailService from '../../services/emailService.js';
 import { NotificationService } from '../../services/notification.service.js';
+import { exitUserFromSequence } from '../../services/emailSequenceService.js';
 
 /**
  * Purchase lead (CRITICAL: Row-level locking for race condition prevention)
@@ -225,6 +226,13 @@ export const purchaseLead = asyncHandler(async (req, res) => {
     );
   } catch (emailError) {
     logger.warn('Failed to send purchase receipt email', { error: emailError.message });
+  }
+
+  // Exit user from onboarding sequence (they've made a purchase)
+  try {
+    await exitUserFromSequence(user.id, 'purchased_lead');
+  } catch (exitError) {
+    logger.warn('Failed to exit user from sequence', { userId: user.id, error: exitError.message });
   }
 
   res.json({

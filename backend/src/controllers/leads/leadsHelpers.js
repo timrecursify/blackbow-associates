@@ -35,12 +35,12 @@ export async function getPurchaseCountByVendorType(prismaInstance, leadId, vendo
 export function calculateDynamicTags(lead, purchasedAt = null) {
   const dynamicTags = [...lead.tags]; // Start with existing tags
   const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
 
-  // NEW tag: leads created within last 3 days OR recently purchased by this user (within 7 days)
-  const isNewlyCreated = new Date(lead.createdAt) >= threeDaysAgo;
+  // NEW tag: leads created within last 5 days OR recently purchased by this user (within 7 days)
+  const isNewlyCreated = new Date(lead.createdAt) >= fiveDaysAgo;
   const isNewlyPurchased = purchasedAt && new Date(purchasedAt) >= sevenDaysAgo;
 
   // Remove NEW if it exists but shouldn't (cleanup old tags)

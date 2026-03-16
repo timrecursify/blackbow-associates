@@ -16,16 +16,19 @@
     "@tremor/react": "^3.18.7",
     "axios": "^1.6.5",
     "date-fns": "^3.6.0",
+    "dompurify": "^3.3.1",
     "express": "^4.21.2",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
     "react-responsive": "^10.0.1",
-    "react-router-dom": "^7.6.3"
+    "react-router-dom": "^7.6.3",
+    "recharts": "^3.6.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/dompurify": "^3.0.5",
     "@types/google.maps": "^3.58.1",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",

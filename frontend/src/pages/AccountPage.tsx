@@ -7,8 +7,10 @@ import { BillingAddressModal } from '../components/BillingAddressModal';
 import Notification from '../components/Notification';
 import { LeadFeedbackModal, FeedbackData } from '../components/LeadFeedbackModal';
 import { FeedbackSuccessModal } from '../components/FeedbackSuccessModal';
+import { ServiceReferralTags } from '../components/ServiceReferralTags';
 import { ReferralsTab } from './account/ReferralsTab';
-import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText, MessageSquare, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
+import { NotificationsTab } from './account/NotificationsTab';
+import { DollarSign, Calendar, MapPin, Mail, Phone, User as UserIcon, Briefcase, ExternalLink, Camera, Edit2, Save, X, FileText, MessageSquare, ChevronLeft, ChevronRight, Gift, Bell } from 'lucide-react';
 import { usersAPI, leadsAPI } from '../services/api';
 import { format } from 'date-fns';
 
@@ -70,7 +72,7 @@ export const AccountPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leads' | 'referrals'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'leads' | 'referrals' | 'notifications'>('overview');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingBilling, setIsEditingBilling] = useState(false);
   const [editForm, setEditForm] = useState({ businessName: '', vendorType: '' });
@@ -115,7 +117,7 @@ export const AccountPage: React.FC = () => {
 
     // Handle tab parameter from URL (e.g., /account?tab=leads)
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'leads' || tabParam === 'transactions' || tabParam === 'overview' || tabParam === 'referrals') {
+    if (tabParam === 'leads' || tabParam === 'transactions' || tabParam === 'overview' || tabParam === 'referrals' || tabParam === 'notifications') {
       setActiveTab(tabParam);
     }
   }, [searchParams, leadsPage]);
@@ -383,6 +385,21 @@ export const AccountPage: React.FC = () => {
             >
               <Gift size={16} />
               Referrals
+            </button>
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`pb-3 sm:pb-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
+                activeTab === 'notifications'
+                  ? 'border-b-2 border-black'
+                  : 'text-gray-600'
+              }`}
+            >
+              <Bell size={16} />
+              Notifications
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
             </button>
           </div>
         </div>
@@ -880,6 +897,9 @@ export const AccountPage: React.FC = () => {
                         </div>
                       )}
 
+                      {/* Service Referral Tags - Mobile */}
+                      <ServiceReferralTags className="pt-3 border-t border-gray-200" />
+
                       <div className="pt-3 border-t border-gray-200 transition-colors duration-200">
                         <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide transition-colors duration-200">Contact Information</p>
                         {lead.personName && (
@@ -1010,6 +1030,8 @@ export const AccountPage: React.FC = () => {
                               <p className="text-sm text-gray-700 transition-colors duration-200">{lead.description}</p>
                             </div>
                           )}
+                          {/* Service Referral Tags - Desktop */}
+                          <ServiceReferralTags className="pt-3 border-t border-gray-200" />
                         </div>
 
                         {/* Contact Info */}
@@ -1163,6 +1185,9 @@ export const AccountPage: React.FC = () => {
 
         {/* Referrals Tab */}
         {activeTab === 'referrals' && <ReferralsTab />}
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && <NotificationsTab />}
       </div>
 
             {/* Billing Address Modal */}

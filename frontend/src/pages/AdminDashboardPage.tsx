@@ -17,10 +17,16 @@ interface User {
   businessName: string | null;
   vendorType: string | null;
   balance: number;
+  totalDeposits: number;
   isAdmin: boolean;
   isBlocked?: boolean;
   blockedReason?: string | null;
   createdAt: string;
+  referredBy?: {
+    id: string;
+    email: string;
+    businessName: string | null;
+  } | null;
 }
 
 interface Lead {
@@ -576,28 +582,28 @@ const AdminDashboardContent: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                        User ID
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        User
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                        Email
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                        Business
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider hidden lg:table-cell">
                         Type
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        Deposited
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider hidden md:table-cell">
                         Balance
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider hidden sm:table-cell">
+                        Source
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider hidden lg:table-cell">
                         Status
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider hidden xl:table-cell">
                         Joined
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -618,29 +624,48 @@ const AdminDashboardContent: React.FC = () => {
                     ) : (
                       users.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900 font-mono">
-                            {user.id.slice(0, 8)}...
+                          <td className="px-3 py-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{user.businessName || user.email}</p>
+                              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{user.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{user.businessName || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{user.vendorType || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-semibold">${user.balance.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-3 py-3 text-sm text-gray-700 hidden lg:table-cell">
+                            {user.vendorType || '-'}
+                          </td>
+                          <td className="px-3 py-3 text-sm font-semibold text-green-700">
+                            ${user.totalDeposits?.toFixed(2) || '0.00'}
+                          </td>
+                          <td className="px-3 py-3 text-sm text-gray-700 hidden md:table-cell">
+                            ${user.balance.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-3 text-sm hidden sm:table-cell">
+                            {user.referredBy ? (
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded" title={`Referred by: ${user.referredBy.email}`}>
+                                Ref: {user.referredBy.businessName || user.referredBy.email.split('@')[0]}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                                Organic
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-sm hidden lg:table-cell">
                             {user.isAdmin ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                              <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
                                 Admin
                               </span>
                             ) : user.isBlocked ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                              <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded">
                                 Blocked
                               </span>
                             ) : (
-                              <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+                              <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded">
                                 Active
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-3 py-3 text-sm text-gray-600 hidden xl:table-cell">
                             {format(new Date(user.createdAt), 'MMM d, yyyy')}
                           </td>
                           <td className="px-3 py-2 text-sm">

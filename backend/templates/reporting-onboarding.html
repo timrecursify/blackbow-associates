@@ -1,0 +1,150 @@
+<!--
+  Reporting System Onboarding Email
+  Sent to new employees when they're added to the reporting system.
+
+  Variables to replace:
+    {{name}} - Employee's first name
+    {{portalUrl}} - reporting.blackbowassociates.com
+
+  Usage (from backend root):
+    node -e "
+      import EmailService from './src/services/emailService.js';
+      import fs from 'fs';
+      let html = fs.readFileSync('./templates/reporting-onboarding.html', 'utf8');
+      html = html.replace(/{{name}}/g, 'NewEmployee');
+      await EmailService.sendEmail('employee@email.com', 'Welcome to Blackbow Daily Reporting — How It Works', html);
+      process.exit(0);
+    "
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+  <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h1 style="color: #1a1a1a; margin-bottom: 8px;">Welcome to Blackbow Daily Reporting!</h1>
+    <p style="color: #666; margin-bottom: 24px;">Hi {{name}}, here's everything you need to know about how the system works.</p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+    <!-- STEP 1 -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">1. Your Daily Code (Every Weekday at 9 AM)</h2>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      Every Monday through Friday at <strong>9:00 AM Eastern</strong>, you'll receive an email with a unique 6-character code (for example: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 16px; font-weight: bold;">X7K2M9</code>). This is your clock-in code for that day. Each code can only be used on the day it's sent and expires at midnight.
+    </p>
+
+    <!-- STEP 2 -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">2. Clocking In</h2>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      When you're ready to start work, go to:
+    </p>
+    <a href="https://{{portalUrl}}" style="display: block; background-color: #1a1a1a; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; text-align: center; font-weight: 500; margin: 16px 0;">
+      {{portalUrl}}
+    </a>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      Enter your 6-character code from the email and click <strong>Clock In</strong>. That's it — no username, no password needed. You'll see a confirmation with the time you clocked in.
+    </p>
+    <p style="color: #555; font-size: 14px; line-height: 1.6; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+      <strong>Tip:</strong> If you accidentally close the browser or switch devices, just go back to the same URL and enter the same code again. It will bring you right back to where you left off (as long as you haven't clocked out yet).
+    </p>
+
+    <!-- STEP 3 -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">3. Logging Your Work (3 Time Slots)</h2>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      Your workday is split into <strong>3 time slots</strong>, each 2 hours long:
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+      <tr style="background: #f8f9fa;">
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Slot 1</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">Available immediately when you clock in</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Slot 2</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">Unlocks 2 hours after you clock in</td>
+      </tr>
+      <tr style="background: #f8f9fa;">
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Slot 3</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">Unlocks 4 hours after you clock in</td>
+      </tr>
+    </table>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      In each slot, log what you worked on as <strong>bullet points</strong>. For each task you can also set a <strong>time range</strong> (from/to) so management can see when you worked on what.
+    </p>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      <strong>How to add tasks:</strong>
+    </p>
+    <ul style="color: #333; font-size: 15px; line-height: 1.8;">
+      <li>Click the <strong>Add another task</strong> button to add a new bullet point</li>
+      <li>Type your task description (e.g., "Called 5 leads from the new list")</li>
+      <li>Optionally set the start and end time for that task</li>
+      <li>Press <strong>Enter</strong> to quickly add another bullet</li>
+      <li>Press <strong>Backspace</strong> on an empty bullet to remove it</li>
+    </ul>
+
+    <!-- STEP 4 -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">4. Saving &amp; Submitting</h2>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      <strong>Auto-save:</strong> Your work is saved automatically every 30 seconds, so you won't lose anything if your browser closes.
+    </p>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      <strong>Submitting a slot:</strong> When you're done with a slot, click the <strong>Submit</strong> button on that slot. Try to submit each slot within its 2-hour window — if you submit after the window, it'll be marked as late (management can see this).
+    </p>
+
+    <!-- STEP 5 -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">5. Reminders</h2>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      If you haven't submitted a slot by the time the next one unlocks, you'll get a <strong>reminder email</strong> nudging you to submit. After Slot 3's deadline, you'll get a final reminder to wrap up and clock out.
+    </p>
+
+    <!-- STEP 6 -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">6. Clocking Out</h2>
+    <p style="color: #333; font-size: 15px; line-height: 1.6;">
+      When you're done for the day, click the <strong>Clock Out</strong> button at the bottom of the page. This will:
+    </p>
+    <ol style="color: #333; font-size: 15px; line-height: 1.8;">
+      <li>Record your clock-out time</li>
+      <li>Compile all your tasks into a daily report</li>
+      <li>Generate an AI summary of your work</li>
+      <li>Send the summary to management</li>
+    </ol>
+    <p style="color: #e74c3c; font-size: 14px; line-height: 1.6; background: #fdf2f2; padding: 12px; border-radius: 6px;">
+      <strong>Important:</strong> Once you clock out, your code is used up for the day. You won't be able to log back in or make changes, so make sure all your tasks are entered before clocking out.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+    <!-- QUICK REFERENCE -->
+    <h2 style="color: #1a1a1a; font-size: 18px;">Quick Reference</h2>
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+      <tr style="background: #f8f9fa;">
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Portal URL</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">{{portalUrl}}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Code arrives</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">9:00 AM Eastern, Mon–Fri</td>
+      </tr>
+      <tr style="background: #f8f9fa;">
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Code expires</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">Midnight Eastern (same day)</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Time slots</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">3 slots, 2 hours each, unlock progressively</td>
+      </tr>
+      <tr style="background: #f8f9fa;">
+        <td style="padding: 10px 12px; border: 1px solid #eee; font-weight: bold;">Auto-save</td>
+        <td style="padding: 10px 12px; border: 1px solid #eee;">Every 30 seconds</td>
+      </tr>
+    </table>
+
+    <p style="color: #333; font-size: 15px; line-height: 1.6; margin-top: 24px;">
+      Your first code will arrive <strong>tomorrow morning at 9 AM</strong>. If you have any questions, reach out to Tim or Slava.
+    </p>
+
+    <p style="color: #999; font-size: 14px; margin-top: 24px;">— Blackbow Associates</p>
+  </div>
+</body>
+</html>

@@ -18,7 +18,7 @@ The system is deployed and operational.
 | Name | Email | Status |
 |------|-------|--------|
 | Zayra | zayra@preciouspicspro.com | Active |
-| Joyce | joyce@preciouspicspro.com | Active |
+| Joyce | joyce@preciouspicspro.com | Deactivated (April 2026) |
 
 ## Summary Recipients
 

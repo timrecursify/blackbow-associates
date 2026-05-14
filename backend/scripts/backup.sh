@@ -67,7 +67,7 @@ send_telegram_notification() {
     if command -v curl &> /dev/null; then
         curl -s -X POST http://localhost:3400/notify \
             -H "Content-Type: application/json" \
-            -d "{\"message\":\"📦 **Database Backup**\\n${message}\",\"level\":\"${level}\",\"service\":\"backup-script\"}" \
+            -d "{\"source\":\"blackbow\",\"message\":\"📦 **Database Backup**\\n${message}\",\"level\":\"${level}\",\"service\":\"backup-script\"}" \
             --max-time 5 &> /dev/null || true
     fi
 }

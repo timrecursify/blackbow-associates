@@ -18,6 +18,7 @@ module.exports = {
     merge_logs: true,
     max_memory_restart: '200M',
     restart_delay: 4000,
-    autorestart: true
+    autorestart: true,
+    kill_timeout: 5000
   }]
 };

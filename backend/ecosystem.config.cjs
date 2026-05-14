@@ -18,6 +18,7 @@ module.exports = {
     restart_delay: 4000,
     autorestart: true,
     max_restarts: 10,
-    min_uptime: '10s'
+    min_uptime: '10s',
+    kill_timeout: 5000
   }]
 };

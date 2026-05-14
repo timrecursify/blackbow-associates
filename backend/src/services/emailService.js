@@ -20,6 +20,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = `${process.env.DEFAULT_FROM_NAME || "Black Bow Associates"} <${process.env.DEFAULT_FROM_EMAIL || "noreply@blackbowassociates.com"}>`;
 
+// Pre-load all email templates at startup (avoids blocking readFileSync in request handlers)
+const TEMPLATE_DIR = path.join(__dirname, "../../templates");
+const templateCache = new Map();
+for (const file of fs.readdirSync(TEMPLATE_DIR)) {
+  if (file.endsWith(".html")) {
+    templateCache.set(file, fs.readFileSync(path.join(TEMPLATE_DIR, file), "utf8"));
+  }
+}
+
 function isValidEmail(email) {
   if (!email || typeof email !== "string") return false;
   // Simple, practical validation (Resend will still validate too)
@@ -32,8 +41,9 @@ class EmailService {
   }
 
   static readTemplate(templateName) {
-    const templatePath = path.join(__dirname, "../../templates", templateName);
-    return fs.readFileSync(templatePath, "utf8");
+    const cached = templateCache.get(templateName);
+    if (!cached) throw new Error(`Email template not found: ${templateName}`);
+    return cached;
   }
 
   static replaceVariables(template, variables) {

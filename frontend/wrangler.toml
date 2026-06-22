@@ -11,7 +11,7 @@ compatibility_date = "2024-01-15"
 [env.production.vars]
 VITE_API_BASE_URL = "https://newsletter.preciouspicspro.com"
 VITE_LOG_LEVEL = "warn"
-VITE_UNSUBSCRIBE_WEBHOOK = "https://newsletter.preciouspicspro.com/newsletter/api/unsubscribe"
+VITE_UNSUBSCRIBE_WEBHOOK = "https://billing.preciouspicspro.com/newsletter/api/unsubscribe"
 
 [env.development]
 compatibility_date = "2024-01-15"

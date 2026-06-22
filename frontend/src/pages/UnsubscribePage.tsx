@@ -32,7 +32,7 @@ export const UnsubscribePage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://newsletter.preciouspicspro.com/newsletter/api/unsubscribe';
+      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://billing.preciouspicspro.com/newsletter/api/unsubscribe';
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -73,7 +73,7 @@ export const UnsubscribePage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://newsletter.preciouspicspro.com/newsletter/api/unsubscribe';
+      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://billing.preciouspicspro.com/newsletter/api/unsubscribe';
 
       const response = await fetch(webhookUrl, {
         method: 'POST',

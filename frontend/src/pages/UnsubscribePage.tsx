@@ -1,16 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 export const UnsubscribePage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Prefill email and token from URL params on mount
+  useEffect(() => {
+    const urlEmail = searchParams.get('email');
+    const urlToken = searchParams.get('token');
+
+    if (urlEmail) {
+      setEmail(urlEmail);
+    }
+    if (urlToken) {
+      setToken(urlToken);
+      // Auto-submit if both email and token are present
+      handleAutoSubmit(urlEmail || '', urlToken);
+    }
+  }, [searchParams]);
+
+  const handleAutoSubmit = async (autoEmail: string, autoToken: string) => {
+    if (!autoEmail || !autoToken) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://newsletter.preciouspicspro.com/newsletter/api/unsubscribe';
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: autoEmail, token: autoToken }),
+      });
+
+      if (response.ok) {
+        setSuccess(true);
+      } else if (response.status === 404) {
+        setSuccess(true); // Already unsubscribed is OK
+      } else {
+        throw new Error('Failed to unsubscribe. Please try again.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email) {
       setError('Please enter your email address');
       return;
@@ -25,31 +73,22 @@ export const UnsubscribePage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Call the unsubscribe webhook endpoint
-      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://ppp-newsletter.tim-611.workers.dev/api/unsubscribe';
-      
+      const webhookUrl = import.meta.env.VITE_UNSUBSCRIBE_WEBHOOK || 'https://newsletter.preciouspicspro.com/newsletter/api/unsubscribe';
+
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, token: token || undefined }),
       });
 
-      // Handle response - both success and "contact not found" are considered successful unsubscribe
       if (response.ok) {
-        // 200 - Successfully unsubscribed
         setSuccess(true);
       } else if (response.status === 404) {
         // 404 - Contact not found means already unsubscribed, which is success
-        const errorData = await response.json();
-        if (errorData.code === 'NOT_FOUND') {
-          setSuccess(true);
-        } else {
-          throw new Error('Failed to unsubscribe. Please try again.');
-        }
+        setSuccess(true);
       } else {
-        // Other errors (400 validation, 500 server errors)
         throw new Error('Failed to unsubscribe. Please try again.');
       }
     } catch (err) {

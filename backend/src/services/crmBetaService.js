@@ -97,32 +97,11 @@ class CrmBetaService {
    */
   static async sendConfirmationEmail(signup) {
     try {
-      const templatePath = path.join(__dirname, '../../templates/crm-beta-confirmation.html');
-      let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
-
-      // Replace placeholders
-      htmlTemplate = htmlTemplate
-        .replace(/{{name}}/g, signup.name)
-        .replace(/{{companyName}}/g, signup.companyName);
-
-      const result = await resend.emails.send({
-        from: `${process.env.DEFAULT_FROM_NAME} <${process.env.DEFAULT_FROM_EMAIL}>`,
-        to: signup.email,
-        subject: "We're Reviewing Your CRM Beta Application",
-        html: htmlTemplate
-      });
-
-      if (result.error) {
-        throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
-      }
-
-      logger.info('Beta confirmation email sent', {
+      logger.info('Email disabled — blackbow decommissioned', {
         signupId: signup.id,
-        email: signup.email,
-        emailId: result.data?.id || result.id
+        email: signup.email
       });
-
-      return { success: true, emailId: result.data?.id || result.id };
+      return { success: true, disabled: true };
 
     } catch (error) {
       logger.error('Failed to send beta confirmation email', {
@@ -140,43 +119,11 @@ class CrmBetaService {
    */
   static async sendAdminNotification(signup) {
     try {
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@blackbowassociates.com';
-
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #000;">🎯 New CRM Beta Signup</h2>
-          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Name:</strong> ${signup.name}</p>
-            <p><strong>Company:</strong> ${signup.companyName}</p>
-            <p><strong>Email:</strong> ${signup.email}</p>
-            <p><strong>Phone:</strong> ${signup.phone}</p>
-            ${signup.companyWebsite ? `<p><strong>Website:</strong> <a href="${signup.companyWebsite}">${signup.companyWebsite}</a></p>` : ''}
-            ${signup.vendorType ? `<p><strong>Vendor Type:</strong> ${signup.vendorType}</p>` : ''}
-            ${signup.message ? `<p><strong>Message:</strong> ${signup.message}</p>` : ''}
-            <p><strong>Submitted:</strong> ${new Date(signup.createdAt).toLocaleString()}</p>
-          </div>
-          <p>View all beta signups in the <a href="https://blackbowassociates.com/admin">admin dashboard</a>.</p>
-        </div>
-      `;
-
-      const result = await resend.emails.send({
-        from: `${process.env.DEFAULT_FROM_NAME} <${process.env.DEFAULT_FROM_EMAIL}>`,
-        to: adminEmail,
-        subject: `New CRM Beta Signup: ${signup.companyName}`,
-        html: htmlContent
-      });
-
-      if (result.error) {
-        throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
-      }
-
-      logger.info('Admin notification email sent', {
+      logger.info('Email disabled — blackbow decommissioned', {
         signupId: signup.id,
-        adminEmail,
-        emailId: result.data?.id || result.id
+        email: signup.email
       });
-
-      return { success: true, emailId: result.data?.id || result.id };
+      return { success: true, disabled: true };
 
     } catch (error) {
       logger.error('Failed to send admin notification email', {

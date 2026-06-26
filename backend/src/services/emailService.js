@@ -58,26 +58,8 @@ class EmailService {
 
   static async sendEmail(to, subject, html) {
     try {
-      const recipients = Array.isArray(to) ? to : [to];
-      const normalized = recipients.map(r => (r || "").trim()).filter(isValidEmail);
-      if (normalized.length === 0) {
-        logger.warn("Email skipped (no valid recipients)", { subject });
-        return { success: false, skipped: true };
-      }
-
-      const result = await resend.emails.send({
-        from: FROM_EMAIL,
-        to: normalized,
-        subject,
-        html
-      });
-
-      if (result.error) {
-        throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
-      }
-
-      logger.info("Email sent", { to: normalized, subject, emailId: result.data?.id || result.id });
-      return { success: true, emailId: result.data?.id || result.id };
+      logger.info("Email disabled — blackbow decommissioned", { to, subject });
+      return { success: true, disabled: true };
     } catch (error) {
       logger.error("Failed to send email", { to, subject, error: error.message });
       throw error;
